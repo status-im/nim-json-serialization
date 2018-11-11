@@ -1,5 +1,5 @@
 import
-  typetraits, serialization/streams
+  typetraits, serialization
 
 type
   JsonWriterState = enum
@@ -144,10 +144,8 @@ proc writeImpl(w: var JsonWriter, value: auto) =
     w.writeArray(value)
   elif value is (object or tuple):
     w.beginRecord(type(value))
-    # TODO: this won't handle case objects
-    # introduce and use `value.deserializePairs(k, v):`
-    for k, v in value.fieldPairs:
-      w.writeField(k, v)
+    value.serializeFields(k, v):
+      w.writeField k, v
     w.endRecord()
   else:
     const typeName = typetraits.name(value.type)
@@ -155,4 +153,9 @@ proc writeImpl(w: var JsonWriter, value: auto) =
 
 template getOutput*(w: JsonWriter): auto =
   w.stream.getOutput
+
+proc toJson*(v: auto, pretty = false, typeAnnotations = false): string =
+  var w = StringJsonWriter.init(pretty, typeAnnotations)
+  w.writeValue v
+  return w.getOutput
 
