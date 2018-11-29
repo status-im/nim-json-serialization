@@ -54,12 +54,12 @@ proc writeFieldName*(w: var JsonWriter, name: string) =
   w.stream.append ':'
   if w.hasPrettyOutput: w.stream.append ' '
 
+  w.state = RecordExpected
+
 proc writeField*(w: var JsonWriter, name: string, value: auto) =
   mixin writeValue
 
   w.writeFieldName(name)
-
-  w.state = RecordExpected
   w.writeValue(value)
 
   w.state = AfterField
@@ -86,7 +86,10 @@ proc endRecord*(w: var JsonWriter) =
     w.indent()
 
   w.stream.append '}'
-  w.state = RecordExpected
+
+template endRecordField*(w: var JsonWriter) =
+  endRecord(w)
+  w.state = AfterField
 
 proc writeArray[T](w: var JsonWriter, elements: openarray[T]) =
   mixin writeValue
