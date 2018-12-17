@@ -1,5 +1,6 @@
 import
-  typetraits, serialization
+  typetraits,
+  faststreams/output_stream, serialization
 
 type
   JsonWriterState = enum
@@ -7,17 +8,16 @@ type
     RecordStarted
     AfterField
 
-  JsonWriter*[Stream] = object
-    stream*: Stream
+  JsonWriter* = object
+    stream*: ptr OutputStream
     hasTypeAnnotations: bool
     hasPrettyOutput*: bool # read-only
     nestingLevel*: int     # read-only
     state: JsonWriterState
 
-  StringJsonWriter* = JsonWriter[StringStream]
-
-proc init*(T: type JsonWriter, pretty = false, typeAnnotations = false): T =
-  init result.stream
+proc init*(T: type JsonWriter, stream: ptr OutputStream,
+           pretty = false, typeAnnotations = false): T =
+  result.stream = stream
   result.hasPrettyOutput = pretty
   result.hasTypeAnnotations = typeAnnotations
   result.nestingLevel = if pretty: 0 else: -1
@@ -31,9 +31,12 @@ template writeValue*(w: var JsonWriter, v: auto) =
 proc beginRecord*(w: var JsonWriter, T: type)
 proc beginRecord*(w: var JsonWriter)
 
-template indent(w: var JsonWriter) =
+template append(x: untyped) =
+  w.stream[].append x
+
+template indent =
   for i in 0 ..< w.nestingLevel:
-    w.stream.append ' '
+    append ' '
 
 proc writeFieldName*(w: var JsonWriter, name: string) =
   # this is implemented as a separate proc in order to
@@ -41,18 +44,18 @@ proc writeFieldName*(w: var JsonWriter, name: string) =
   assert w.state != RecordExpected
 
   if w.state == AfterField:
-    w.stream.append ','
+    append ','
 
   if w.hasPrettyOutput:
-    w.stream.append '\n'
+    append '\n'
 
-  w.indent()
+  indent()
 
-  w.stream.append '"'
-  w.stream.append name
-  w.stream.append '"'
-  w.stream.append ':'
-  if w.hasPrettyOutput: w.stream.append ' '
+  append '"'
+  append name
+  append '"'
+  append ':'
+  if w.hasPrettyOutput: append ' '
 
   w.state = RecordExpected
 
@@ -67,7 +70,7 @@ proc writeField*(w: var JsonWriter, name: string, value: auto) =
 proc beginRecord*(w: var JsonWriter) =
   assert w.state == RecordExpected
 
-  w.stream.append '{'
+  append '{'
   if w.hasPrettyOutput:
     w.nestingLevel += 2
 
@@ -81,11 +84,11 @@ proc endRecord*(w: var JsonWriter) =
   assert w.state != RecordExpected
 
   if w.hasPrettyOutput:
-    w.stream.append '\n'
+    append '\n'
     w.nestingLevel -= 2
-    w.indent()
+    indent()
 
-  w.stream.append '}'
+  append '}'
 
 template endRecordField*(w: var JsonWriter) =
   endRecord(w)
@@ -94,16 +97,16 @@ template endRecordField*(w: var JsonWriter) =
 proc writeArray[T](w: var JsonWriter, elements: openarray[T]) =
   mixin writeValue
 
-  w.stream.append '['
+  append '['
   for i, e in elements:
-    if i != 0: w.stream.append ','
+    if i != 0: append ','
     w.state = RecordExpected
     w.writeValue(e)
-  w.stream.append ']'
+  append ']'
 
 proc writeImpl(w: var JsonWriter, value: auto) =
   template addChar(c) =
-    w.stream.append c
+    append c
 
   when value is string:
     addChar '"'
@@ -121,28 +124,28 @@ proc writeImpl(w: var JsonWriter, value: auto) =
       of '\r': addPrefixSlash 'r'
       of '"' : addPrefixSlash '\"'
       of '\0'..'\7':
-        w.stream.append "\\u000"
-        w.stream.append char(ord('0') + ord(c))
+        append "\\u000"
+        append char(ord('0') + ord(c))
       of '\14'..'\31':
-        w.stream.append "\\u00"
+        append "\\u00"
         # TODO: Should this really use a decimal representation?
         # Or perhaps $ord(c) returns hex?
         # This is potentially a bug in Nim's json module.
         # In any case, we can call appendNumber here.
-        w.stream.append $ord(c)
+        append $ord(c)
       of '\\': addPrefixSlash '\\'
       else: addChar c
 
     addChar '"'
 
   elif value is bool:
-    w.stream.append if value: "true" else: "false"
+    append if value: "true" else: "false"
   elif value is enum:
-    w.stream.appendNumber ord(value)
+    w.stream[].appendNumber ord(value)
   elif value is SomeInteger:
-    w.stream.appendNumber value
+    w.stream[].appendNumber value
   elif value is SomeFloat:
-    w.stream.append $value
+    append $value
   elif value is (seq or array):
     w.writeArray(value)
   elif value is (object or tuple):
@@ -154,11 +157,9 @@ proc writeImpl(w: var JsonWriter, value: auto) =
     const typeName = typetraits.name(value.type)
     {.error: "Failed to convert to JSON an unsupported type: " & typeName.}
 
-template getOutput*(w: JsonWriter): auto =
-  w.stream.getOutput
-
 proc toJson*(v: auto, pretty = false, typeAnnotations = false): string =
-  var w = StringJsonWriter.init(pretty, typeAnnotations)
+  var s = init StringOutputStream
+  var w = JsonWriter.init(addr s, pretty, typeAnnotations)
   w.writeValue v
-  return w.getOutput
+  return s.getOutput
 

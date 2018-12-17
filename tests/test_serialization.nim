@@ -1,6 +1,7 @@
 import
   strutils, options, unittest,
-  json_serialization
+  serialization/testing/generic_suite,
+  ../json_serialization, utils
 
 type
   Simple = object
@@ -17,16 +18,9 @@ type
     z: ref Simple
     # o: Option[Simple]
 
-proc dedent(s: string): string =
-  var s = s.strip(leading = false)
-  var minIndent = 99999999999
-  for l in s.splitLines:
-    let indent = count(l, ' ')
-    if indent == 0: continue
-    if indent < minIndent: minIndent = indent
-  result = s.unindent(minIndent)
+executeReaderWriterTests Json
 
-suite "JSON serialization":
+suite "toJson tests":
   test "encode primitives":
     check:
       1.toJson == "1"
