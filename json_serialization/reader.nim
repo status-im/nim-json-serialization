@@ -141,21 +141,23 @@ proc readImpl(r: var JsonReader, value: var auto) =
     type T = value.type
     r.skipToken tkCurlyLe
 
-    let fields = T.fieldReadersTable(JsonReader)
-    var expectedFieldPos = 0
-    while r.lexer.tok == tkString:
-      let reader = findFieldReader(fields[], r.lexer.strVal, expectedFieldPos)
-      r.lexer.next()
-      r.skipToken tkColon
-      if reader != nil:
-        reader(value, r)
-      else:
-        const typeName = typetraits.name(T)
-        r.unexpectedField(r.lexer.strVal, typeName)
-      if r.lexer.tok == tkComma:
+    when T.totalSerializedFields > 0:
+      let fields = T.fieldReadersTable(JsonReader)
+      var expectedFieldPos = 0
+      while r.lexer.tok == tkString:
+        let reader = findFieldReader(fields[], r.lexer.strVal, expectedFieldPos)
         r.lexer.next()
-      else:
-        break
+        r.skipToken tkColon
+        if reader != nil:
+          reader(value, r)
+        else:
+          const typeName = typetraits.name(T)
+          r.unexpectedField(r.lexer.strVal, typeName)
+        if r.lexer.tok == tkComma:
+          r.lexer.next()
+        else:
+          break
+
     r.skipToken tkCurlyRi
 
   else:

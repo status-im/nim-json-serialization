@@ -158,6 +158,8 @@ proc writeImpl(w: var JsonWriter, value: auto) =
     {.error: "Failed to convert to JSON an unsupported type: " & typeName.}
 
 proc toJson*(v: auto, pretty = false, typeAnnotations = false): string =
+  mixin writeValue
+
   var s = init StringOutputStream
   var w = JsonWriter.init(addr s, pretty, typeAnnotations)
   w.writeValue v
