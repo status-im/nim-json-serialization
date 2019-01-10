@@ -1,7 +1,7 @@
 import
   strutils, options, unittest,
   serialization/testing/generic_suite,
-  ../json_serialization, utils
+  ../json_serialization, ./utils
 
 type
   Simple = object

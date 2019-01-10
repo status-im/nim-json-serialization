@@ -1,6 +1,6 @@
 import
   unittest,
-  ../json_serialization/lexer, utils
+  ../json_serialization/lexer, ./utils
 
 template expectedToken(token: TokKind, additionalTest = true) {.dirty.} =
   lexer.next()
