@@ -1,6 +1,7 @@
 import
   strutils, unicode,
-  faststreams/input_stream, std_shims/objects
+  faststreams/input_stream, std_shims/objects,
+  types
 
 export
   input_stream
@@ -36,9 +37,11 @@ type
     errUnexpectedEof        = "unexpected end of file",
     errCommentExpected      = "comment expected"
     errOrphanSurrogate      = "unicode surrogates must be followed by another unicode character"
+    errNonPortableInt       = "number is outside the range of portable values"
 
   JsonLexer* = object
     stream: AsciiStream
+    mode*: JsonMode
 
     line*: int
     lineStartPos: int
@@ -47,7 +50,7 @@ type
     tok*: TokKind
     err*: JsonError
 
-    intVal*: int
+    intVal*: int64
     floatVal*: float
     strVal*: string
 
@@ -72,19 +75,20 @@ proc isDigit(c: char): bool {.inline.} =
 proc col*(lexer: JsonLexer): int =
   lexer.stream.pos - lexer.lineStartPos
 
-proc init*(T: type JsonLexer, stream: AsciiStream): T =
+proc init*(T: type JsonLexer, stream: AsciiStream, mode = defaultJsonMode): T =
   T(stream: stream,
+    mode: mode,
     line: 0,
     lineStartPos: 0,
     tokenStart: -1,
     tok: tkError,
     err: errNone,
-    intVal: 0,
+    intVal: int64 0,
     floatVal: 0'f,
     strVal: "")
 
-proc init*(T: type JsonLexer, stream: ByteStream): auto =
-  init(JsonLexer, AsciiStream(stream))
+proc init*(T: type JsonLexer, stream: ByteStream, mode = defaultJsonMode): auto =
+  init(JsonLexer, AsciiStream(stream), mode)
 
 template error(error: JsonError) {.dirty.} =
   lexer.err = error
@@ -97,6 +101,10 @@ template checkForUnexpectedEof {.dirty.} =
 template requireNextChar(): char =
   checkForUnexpectedEof()
   lexer.stream.read()
+
+template checkForNonPortableInt(val: uint64) =
+  if lexer.mode == Portable and val > uint64(maxPortableInt):
+    error errNonPortableInt
 
 proc scanHexRune(lexer: var JsonLexer): int =
   for i in 0..3:
@@ -241,13 +249,13 @@ proc scanSign(lexer: var JsonLexer): int =
     advance lexer.stream
   return 1
 
-proc scanInt(lexer: var JsonLexer): int =
+proc scanInt(lexer: var JsonLexer): uint64 =
   var c = lexer.stream.peek()
-  result = ord(c) - ord('0')
+  result = uint64(ord(c) - ord('0'))
 
   c = eatDigitAndPeek()
   while c.isDigit:
-    result = result * 10 + (ord(c) - ord('0'))
+    result = result * 10 + uint64(ord(c) - ord('0'))
     c = eatDigitAndPeek()
 
 proc scanNumber(lexer: var JsonLexer) =
@@ -262,7 +270,9 @@ proc scanNumber(lexer: var JsonLexer) =
     c = lexer.stream.peek()
   elif c.isDigit:
     lexer.tok = tkInt
-    lexer.intVal = lexer.scanInt()
+    let scannedValue = lexer.scanInt()
+    checkForNonPortableInt scannedValue
+    lexer.intVal = int(scannedValue)
     if lexer.stream.eof: return
     c = lexer.stream.peek()
     if c == '.':
@@ -287,7 +297,7 @@ proc scanNumber(lexer: var JsonLexer) =
       error errNumberExpected
 
     let exponent = lexer.scanInt()
-    if exponent >= len(powersOfTen):
+    if exponent >= uint64(len(powersOfTen)):
       error errExponentTooLarge
 
     if sign > 0:

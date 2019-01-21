@@ -1,7 +1,10 @@
 import
   strutils, typetraits, macros,
   faststreams/input_stream, serialization/object_serialization,
-  lexer
+  types, lexer
+
+export
+  types
 
 type
   JsonReader* = object
@@ -30,12 +33,12 @@ type
     encountedToken*: TokKind
     expectedToken*: ExpectedTokenCategory
 
-proc init*(T: type JsonReader, stream: AsciiStream): T =
-  result.lexer = JsonLexer.init stream
+proc init*(T: type JsonReader, stream: AsciiStream, mode = defaultJsonMode): T =
+  result.lexer = JsonLexer.init(stream, mode)
   result.lexer.next()
 
-template init*(T: type JsonReader, stream: ByteStream): auto =
-  init JsonReader, AsciiStream(stream)
+template init*(T: type JsonReader, stream: ByteStream, mode = defaultJsonMode): auto =
+  init JsonReader, AsciiStream(stream), mode
 
 proc setParsed[T: enum](e: var T, s: string) =
   e = parseEnum[T](s)
@@ -44,31 +47,31 @@ proc assignLineNumber(ex: ref JsonReaderError, r: JsonReader) =
   ex.line = r.lexer.line
   ex.col = r.lexer.col
 
-proc unexpectedToken(r: JsonReader, expected: ExpectedTokenCategory) =
+proc raiseUnexpectedToken(r: JsonReader, expected: ExpectedTokenCategory) =
   var ex = new UnexpectedToken
   ex.assignLineNumber(r)
   ex.encountedToken = r.lexer.tok
   ex.expectedToken = expected
   raise ex
 
-proc requireToken(r: JsonReader, tk: TokKind) =
-  if r.lexer.tok != tk:
-    r.unexpectedToken case tk
-                      of tkString: etString
-                      of tkInt: etInt
-                      of tkComma: etComma
-                      of tkBracketRi: etBracketRi
-                      of tkBracketLe: etBracketLe
-                      of tkCurlyRi: etCurrlyRi
-                      of tkCurlyLe: etCurrlyLe
-                      else: (assert false; etBool)
-
-proc unexpectedField(r: JsonReader, fieldName, deserializedType: cstring) =
+proc raiseUnexpectedField(r: JsonReader, fieldName, deserializedType: cstring) =
   var ex = new UnexpectedField
   ex.assignLineNumber(r)
   ex.encounteredField = fieldName
   ex.deserializedType = deserializedType
   raise ex
+
+proc requireToken(r: JsonReader, tk: TokKind) =
+  if r.lexer.tok != tk:
+    r.raiseUnexpectedToken case tk
+      of tkString: etString
+      of tkInt: etInt
+      of tkComma: etComma
+      of tkBracketRi: etBracketRi
+      of tkBracketLe: etBracketLe
+      of tkCurlyRi: etCurrlyRi
+      of tkCurlyLe: etCurrlyLe
+      else: (assert false; etBool)
 
 proc skipToken(r: var JsonReader, tk: TokKind) =
   r.requireToken tk
@@ -88,7 +91,7 @@ proc readImpl(r: var JsonReader, value: var auto) =
     case tok
     of tkTrue: value = true
     of tkFalse: value = false
-    else: r.unexpectedToken etBool
+    else: r.raiseUnexpectedToken etBool
     r.lexer.next()
 
   elif value is enum:
@@ -100,7 +103,7 @@ proc readImpl(r: var JsonReader, value: var auto) =
       # TODO: validate that the value is in range
       value = type(value)(r.lexer.intVal)
     else:
-      r.unexpectedToken etEnum
+      r.raiseUnexpectedToken etEnum
     r.lexer.next()
 
   elif value is SomeInteger:
@@ -113,7 +116,8 @@ proc readImpl(r: var JsonReader, value: var auto) =
     case tok
     of tkInt: value = float(r.lexer.intVal)
     of tkFloat: value = r.lexer.floatVal
-    else: r.unexpectedToken etNumber
+    else:
+      r.raiseUnexpectedToken etNumber
     r.lexer.next()
 
   elif value is seq:
@@ -152,7 +156,7 @@ proc readImpl(r: var JsonReader, value: var auto) =
           reader(value, r)
         else:
           const typeName = typetraits.name(T)
-          r.unexpectedField(r.lexer.strVal, typeName)
+          r.raiseUnexpectedField(r.lexer.strVal, typeName)
         if r.lexer.tok == tkComma:
           r.lexer.next()
         else:

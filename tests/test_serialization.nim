@@ -40,3 +40,13 @@ suite "toJson tests":
         }
       """
 
+  test "max unsigned value":
+    var uintVal = not uint64(0)
+    let jsonValue = Json.encode(uintVal)
+    check:
+      jsonValue == "18446744073709551615"
+      Json.decode(jsonValue, uint64) == uintVal
+
+    expect JsonReaderError:
+      discard Json.decode(jsonValue, uint64, mode = Portable)
+
