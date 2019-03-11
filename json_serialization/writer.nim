@@ -9,13 +9,13 @@ type
     AfterField
 
   JsonWriter* = object
-    stream*: ptr OutputStream
+    stream*: OutputStreamVar
     hasTypeAnnotations: bool
     hasPrettyOutput*: bool # read-only
     nestingLevel*: int     # read-only
     state: JsonWriterState
 
-proc init*(T: type JsonWriter, stream: ptr OutputStream,
+proc init*(T: type JsonWriter, stream: OutputStreamVar,
            pretty = false, typeAnnotations = false): T =
   result.stream = stream
   result.hasPrettyOutput = pretty
@@ -32,7 +32,7 @@ proc beginRecord*(w: var JsonWriter, T: type)
 proc beginRecord*(w: var JsonWriter)
 
 template append(x: untyped) =
-  w.stream[].append x
+  w.stream.append x
 
 template indent =
   for i in 0 ..< w.nestingLevel:
@@ -141,9 +141,9 @@ proc writeImpl(w: var JsonWriter, value: auto) =
   elif value is bool:
     append if value: "true" else: "false"
   elif value is enum:
-    w.stream[].appendNumber ord(value)
+    w.stream.appendNumber ord(value)
   elif value is SomeInteger:
-    w.stream[].appendNumber value
+    w.stream.appendNumber value
   elif value is SomeFloat:
     append $value
   elif value is (seq or array):
@@ -160,8 +160,8 @@ proc writeImpl(w: var JsonWriter, value: auto) =
 proc toJson*(v: auto, pretty = false, typeAnnotations = false): string =
   mixin writeValue
 
-  var s = init StringOutputStream
-  var w = JsonWriter.init(addr s, pretty, typeAnnotations)
+  var s = init OutputStream
+  var w = JsonWriter.init(s, pretty, typeAnnotations)
   w.writeValue v
-  return s.getOutput
+  return s.getOutput(string)
 

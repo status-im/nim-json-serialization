@@ -33,12 +33,12 @@ type
     encountedToken*: TokKind
     expectedToken*: ExpectedTokenCategory
 
-proc init*(T: type JsonReader, stream: AsciiStream, mode = defaultJsonMode): T =
+proc init*(T: type JsonReader, stream: AsciiStreamVar, mode = defaultJsonMode): T =
   result.lexer = JsonLexer.init(stream, mode)
   result.lexer.next()
 
-template init*(T: type JsonReader, stream: ByteStream, mode = defaultJsonMode): auto =
-  init JsonReader, AsciiStream(stream), mode
+template init*(T: type JsonReader, stream: ByteStreamVar, mode = defaultJsonMode): auto =
+  init JsonReader, AsciiStreamVar(stream), mode
 
 proc setParsed[T: enum](e: var T, s: string) =
   e = parseEnum[T](s)
