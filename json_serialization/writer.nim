@@ -41,7 +41,7 @@ template indent =
 proc writeFieldName*(w: var JsonWriter, name: string) =
   # this is implemented as a separate proc in order to
   # keep the code bloat from `writeField` to a minimum
-  assert w.state != RecordExpected
+  doAssert w.state != RecordExpected
 
   if w.state == AfterField:
     append ','
@@ -68,7 +68,7 @@ proc writeField*(w: var JsonWriter, name: string, value: auto) =
   w.state = AfterField
 
 proc beginRecord*(w: var JsonWriter) =
-  assert w.state == RecordExpected
+  doAssert w.state == RecordExpected
 
   append '{'
   if w.hasPrettyOutput:
@@ -81,7 +81,7 @@ proc beginRecord*(w: var JsonWriter, T: type) =
   if w.hasTypeAnnotations: w.writeField("$type", typetraits.name(T))
 
 proc endRecord*(w: var JsonWriter) =
-  assert w.state != RecordExpected
+  doAssert w.state != RecordExpected
 
   if w.hasPrettyOutput:
     append '\n'

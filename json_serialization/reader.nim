@@ -71,7 +71,7 @@ proc requireToken(r: JsonReader, tk: TokKind) =
       of tkBracketLe: etBracketLe
       of tkCurlyRi: etCurrlyRi
       of tkCurlyLe: etCurrlyLe
-      else: (assert false; etBool)
+      else: (doAssert false; etBool)
 
 proc skipToken(r: var JsonReader, tk: TokKind) =
   r.requireToken tk

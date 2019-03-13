@@ -26,7 +26,7 @@ type
     distance: Mile
 
 template reject(code) =
-  static: assert(not compiles(code))
+  static: doAssert(not compiles(code))
 
 borrowSerialization(Meter, int)
 
