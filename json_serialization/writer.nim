@@ -155,7 +155,7 @@ proc writeImpl(w: var JsonWriter, value: auto) =
     w.endRecord()
   else:
     const typeName = typetraits.name(value.type)
-    {.error: "Failed to convert to JSON an unsupported type: " & typeName.}
+    {.fatal: "Failed to convert to JSON an unsupported type: " & typeName.}
 
 proc toJson*(v: auto, pretty = false, typeAnnotations = false): string =
   mixin writeValue

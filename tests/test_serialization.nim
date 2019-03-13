@@ -4,9 +4,13 @@ import
   ../json_serialization, ./utils
 
 type
+  Meter = distinct int
+  Mile = distinct int
+
   Simple = object
     x: int
     y: string
+    distance: Meter
 
   Foo = object
     i: int
@@ -18,7 +22,21 @@ type
     z: ref Simple
     # o: Option[Simple]
 
+  Invalid = object
+    distance: Mile
+
+template reject(code) =
+  static: assert(not compiles(code))
+
+borrowSerialization(Meter, int)
+
 executeReaderWriterTests Json
+
+when false:
+  # The compiler cannot handle this check at the moment
+  # {.fatal.} seems fatal even in `compiles` context
+  var invalid = Invalid(distance: Mile(100))
+  reject invalid.toJson
 
 suite "toJson tests":
   test "encode primitives":
@@ -28,15 +46,16 @@ suite "toJson tests":
       "abc".toJson == "\"abc\""
 
   test "simple objects":
-    var s = Simple(x: 10, y: "test")
+    var s = Simple(x: 10, y: "test", distance: Meter(20))
 
     check:
-      s.toJson == """{"x":10,"y":"test"}"""
-      s.toJson(typeAnnotations = true) == """{"$type":"Simple","x":10,"y":"test"}"""
+      s.toJson == """{"x":10,"y":"test","distance":20}"""
+      s.toJson(typeAnnotations = true) == """{"$type":"Simple","x":10,"y":"test","distance":20}"""
       s.toJson(pretty = true) == dedent"""
         {
           "x": 10,
-          "y": "test"
+          "y": "test",
+          "distance": 20
         }
       """
 
