@@ -22,6 +22,9 @@ type
     z: ref Simple
     # o: Option[Simple]
 
+  HoldsArray = object
+    data: seq[int]
+
   Invalid = object
     distance: Mile
 
@@ -56,6 +59,21 @@ suite "toJson tests":
           "x": 10,
           "y": "test",
           "distance": 20
+        }
+      """
+
+  test "arrays are printed correctly":
+    var x = HoldsArray(data: @[1, 2, 3, 4])
+
+    check:
+      x.toJson(pretty = true) == dedent"""
+        {
+          "data": [
+            1,
+            2,
+            3,
+            4
+          ]
         }
       """
 

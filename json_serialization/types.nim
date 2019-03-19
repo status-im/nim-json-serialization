@@ -1,9 +1,15 @@
+import
+  serialization/errors
+
+export
+  errors
+
 type
   JsonMode* = enum
     Relaxed
     Portable
 
-  JsonError* = object of CatchableError
+  JsonError* = object of SerializationError
 
 const
   defaultJsonMode* = JsonMode.Relaxed

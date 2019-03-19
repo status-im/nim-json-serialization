@@ -98,10 +98,27 @@ proc writeArray[T](w: var JsonWriter, elements: openarray[T]) =
   mixin writeValue
 
   append '['
+
+  if w.hasPrettyOutput:
+    append '\n'
+    w.nestingLevel += 2
+    indent()
+
   for i, e in elements:
-    if i != 0: append ','
+    if i != 0:
+      append ','
+      if w.hasPrettyOutput:
+        append '\n'
+        indent()
+
     w.state = RecordExpected
     w.writeValue(e)
+
+  if w.hasPrettyOutput:
+    append '\n'
+    w.nestingLevel -= 2
+    indent()
+
   append ']'
 
 proc writeImpl(w: var JsonWriter, value: auto) =

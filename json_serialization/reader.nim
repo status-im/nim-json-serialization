@@ -1,21 +1,25 @@
 import
-  strutils, typetraits, macros,
-  faststreams/input_stream, serialization/object_serialization,
+  strutils, typetraits, macros, strformat,
+  faststreams/input_stream, serialization/[object_serialization, errors],
   types, lexer
 
 export
-  types
+  types, errors
 
 type
   JsonReader* = object
     lexer: JsonLexer
 
-  JsonReaderError* = object of CatchableError
+  JsonReaderError* = object of JsonError
     line*, col*: int
 
   UnexpectedField* = object of JsonReaderError
     encounteredField*: cstring
     deserializedType*: cstring
+
+  CustomSerializationError* = object of JsonReaderError
+    deserializedType*: cstring
+    innerException*: ref CatchableError
 
   ExpectedTokenCategory* = enum
     etBool = "bool literal"
@@ -33,15 +37,20 @@ type
     encountedToken*: TokKind
     expectedToken*: ExpectedTokenCategory
 
-proc init*(T: type JsonReader, stream: AsciiStreamVar, mode = defaultJsonMode): T =
-  result.lexer = JsonLexer.init(stream, mode)
-  result.lexer.next()
+method formatMsg*(err: ref JsonReaderError, filename: string): string =
+  fmt"{filename}({err.line}, {err.col}) Error while reading json file"
+
+method formatMsg*(err: ref UnexpectedField, filename: string): string =
+  fmt"{filename}({err.line}, {err.col}) Unexpected field '{err.encounteredField}' while deserialing {err.deserializedType}"
+
+method formatMsg*(err: ref UnexpectedToken, filename: string): string =
+  fmt"{filename}({err.line}, {err.col}) Unexpected token '{err.encountedToken}' in place of '{err.expectedToken}'"
+
+method formatMsg*(err: ref CustomSerializationError, filename: string): string =
+  fmt"{filename}({err.line}, {err.col}) Error while deserializing '{err.deserializedType}': {err.innerException.msg}"
 
 template init*(T: type JsonReader, stream: ByteStreamVar, mode = defaultJsonMode): auto =
   init JsonReader, AsciiStreamVar(stream), mode
-
-proc setParsed[T: enum](e: var T, s: string) =
-  e = parseEnum[T](s)
 
 proc assignLineNumber(ex: ref JsonReaderError, r: JsonReader) =
   ex.line = r.lexer.line
@@ -61,6 +70,22 @@ proc raiseUnexpectedField(r: JsonReader, fieldName, deserializedType: cstring) =
   ex.deserializedType = deserializedType
   raise ex
 
+proc raiseCustomSerializationError(r: JsonReader,
+                                   deserializedType: cstring,
+                                   innerException: ref CatchableError) =
+  var ex = new CustomSerializationError
+  ex.assignLineNumber(r)
+  ex.deserializedType = deserializedType
+  ex.innerException = innerException
+  raise ex
+
+proc init*(T: type JsonReader, stream: AsciiStreamVar, mode = defaultJsonMode): T =
+  result.lexer = JsonLexer.init(stream, mode)
+  result.lexer.next()
+
+proc setParsed[T: enum](e: var T, s: string) =
+  e = parseEnum[T](s)
+
 proc requireToken(r: JsonReader, tk: TokKind) =
   if r.lexer.tok != tk:
     r.raiseUnexpectedToken case tk
@@ -77,7 +102,31 @@ proc skipToken(r: var JsonReader, tk: TokKind) =
   r.requireToken tk
   r.lexer.next()
 
-proc readImpl(r: var JsonReader, value: var auto) =
+template checkedRead(r: var JsonReader, value: var auto) =
+  # TODO: Here, we are interested in catching errors only from
+  # user-defined overloads of `readValue`. At the moment, this
+  # is a bit hard to do, because we cannot discriminate between
+  # the overload here and the mixed-in ones.
+  # Perhaps a more cleaner implementation will have two separate
+  # overloadable procs:
+  #
+  # * `readValue`
+  #    intended for people who implement Readers
+  #
+  # * `customReadValue`
+  #    intended for user-defined types,
+  #    may be hidden behind a `customSerialization` template
+
+  mixin readValue
+  try:
+    readValue(r, value)
+  except JsonError:
+    raise
+  except CatchableError as err:
+    type T = type(value)
+    raiseCustomSerializationError(r, typetraits.name(T), err)
+
+proc readValue*(r: var JsonReader, value: var auto) =
   mixin readValue
 
   let tok = r.lexer.tok
@@ -126,7 +175,7 @@ proc readImpl(r: var JsonReader, value: var auto) =
       while true:
         let lastPos = value.len
         value.setLen(lastPos + 1)
-        readValue(r, value[lastPos])
+        checkedRead(r, value[lastPos])
         if r.lexer.tok != tkComma: break
         r.lexer.next()
     r.skipToken tkBracketRi
@@ -136,9 +185,9 @@ proc readImpl(r: var JsonReader, value: var auto) =
     for i in low(value) ..< high(value):
       # TODO: dont's ask. this makes the code compile
       if false: value[i] = value[i]
-      readValue(r, value[i])
+      checkedRead(r, value[i])
       r.skipToken tkComma
-    readValue(r, value[high(value)])
+    checkedRead(r, value[high(value)])
     r.skipToken tkBracketRi
 
   elif value is (object or tuple):
@@ -167,7 +216,4 @@ proc readImpl(r: var JsonReader, value: var auto) =
   else:
     const typeName = typetraits.name(value.type)
     {.error: "Failed to convert to JSON an unsupported type: " & typeName.}
-
-template readValue*(r: var JsonReader, value: var auto) =
-  readImpl(r, value)
 

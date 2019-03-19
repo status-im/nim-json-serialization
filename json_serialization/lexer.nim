@@ -23,7 +23,7 @@ type
     tkColon,
     tkComma
 
-  JsonError* = enum
+  JsonErrorKind* = enum
     errNone                 = "no error",
     errHexCharExpected      = "hex char expected (part of escape sequence)",
     errStringExpected       = "string expected",
@@ -48,7 +48,7 @@ type
     tokenStart: int
 
     tok*: TokKind
-    err*: JsonError
+    err*: JsonErrorKind
 
     intVal*: int64
     floatVal*: float
@@ -91,7 +91,7 @@ proc init*(T: type JsonLexer, stream: ref ByteStream, mode = defaultJsonMode): a
   type AS = ref AsciiStream
   init(JsonLexer, AS(stream), mode)
 
-template error(error: JsonError) {.dirty.} =
+template error(error: JsonErrorKind) {.dirty.} =
   lexer.err = error
   lexer.tok = tkError
   return
