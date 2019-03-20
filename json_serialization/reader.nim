@@ -18,7 +18,7 @@ type
     deserializedType*: cstring
 
   CustomSerializationError* = object of JsonReaderError
-    deserializedType*: cstring
+    deserializedField*: string
     innerException*: ref CatchableError
 
   ExpectedTokenCategory* = enum
@@ -47,7 +47,7 @@ method formatMsg*(err: ref UnexpectedToken, filename: string): string =
   fmt"{filename}({err.line}, {err.col}) Unexpected token '{err.encountedToken}' in place of '{err.expectedToken}'"
 
 method formatMsg*(err: ref CustomSerializationError, filename: string): string =
-  fmt"{filename}({err.line}, {err.col}) Error while deserializing '{err.deserializedType}': {err.innerException.msg}"
+  fmt"{filename}({err.line}, {err.col}) Error while deserializing '{err.deserializedField}': {err.innerException.msg}"
 
 template init*(T: type JsonReader, stream: ByteStreamVar, mode = defaultJsonMode): auto =
   init JsonReader, AsciiStreamVar(stream), mode
@@ -70,13 +70,13 @@ proc raiseUnexpectedField(r: JsonReader, fieldName, deserializedType: cstring) =
   ex.deserializedType = deserializedType
   raise ex
 
-proc raiseCustomSerializationError(r: JsonReader,
-                                   deserializedType: cstring,
-                                   innerException: ref CatchableError) =
+proc readValueFailed*(r: JsonReader,
+                      Record: type, fieldName: string, field: var auto,
+                      err: ref CatchableError) =
   var ex = new CustomSerializationError
   ex.assignLineNumber(r)
-  ex.deserializedType = deserializedType
-  ex.innerException = innerException
+  ex.deserializedField = fieldName
+  ex.innerException = err
   raise ex
 
 proc init*(T: type JsonReader, stream: AsciiStreamVar, mode = defaultJsonMode): T =
@@ -101,30 +101,6 @@ proc requireToken(r: JsonReader, tk: TokKind) =
 proc skipToken(r: var JsonReader, tk: TokKind) =
   r.requireToken tk
   r.lexer.next()
-
-template checkedRead(r: var JsonReader, value: var auto) =
-  # TODO: Here, we are interested in catching errors only from
-  # user-defined overloads of `readValue`. At the moment, this
-  # is a bit hard to do, because we cannot discriminate between
-  # the overload here and the mixed-in ones.
-  # Perhaps a more cleaner implementation will have two separate
-  # overloadable procs:
-  #
-  # * `readValue`
-  #    intended for people who implement Readers
-  #
-  # * `customReadValue`
-  #    intended for user-defined types,
-  #    may be hidden behind a `customSerialization` template
-
-  mixin readValue
-  try:
-    readValue(r, value)
-  except JsonError:
-    raise
-  except CatchableError as err:
-    type T = type(value)
-    raiseCustomSerializationError(r, typetraits.name(T), err)
 
 proc readValue*(r: var JsonReader, value: var auto) =
   mixin readValue
@@ -175,7 +151,7 @@ proc readValue*(r: var JsonReader, value: var auto) =
       while true:
         let lastPos = value.len
         value.setLen(lastPos + 1)
-        checkedRead(r, value[lastPos])
+        readValue(r, value[lastPos])
         if r.lexer.tok != tkComma: break
         r.lexer.next()
     r.skipToken tkBracketRi
@@ -185,9 +161,9 @@ proc readValue*(r: var JsonReader, value: var auto) =
     for i in low(value) ..< high(value):
       # TODO: dont's ask. this makes the code compile
       if false: value[i] = value[i]
-      checkedRead(r, value[i])
+      readValue(r, value[i])
       r.skipToken tkComma
-    checkedRead(r, value[high(value)])
+    readValue(r, value[high(value)])
     r.skipToken tkBracketRi
 
   elif value is (object or tuple):
