@@ -1,6 +1,6 @@
 import
   typetraits,
-  faststreams/output_stream, serialization
+  faststreams/output_stream, serialization, json
 
 type
   JsonWriterState = enum
@@ -15,6 +15,8 @@ type
     nestingLevel*: int     # read-only
     state: JsonWriterState
 
+  JsonString* = distinct string
+
 proc init*(T: type JsonWriter, stream: OutputStreamVar,
            pretty = false, typeAnnotations = false): T =
   result.stream = stream
@@ -23,13 +25,9 @@ proc init*(T: type JsonWriter, stream: OutputStreamVar,
   result.nestingLevel = if pretty: 0 else: -1
   result.state = RecordExpected
 
-proc writeImpl(w: var JsonWriter, value: auto)
-
-template writeValue*(w: var JsonWriter, v: auto) =
-  writeImpl(w, v)
-
 proc beginRecord*(w: var JsonWriter, T: type)
 proc beginRecord*(w: var JsonWriter)
+proc writeValue*(w: var JsonWriter, value: auto)
 
 template append(x: untyped) =
   w.stream.append x
@@ -121,11 +119,21 @@ proc writeArray[T](w: var JsonWriter, elements: openarray[T]) =
 
   append ']'
 
-proc writeImpl(w: var JsonWriter, value: auto) =
+proc writeValue*(w: var JsonWriter, value: auto) =
   template addChar(c) =
     append c
 
-  when value is string:
+  when value is JsonNode:
+    append if w.hasPrettyOutput: value.pretty
+           else: $value
+  elif value is JsonString:
+    append string(value)
+  elif value is ref:
+    if value == nil:
+      append "null"
+    else:
+      writeValue(w, value[])
+  elif value is string|cstring:
     addChar '"'
 
     template addPrefixSlash(c) =
@@ -154,7 +162,6 @@ proc writeImpl(w: var JsonWriter, value: auto) =
       else: addChar c
 
     addChar '"'
-
   elif value is bool:
     append if value: "true" else: "false"
   elif value is enum:
