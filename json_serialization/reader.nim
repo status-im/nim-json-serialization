@@ -47,7 +47,7 @@ method formatMsg*(err: ref UnexpectedToken, filename: string): string =
   fmt"{filename}({err.line}, {err.col}) Unexpected token '{err.encountedToken}' in place of '{err.expectedToken}'"
 
 method formatMsg*(err: ref CustomSerializationError, filename: string): string =
-  fmt"{filename}({err.line}, {err.col}) Error while deserializing '{err.deserializedField}': {err.innerException.msg}"
+  fmt"{filename}({err.line}, {err.col}) Custom serialization exception while deserializing '{err.deserializedField}': [{err.innerException.name}] {err.innerException.msg}"
 
 template init*(T: type JsonReader, stream: ByteStreamVar, mode = defaultJsonMode): auto =
   init JsonReader, AsciiStreamVar(stream), mode
