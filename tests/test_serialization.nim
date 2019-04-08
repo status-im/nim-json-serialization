@@ -62,6 +62,21 @@ suite "toJson tests":
         }
       """
 
+  test "handle missing fields":
+    let json = dedent"""
+        {
+          "y": "test",
+          "distance": 20
+        }
+      """
+
+    let decoded = Json.decode(json, Simple)
+
+    check:
+      decoded.x == 0
+      decoded.y == "test"
+      decoded.distance.int == 20
+
   test "arrays are printed correctly":
     var x = HoldsArray(data: @[1, 2, 3, 4])
 
