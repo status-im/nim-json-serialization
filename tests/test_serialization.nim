@@ -28,6 +28,10 @@ type
   Invalid = object
     distance: Mile
 
+  Reserved = object
+    # Using Nim reserved keyword
+    `type`: string
+
 template reject(code) =
   static: doAssert(not compiles(code))
 
@@ -102,3 +106,8 @@ suite "toJson tests":
     expect JsonReaderError:
       discard Json.decode(jsonValue, uint64, mode = Portable)
 
+  test "Using Nim reserved keyword `type`":
+    let r = Reserved(`type`: "uint8")
+    check:
+      r.toJSON == """{"type":"uint8"}"""
+      r == Json.decode("""{"type":"uint8"}""", Reserved)

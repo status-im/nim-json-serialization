@@ -167,7 +167,7 @@ proc readValue*(r: var JsonReader, value: var auto) =
     r.skipToken tkBracketRi
 
   elif value is (object or tuple):
-    type T = value.type
+    type T = type(value)
     r.skipToken tkCurlyLe
 
     when T.totalSerializedFields > 0:
@@ -192,4 +192,3 @@ proc readValue*(r: var JsonReader, value: var auto) =
   else:
     const typeName = typetraits.name(value.type)
     {.error: "Failed to convert to JSON an unsupported type: " & typeName.}
-
