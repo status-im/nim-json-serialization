@@ -102,6 +102,12 @@ proc skipToken(r: var JsonReader, tk: TokKind) =
   r.requireToken tk
   r.lexer.next()
 
+proc allocPtr[T](p: var ptr T) =
+  p = create(T)
+
+proc allocPtr[T](p: var ref T) =
+  p = new(T)
+
 proc readValue*(r: var JsonReader, value: var auto) =
   mixin readValue
 
@@ -118,6 +124,14 @@ proc readValue*(r: var JsonReader, value: var auto) =
     of tkFalse: value = false
     else: r.raiseUnexpectedToken etBool
     r.lexer.next()
+
+  elif value is ref|ptr:
+    if tok == tkNull:
+      value = nil
+      r.lexer.next()
+    else:
+      allocPtr value
+      value[] = readValue(r, type(value[]))
 
   elif value is enum:
     case tok

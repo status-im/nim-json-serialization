@@ -1,5 +1,5 @@
 import std/net, ../../json_serialization.nim
-export json_serialization
+export net
 
 proc writeValue*(writer: var JsonWriter, value: Port) =
   writeValue(writer, uint16 value)

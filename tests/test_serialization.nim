@@ -1,7 +1,8 @@
 import
-  strutils, options, unittest,
+  strutils, unittest,
   serialization/testing/generic_suite,
-  ../json_serialization, ./utils
+  ../json_serialization, ./utils,
+  ../json_serialization/std/options
 
 type
   Meter = distinct int
@@ -20,7 +21,10 @@ type
   Bar = object
     sf: seq[Foo]
     z: ref Simple
-    # o: Option[Simple]
+
+  HoldsOption = object
+    r: ref Simple
+    o: Option[Simple]
 
   HoldsArray = object
     data: seq[int]
@@ -37,7 +41,21 @@ template reject(code) =
 
 borrowSerialization(Meter, int)
 
+proc `==`(lhs, rhs: Meter): bool =
+  int(lhs) == int(rhs)
+
+proc `==`(lhs, rhs: ref Simple): bool =
+  if lhs.isNil: return rhs.isNil
+  if rhs.isNil: return false
+  return lhs[] == rhs[]
+
 executeReaderWriterTests Json
+
+proc newSimple(x: int, y: string, d: Meter): ref Simple =
+  new result
+  result.x = x
+  result.y = y
+  result.distance = d
 
 when false:
   # The compiler cannot handle this check at the moment
@@ -111,3 +129,12 @@ suite "toJson tests":
     check:
       r.toJSON == """{"type":"uint8"}"""
       r == Json.decode("""{"type":"uint8"}""", Reserved)
+
+  test "Option types":
+    let
+      h1 = HoldsOption(o: some Simple(x: 1, y: "2", distance: Meter(3)))
+      h2 = HoldsOption(r: newSimple(1, "2", Meter(3)))
+
+    Json.roundtripTest h1, """{"r":null,"o":{"x":1,"y":"2","distance":3}}"""
+    Json.roundtripTest h2, """{"r":{"x":1,"y":"2","distance":3},"o":null}"""
+
