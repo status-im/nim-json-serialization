@@ -41,7 +41,7 @@ method formatMsg*(err: ref JsonReaderError, filename: string): string =
   fmt"{filename}({err.line}, {err.col}) Error while reading json file"
 
 method formatMsg*(err: ref UnexpectedField, filename: string): string =
-  fmt"{filename}({err.line}, {err.col}) Unexpected field '{err.encounteredField}' while deserialing {err.deserializedType}"
+  fmt"{filename}({err.line}, {err.col}) Unexpected field '{err.encounteredField}' while deserializing {err.deserializedType}"
 
 method formatMsg*(err: ref UnexpectedToken, filename: string): string =
   fmt"{filename}({err.line}, {err.col}) Unexpected token '{err.encountedToken}' in place of '{err.expectedToken}'"
