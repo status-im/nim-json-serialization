@@ -1,6 +1,6 @@
 import
   strutils, unicode,
-  faststreams/input_stream, std_shims/objects,
+  faststreams/input_stream, stew/objects,
   types
 
 export

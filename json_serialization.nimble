@@ -9,7 +9,7 @@ skipDirs      = @["tests"]
 
 requires "nim >= 0.17.0",
          "serialization",
-         "std_shims"
+         "stew"
 
 task test, "Run tests":
   for filename in [
