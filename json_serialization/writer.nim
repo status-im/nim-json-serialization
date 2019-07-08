@@ -125,6 +125,8 @@ proc writeArray[T](w: var JsonWriter, elements: openarray[T]) =
   writeIterable(w, elements)
 
 proc writeValue*(w: var JsonWriter, value: auto) =
+  mixin enumInstanceSerializedFields
+
   template addChar(c) =
     append c
 
@@ -161,7 +163,6 @@ proc writeValue*(w: var JsonWriter, value: auto) =
         # TODO: Should this really use a decimal representation?
         # Or perhaps $ord(c) returns hex?
         # This is potentially a bug in Nim's json module.
-        # In any case, we can call appendNumber here.
         append $ord(c)
       of '\\': addPrefixSlash '\\'
       else: addChar c
@@ -170,16 +171,16 @@ proc writeValue*(w: var JsonWriter, value: auto) =
   elif value is bool:
     append if value: "true" else: "false"
   elif value is enum:
-    w.stream.appendNumber ord(value)
+    w.stream.append $ord(value)
   elif value is SomeInteger:
-    w.stream.appendNumber value
+    w.stream.append $value
   elif value is SomeFloat:
     append $value
   elif value is (seq or array):
     w.writeArray(value)
   elif value is (object or tuple):
     w.beginRecord(type(value))
-    value.serializeFields(k, v):
+    value.enumInstanceSerializedFields(k, v):
       w.writeField k, v
     w.endRecord()
   else:

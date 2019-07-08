@@ -1,5 +1,6 @@
 import
   strutils, unittest,
+  serialization/object_serialization,
   serialization/testing/generic_suite,
   ../json_serialization, ./utils,
   ../json_serialization/std/[options, sets]
@@ -12,10 +13,11 @@ type
     x: int
     y: string
     distance: Meter
+    ignored: int
 
   Foo = object
     i: int
-    b: Bar
+    b {.dontSerialize.}: Bar
     s: string
 
   Bar = object
@@ -40,6 +42,8 @@ template reject(code) =
   static: doAssert(not compiles(code))
 
 borrowSerialization(Meter, int)
+
+Simple.setSerializedFields distance, x, y
 
 proc `==`(lhs, rhs: Meter): bool =
   int(lhs) == int(rhs)
@@ -74,21 +78,21 @@ suite "toJson tests":
     var s = Simple(x: 10, y: "test", distance: Meter(20))
 
     check:
-      s.toJson == """{"x":10,"y":"test","distance":20}"""
-      s.toJson(typeAnnotations = true) == """{"$type":"Simple","x":10,"y":"test","distance":20}"""
+      s.toJson == """{"distance":20,"x":10,"y":"test"}"""
+      s.toJson(typeAnnotations = true) == """{"$type":"Simple","distance":20,"x":10,"y":"test"}"""
       s.toJson(pretty = true) == dedent"""
         {
+          "distance": 20,
           "x": 10,
-          "y": "test",
-          "distance": 20
+          "y": "test"
         }
       """
 
   test "handle missing fields":
     let json = dedent"""
         {
-          "y": "test",
-          "distance": 20
+          "distance": 20,
+          "y": "test"
         }
       """
 
@@ -135,8 +139,8 @@ suite "toJson tests":
       h1 = HoldsOption(o: some Simple(x: 1, y: "2", distance: Meter(3)))
       h2 = HoldsOption(r: newSimple(1, "2", Meter(3)))
 
-    Json.roundtripTest h1, """{"r":null,"o":{"x":1,"y":"2","distance":3}}"""
-    Json.roundtripTest h2, """{"r":{"x":1,"y":"2","distance":3},"o":null}"""
+    Json.roundtripTest h1, """{"r":null,"o":{"distance":3,"x":1,"y":"2"}}"""
+    Json.roundtripTest h2, """{"r":{"distance":3,"x":1,"y":"2"},"o":null}"""
 
   test "Set types":
     type HoldsSet = object

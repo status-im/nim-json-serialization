@@ -17,10 +17,6 @@ type
     encounteredField*: cstring
     deserializedType*: cstring
 
-  CustomSerializationError* = object of JsonReaderError
-    deserializedField*: string
-    innerException*: ref CatchableError
-
   ExpectedTokenCategory* = enum
     etBool = "bool literal"
     etInt = "integer"
@@ -32,6 +28,10 @@ type
     etBracketRi = "array end bracker"
     etCurrlyLe = "object start bracket"
     etCurrlyRi = "object end bracket"
+
+  GenericJsonReaderError* = object of JsonReaderError
+    deserializedField*: string
+    innerException*: ref CatchableError
 
   UnexpectedToken* = object of JsonReaderError
     encountedToken*: TokKind
@@ -46,8 +46,8 @@ method formatMsg*(err: ref UnexpectedField, filename: string): string =
 method formatMsg*(err: ref UnexpectedToken, filename: string): string =
   fmt"{filename}({err.line}, {err.col}) Unexpected token '{err.encountedToken}' in place of '{err.expectedToken}'"
 
-method formatMsg*(err: ref CustomSerializationError, filename: string): string =
-  fmt"{filename}({err.line}, {err.col}) Custom serialization exception while deserializing '{err.deserializedField}': [{err.innerException.name}] {err.innerException.msg}"
+method formatMsg*(err: ref GenericJsonReaderError, filename: string): string =
+  fmt"{filename}({err.line}, {err.col}) Exception encountered while deserializing '{err.deserializedField}': [{err.innerException.name}] {err.innerException.msg}"
 
 template init*(T: type JsonReader, stream: ByteStreamVar, mode = defaultJsonMode): auto =
   init JsonReader, AsciiStreamVar(stream), mode
@@ -70,10 +70,12 @@ proc raiseUnexpectedField(r: JsonReader, fieldName, deserializedType: cstring) =
   ex.deserializedType = deserializedType
   raise ex
 
-proc readValueFailed*(r: JsonReader,
-                      Record: type, fieldName: string, field: var auto,
-                      err: ref CatchableError) =
-  var ex = new CustomSerializationError
+proc handleReadException*(r: JsonReader,
+                          Record: type,
+                          fieldName: string,
+                          field: var auto,
+                          err: ref CatchableError) =
+  var ex = new GenericJsonReaderError
   ex.assignLineNumber(r)
   ex.deserializedField = fieldName
   ex.innerException = err
