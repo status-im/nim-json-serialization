@@ -2,7 +2,7 @@ import
   strutils, unittest,
   serialization/testing/generic_suite,
   ../json_serialization, ./utils,
-  ../json_serialization/std/options
+  ../json_serialization/std/[options, sets]
 
 type
   Meter = distinct int
@@ -137,4 +137,15 @@ suite "toJson tests":
 
     Json.roundtripTest h1, """{"r":null,"o":{"x":1,"y":"2","distance":3}}"""
     Json.roundtripTest h2, """{"r":{"x":1,"y":"2","distance":3},"o":null}"""
+
+  test "Set types":
+    type HoldsSet = object
+      a: int
+      s: HashSet[string]
+
+    var s1 = toSet([1, 2, 3, 1, 4, 2])
+    var s2 = HoldsSet(a: 100, s: toSet(["a", "b", "c"]))
+
+    Json.roundtripTest s1
+    Json.roundtripTest s2
 

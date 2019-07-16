@@ -108,6 +108,19 @@ proc allocPtr[T](p: var ptr T) =
 proc allocPtr[T](p: var ref T) =
   p = new(T)
 
+iterator readArray*(r: var JsonReader, ElemType: typedesc): ElemType =
+  mixin readValue
+
+  r.skipToken tkBracketLe
+  if r.lexer.tok != tkBracketRi:
+    while true:
+      var res: ElemType
+      readValue(r, res)
+      yield res
+      if r.lexer.tok != tkComma: break
+      r.lexer.next()
+  r.skipToken tkBracketRi
+
 proc readValue*(r: var JsonReader, value: var auto) =
   mixin readValue
 
