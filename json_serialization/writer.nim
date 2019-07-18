@@ -172,6 +172,11 @@ proc writeValue*(w: var JsonWriter, value: auto) =
     append if value: "true" else: "false"
   elif value is enum:
     w.stream.append $ord(value)
+  elif value is range:
+    when low(value) < 0:
+      w.stream.append $int64(value)
+    else:
+      w.stream.append $uint64(value)
   elif value is SomeInteger:
     w.stream.append $value
   elif value is SomeFloat:
