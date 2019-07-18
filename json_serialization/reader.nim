@@ -8,7 +8,7 @@ export
 
 type
   JsonReader* = object
-    lexer: JsonLexer
+    lexer*: JsonLexer
 
   JsonReaderError* = object of JsonError
     line*, col*: int
@@ -88,7 +88,7 @@ proc init*(T: type JsonReader, stream: AsciiStreamVar, mode = defaultJsonMode): 
 proc setParsed[T: enum](e: var T, s: string) =
   e = parseEnum[T](s)
 
-proc requireToken(r: JsonReader, tk: TokKind) =
+proc requireToken*(r: JsonReader, tk: TokKind) =
   if r.lexer.tok != tk:
     r.raiseUnexpectedToken case tk
       of tkString: etString
@@ -100,7 +100,7 @@ proc requireToken(r: JsonReader, tk: TokKind) =
       of tkCurlyLe: etCurrlyLe
       else: (doAssert false; etBool)
 
-proc skipToken(r: var JsonReader, tk: TokKind) =
+proc skipToken*(r: var JsonReader, tk: TokKind) =
   r.requireToken tk
   r.lexer.next()
 
