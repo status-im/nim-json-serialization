@@ -52,18 +52,18 @@ method formatMsg*(err: ref GenericJsonReaderError, filename: string): string =
 template init*(T: type JsonReader, stream: ByteStreamVar, mode = defaultJsonMode): auto =
   init JsonReader, AsciiStreamVar(stream), mode
 
-proc assignLineNumber(ex: ref JsonReaderError, r: JsonReader) =
+proc assignLineNumber*(ex: ref JsonReaderError, r: JsonReader) =
   ex.line = r.lexer.line
-  ex.col = r.lexer.col
+  ex.col = r.lexer.tokenStartCol
 
-proc raiseUnexpectedToken(r: JsonReader, expected: ExpectedTokenCategory) =
+proc raiseUnexpectedToken*(r: JsonReader, expected: ExpectedTokenCategory) =
   var ex = new UnexpectedToken
   ex.assignLineNumber(r)
   ex.encountedToken = r.lexer.tok
   ex.expectedToken = expected
   raise ex
 
-proc raiseUnexpectedField(r: JsonReader, fieldName, deserializedType: cstring) =
+proc raiseUnexpectedField*(r: JsonReader, fieldName, deserializedType: cstring) =
   var ex = new UnexpectedField
   ex.assignLineNumber(r)
   ex.encounteredField = fieldName

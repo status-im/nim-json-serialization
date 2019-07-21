@@ -75,10 +75,13 @@ proc isDigit(c: char): bool {.inline.} =
 proc col*(lexer: JsonLexer): int =
   lexer.stream[].pos - lexer.lineStartPos
 
+proc tokenStartCol*(lexer: JsonLexer): int =
+  1 + lexer.tokenStart - lexer.lineStartPos
+
 proc init*(T: type JsonLexer, stream: ref AsciiStream, mode = defaultJsonMode): T =
   T(stream: stream,
     mode: mode,
-    line: 0,
+    line: 1,
     lineStartPos: 0,
     tokenStart: -1,
     tok: tkError,
