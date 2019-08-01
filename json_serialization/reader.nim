@@ -73,7 +73,7 @@ proc raiseUnexpectedField*(r: JsonReader, fieldName, deserializedType: cstring) 
 proc handleReadException*(r: JsonReader,
                           Record: type,
                           fieldName: string,
-                          field: var auto,
+                          field: auto,
                           err: ref CatchableError) =
   var ex = new GenericJsonReaderError
   ex.assignLineNumber(r)

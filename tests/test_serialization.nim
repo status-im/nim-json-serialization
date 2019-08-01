@@ -38,6 +38,43 @@ type
     # Using Nim reserved keyword
     `type`: string
 
+  ObjectKind = enum
+    A
+    B
+
+  CaseObject = object
+   case kind: ObjectKind:
+   of A:
+     a: int
+     other: CaseObjectRef
+   else:
+     b: int
+
+  CaseObjectRef = ref CaseObject
+
+func caseObjectEquals(a, b: CaseObject): bool
+
+func `==`*(a, b: CaseObjectRef): bool =
+  let nils = ord(a.isNil) + ord(b.isNil)
+  if nils == 0:
+    caseObjectEquals(a[], b[])
+  else:
+    nils == 2
+
+func caseObjectEquals(a, b: CaseObject): bool =
+  # TODO This is needed to work-around a Nim overload selection issue
+  if a.kind != b.kind: return false
+
+  case a.kind
+  of A:
+    if a.a != b.a: return false
+    a.other == b.other
+  of B:
+    a.b == b.b
+
+func `==`*(a, b: CaseObject): bool =
+  caseObjectEquals(a, b)
+
 template reject(code) =
   static: doAssert(not compiles(code))
 
@@ -152,4 +189,14 @@ suite "toJson tests":
 
     Json.roundtripTest s1
     Json.roundtripTest s2
+
+  test "Case objects":
+    var
+      c1 = CaseObjectRef(kind: B, b: 100)
+      c2 = CaseObjectRef(kind: A, a: 80, other: CaseObjectRef(kind: B))
+      c3 = CaseObject(kind: A, a: 60, other: nil)
+
+    Json.roundtripTest c1
+    Json.roundtripTest c2
+    Json.roundtripTest c3
 
