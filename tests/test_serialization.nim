@@ -6,15 +6,6 @@ import
   ../json_serialization/std/[options, sets]
 
 type
-  Meter = distinct int
-  Mile = distinct int
-
-  Simple = object
-    x: int
-    y: string
-    distance: Meter
-    ignored: int
-
   Foo = object
     i: int
     b {.dontSerialize.}: Bar
@@ -24,13 +15,6 @@ type
     sf: seq[Foo]
     z: ref Simple
 
-  HoldsOption = object
-    r: ref Simple
-    o: Option[Simple]
-
-  HoldsArray = object
-    data: seq[int]
-
   Invalid = object
     distance: Mile
 
@@ -38,49 +22,12 @@ type
     # Using Nim reserved keyword
     `type`: string
 
-  ObjectKind = enum
-    A
-    B
-
-  CaseObject = object
-   case kind: ObjectKind:
-   of A:
-     a: int
-     other: CaseObjectRef
-   else:
-     b: int
-
-  CaseObjectRef = ref CaseObject
-
-func caseObjectEquals(a, b: CaseObject): bool
-
-func `==`*(a, b: CaseObjectRef): bool =
-  let nils = ord(a.isNil) + ord(b.isNil)
-  if nils == 0:
-    caseObjectEquals(a[], b[])
-  else:
-    nils == 2
-
-func caseObjectEquals(a, b: CaseObject): bool =
-  # TODO This is needed to work-around a Nim overload selection issue
-  if a.kind != b.kind: return false
-
-  case a.kind
-  of A:
-    if a.a != b.a: return false
-    a.other == b.other
-  of B:
-    a.b == b.b
-
-func `==`*(a, b: CaseObject): bool =
-  caseObjectEquals(a, b)
+# TODO `borrowSerialization` still doesn't work
+# properly when it's placed in another module:
+Meter.borrowSerialization int
 
 template reject(code) =
   static: doAssert(not compiles(code))
-
-borrowSerialization(Meter, int)
-
-Simple.setSerializedFields distance, x, y
 
 proc `==`(lhs, rhs: Meter): bool =
   int(lhs) == int(rhs)
@@ -178,25 +125,4 @@ suite "toJson tests":
 
     Json.roundtripTest h1, """{"r":null,"o":{"distance":3,"x":1,"y":"2"}}"""
     Json.roundtripTest h2, """{"r":{"distance":3,"x":1,"y":"2"},"o":null}"""
-
-  test "Set types":
-    type HoldsSet = object
-      a: int
-      s: HashSet[string]
-
-    var s1 = toSet([1, 2, 3, 1, 4, 2])
-    var s2 = HoldsSet(a: 100, s: toSet(["a", "b", "c"]))
-
-    Json.roundtripTest s1
-    Json.roundtripTest s2
-
-  test "Case objects":
-    var
-      c1 = CaseObjectRef(kind: B, b: 100)
-      c2 = CaseObjectRef(kind: A, a: 80, other: CaseObjectRef(kind: B))
-      c3 = CaseObject(kind: A, a: 60, other: nil)
-
-    Json.roundtripTest c1
-    Json.roundtripTest c2
-    Json.roundtripTest c3
 
