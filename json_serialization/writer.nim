@@ -125,7 +125,7 @@ proc writeArray[T](w: var JsonWriter, elements: openarray[T]) =
   writeIterable(w, elements)
 
 proc writeValue*(w: var JsonWriter, value: auto) =
-  mixin enumInstanceSerializedFields
+  mixin enumInstanceSerializedFields, writeValue
 
   template addChar(c) =
     append c

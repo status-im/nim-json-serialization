@@ -14,7 +14,6 @@ proc readValue*(reader: var JsonReader, value: var TableType) =
   type KeyType = type(value.keys)
   type ValueType = type(value.values)
   value = init TableType
-  for (key, val) in readObject(reader, KeyType, ValueType):
+  for key, val in readObject(reader, KeyType, ValueType):
     value[key] = val
-
 
