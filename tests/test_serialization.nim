@@ -3,7 +3,7 @@ import
   serialization/object_serialization,
   serialization/testing/generic_suite,
   ../json_serialization, ./utils,
-  ../json_serialization/std/[options, sets]
+  ../json_serialization/std/[options, sets, tables]
 
 type
   Foo = object
