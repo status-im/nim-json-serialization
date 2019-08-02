@@ -2,7 +2,7 @@ import stew/shims/tables, ../../json_serialization/[reader, writer, lexer]
 export tables
 
 type
-  TableType = OrderedTable | Table
+  TableType = OrderedTable | Table | TableRef
 
 proc writeValue*(writer: var JsonWriter, value: TableType) =
   writer.beginRecord()
