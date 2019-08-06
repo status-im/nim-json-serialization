@@ -125,7 +125,7 @@ proc writeArray[T](w: var JsonWriter, elements: openarray[T]) =
   writeIterable(w, elements)
 
 proc writeValue*(w: var JsonWriter, value: auto) =
-  mixin enumInstanceSerializedFields, writeValue
+  mixin enumInstanceSerializedFields, writeValue, writeFieldIMPL
 
   template addChar(c) =
     append c
@@ -185,8 +185,12 @@ proc writeValue*(w: var JsonWriter, value: auto) =
     w.writeArray(value)
   elif value is (object or tuple):
     w.beginRecord(type(value))
-    value.enumInstanceSerializedFields(k, v):
-      w.writeField k, v
+    type RecordType = type value
+    value.enumInstanceSerializedFields(fieldName, field):
+      type FieldType = type field
+      w.writeFieldName(fieldName)
+      w.writeFieldIMPL(FieldTag[RecordType, fieldName, FieldType], field, value)
+      w.state = AfterField
     w.endRecord()
   else:
     const typeName = typetraits.name(value.type)
