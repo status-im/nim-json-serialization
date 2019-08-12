@@ -221,7 +221,11 @@ proc readValue*(r: var JsonReader, value: var auto) =
       let fields = T.fieldReadersTable(JsonReader)
       var expectedFieldPos = 0
       while r.lexer.tok == tkString:
-        let reader = findFieldReader(fields[], r.lexer.strVal, expectedFieldPos)
+        when T is tuple:
+          var reader = fields[][expectedFieldPos].reader
+          expectedFieldPos += 1
+        else:
+          var reader = findFieldReader(fields[], r.lexer.strVal, expectedFieldPos)
         r.lexer.next()
         r.skipToken tkColon
         if reader != nil:
