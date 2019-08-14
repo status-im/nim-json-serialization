@@ -40,6 +40,10 @@ suite "lexer tests":
     expectedToken tkInt,      lexer.intVal == 190
     expectedToken tkEof
 
+  lexerTest "int64 literal",  "3568257348920230622":
+    expectedToken tkInt,      lexer.intVal == 3568257348920230622'i64
+    expectedToken tkEof
+
   lexerTest "float literal",  ".340":
     expectedToken tkFloat,    lexer.floatVal =~ 0.340
     expectedToken tkEof
