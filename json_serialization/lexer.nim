@@ -276,7 +276,7 @@ proc scanNumber(lexer: var JsonLexer) =
     lexer.tok = tkInt
     let scannedValue = lexer.scanInt()
     checkForNonPortableInt scannedValue
-    lexer.intVal = int(scannedValue)
+    lexer.intVal = int64(scannedValue)
     if lexer.stream[].eof: return
     c = lexer.stream[].peek()
     if c == '.':
