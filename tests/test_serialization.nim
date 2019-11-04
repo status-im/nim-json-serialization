@@ -26,7 +26,7 @@ type
 # properly when it's placed in another module:
 Meter.borrowSerialization int
 
-template reject(code) =
+template reject(code) {.used.} =
   static: doAssert(not compiles(code))
 
 proc `==`(lhs, rhs: Meter): bool =
@@ -45,11 +45,11 @@ proc newSimple(x: int, y: string, d: Meter): ref Simple =
   result.y = y
   result.distance = d
 
-when false:
-  # The compiler cannot handle this check at the moment
-  # {.fatal.} seems fatal even in `compiles` context
-  var invalid = Invalid(distance: Mile(100))
-  reject invalid.toJson
+var invalid = Invalid(distance: Mile(100))
+# The compiler cannot handle this check at the moment
+# {.fatal.} seems fatal even in `compiles` context
+when false: reject invalid.toJson
+else: discard invalid
 
 suite "toJson tests":
   test "encode primitives":

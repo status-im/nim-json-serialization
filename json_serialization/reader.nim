@@ -144,7 +144,7 @@ iterator readObject*(r: var JsonReader, KeyType: typedesc, ValueType: typedesc):
 proc readValue*(r: var JsonReader, value: var auto) =
   mixin readValue
 
-  let tok = r.lexer.tok
+  let tok {.used.} = r.lexer.tok
 
   when value is string:
     r.requireToken tkString

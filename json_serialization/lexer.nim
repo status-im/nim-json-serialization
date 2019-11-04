@@ -1,5 +1,5 @@
 import
-  strutils, unicode,
+  unicode,
   faststreams/input_stream, stew/objects,
   types
 
@@ -55,8 +55,6 @@ type
     strVal*: string
 
 const
-  pageSize = 4096
-
   powersOfTen = [1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9,
                  1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
                  1e20, 1e21, 1e22] # TODO: this table should be much larger
@@ -276,7 +274,7 @@ proc scanNumber(lexer: var JsonLexer) =
     lexer.tok = tkInt
     let scannedValue = lexer.scanInt()
     checkForNonPortableInt scannedValue
-    lexer.intVal = int64(scannedValue)
+    lexer.intVal = int64(scannedValue) * sign
     if lexer.stream[].eof: return
     c = lexer.stream[].peek()
     if c == '.':

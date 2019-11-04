@@ -127,9 +127,6 @@ proc writeArray[T](w: var JsonWriter, elements: openarray[T]) =
 proc writeValue*(w: var JsonWriter, value: auto) =
   mixin enumInstanceSerializedFields, writeValue, writeFieldIMPL
 
-  template addChar(c) =
-    append c
-
   when value is JsonNode:
     append if w.hasPrettyOutput: value.pretty
            else: $value
@@ -141,11 +138,11 @@ proc writeValue*(w: var JsonWriter, value: auto) =
     else:
       writeValue(w, value[])
   elif value is string|cstring:
-    addChar '"'
+    append '"'
 
     template addPrefixSlash(c) =
-      addChar '\\'
-      addChar c
+      append '\\'
+      append c
 
     for c in value:
       case c
@@ -165,9 +162,9 @@ proc writeValue*(w: var JsonWriter, value: auto) =
         # This is potentially a bug in Nim's json module.
         append $ord(c)
       of '\\': addPrefixSlash '\\'
-      else: addChar c
+      else: append c
 
-    addChar '"'
+    append '"'
   elif value is bool:
     append if value: "true" else: "false"
   elif value is enum:
