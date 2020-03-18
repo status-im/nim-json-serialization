@@ -36,6 +36,9 @@ template indent =
   for i in 0 ..< w.nestingLevel:
     append ' '
 
+template `$`*(s: JsonString): string =
+  string(s)
+
 proc writeFieldName*(w: var JsonWriter, name: string) =
   # this is implemented as a separate proc in order to
   # keep the code bloat from `writeField` to a minimum
