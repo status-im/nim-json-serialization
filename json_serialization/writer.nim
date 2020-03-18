@@ -181,7 +181,7 @@ proc writeValue*(w: var JsonWriter, value: auto) =
     w.stream.append $value
   elif value is SomeFloat:
     append $value
-  elif value is (seq or array):
+  elif value is (seq or array or openArray):
     w.writeArray(value)
   elif value is (object or tuple):
     w.beginRecord(type(value))
