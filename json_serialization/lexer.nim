@@ -12,6 +12,7 @@ type
     tkEof,
     tkString,
     tkInt,
+    tkNegativeInt,
     tkFloat,
     tkTrue,
     tkFalse,
@@ -50,7 +51,7 @@ type
     tok*: TokKind
     err*: JsonErrorKind
 
-    intVal*: int64
+    absIntVal*: uint64 # BEWARE: negative integers will have tok == tkNegativeInt
     floatVal*: float
     strVal*: string
 
@@ -84,7 +85,7 @@ proc init*(T: type JsonLexer, stream: ref AsciiStream, mode = defaultJsonMode): 
     tokenStart: -1,
     tok: tkError,
     err: errNone,
-    intVal: int64 0,
+    absIntVal: uint64 0,
     floatVal: 0'f,
     strVal: "")
 
@@ -271,15 +272,16 @@ proc scanNumber(lexer: var JsonLexer) =
     lexer.tok = tkFloat
     c = lexer.stream[].peek()
   elif c.isDigit:
-    lexer.tok = tkInt
+    lexer.tok = if sign > 0: tkInt
+                else: tkNegativeInt
     let scannedValue = lexer.scanInt()
     checkForNonPortableInt scannedValue
-    lexer.intVal = int64(scannedValue) * sign
+    lexer.absIntVal = scannedValue
     if lexer.stream[].eof: return
     c = lexer.stream[].peek()
     if c == '.':
       lexer.tok = tkFloat
-      lexer.floatVal = float(lexer.intVal)
+      lexer.floatVal = float(lexer.absIntVal) * float(sign)
       c = eatDigitAndPeek()
   else:
     error errNumberExpected

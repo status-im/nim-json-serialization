@@ -37,6 +37,15 @@ type
     encountedToken*: TokKind
     expectedToken*: ExpectedTokenCategory
 
+  IntOverflowError* = object of JsonReaderError
+    isNegative: bool
+    absIntVal: uint64
+
+func valueStr(err: ref IntOverflowError): string =
+  if err.isNegative:
+    result.add '-'
+  result.add($err.absIntVal)
+
 method formatMsg*(err: ref JsonReaderError, filename: string): string =
   fmt"{filename}({err.line}, {err.col}) Error while reading json file"
 
@@ -49,6 +58,9 @@ method formatMsg*(err: ref UnexpectedToken, filename: string): string =
 method formatMsg*(err: ref GenericJsonReaderError, filename: string): string =
   fmt"{filename}({err.line}, {err.col}) Exception encountered while deserializing '{err.deserializedField}': [{err.innerException.name}] {err.innerException.msg}"
 
+method formatMsg*(err: ref IntOverflowError, filename: string): string =
+  fmt"{filename}({err.line}, {err.col}) The value '{err.valueStr}' is outside of the allowed range"
+
 template init*(T: type JsonReader, stream: ByteStreamVar, mode = defaultJsonMode): auto =
   init JsonReader, AsciiStreamVar(stream), mode
 
@@ -56,14 +68,21 @@ proc assignLineNumber*(ex: ref JsonReaderError, r: JsonReader) =
   ex.line = r.lexer.line
   ex.col = r.lexer.tokenStartCol
 
-proc raiseUnexpectedToken*(r: JsonReader, expected: ExpectedTokenCategory) =
+proc raiseUnexpectedToken*(r: JsonReader, expected: ExpectedTokenCategory) {.noreturn.} =
   var ex = new UnexpectedToken
   ex.assignLineNumber(r)
   ex.encountedToken = r.lexer.tok
   ex.expectedToken = expected
   raise ex
 
-proc raiseUnexpectedField*(r: JsonReader, fieldName, deserializedType: cstring) =
+proc raiseIntOverflow*(r: JsonReader, absIntVal: uint64, isNegative: bool) {.noreturn.} =
+  var ex = new IntOverflowError
+  ex.assignLineNumber(r)
+  ex.absIntVal = absIntVal
+  ex.isNegative = isNegative
+  raise ex
+
+proc raiseUnexpectedField*(r: JsonReader, fieldName, deserializedType: cstring) {.noreturn.} =
   var ex = new UnexpectedField
   ex.assignLineNumber(r)
   ex.encounteredField = fieldName
@@ -92,7 +111,7 @@ proc requireToken*(r: JsonReader, tk: TokKind) =
   if r.lexer.tok != tk:
     r.raiseUnexpectedToken case tk
       of tkString: etString
-      of tkInt: etInt
+      of tkInt, tkNegativeInt: etInt
       of tkComma: etComma
       of tkBracketRi: etBracketRi
       of tkBracketLe: etBracketLe
@@ -141,6 +160,13 @@ iterator readObject*(r: var JsonReader, KeyType: typedesc, ValueType: typedesc):
       r.lexer.next()
   r.skipToken tkCurlyRi
 
+func maxAbsValue(T: type[SomeInteger]): uint64 {.compileTime.} =
+  when T is int8 : 128'u64
+  elif T is int16: 32768'u64
+  elif T is int32: 2147483648'u64
+  elif T is int64: 9223372036854775808'u64
+  else: uint64(high(T))
+
 proc readValue*(r: var JsonReader, value: var auto) =
   mixin readValue
 
@@ -173,20 +199,39 @@ proc readValue*(r: var JsonReader, value: var auto) =
       value.setParsed(r.lexer.strVal)
     of tkInt:
       # TODO: validate that the value is in range
-      value = type(value)(r.lexer.intVal)
+      value = type(value)(r.lexer.absIntVal)
     else:
       r.raiseUnexpectedToken etEnum
     r.lexer.next()
 
   elif value is SomeInteger:
     type TargetType = type(value)
-    r.requireToken tkInt
-    value = TargetType(r.lexer.intVal)
+    const maxValidValue = maxAbsValue(TargetType)
+
+    if r.lexer.absIntVal > maxValidValue:
+      r.raiseIntOverflow r.lexer.absIntVal, tok == tkNegativeInt
+
+    case tok
+    of tkInt:
+      value = TargetType(r.lexer.absIntVal)
+    of tkNegativeInt:
+      when value is SomeSignedInt:
+        if r.lexer.absIntVal == maxValidValue:
+          # We must handle this as a special case because it would be illegal
+          # to convert a value like 128 to int8 before negating it. The max
+          # int8 value is 127 (while the minimum is -128).
+          value = low(TargetType)
+        else:
+          value = -TargetType(r.lexer.absIntVal)
+      else:
+        r.raiseIntOverflow r.lexer.absIntVal, true
+    else:
+      r.raiseUnexpectedToken etInt
     r.lexer.next()
 
   elif value is SomeFloat:
     case tok
-    of tkInt: value = float(r.lexer.intVal)
+    of tkInt: value = float(r.lexer.absIntVal)
     of tkFloat: value = r.lexer.floatVal
     else:
       r.raiseUnexpectedToken etNumber
