@@ -2,11 +2,11 @@ import
   unittest,
   ../json_serialization/lexer, ./utils
 
-template expectedToken(token: TokKind, additionalTest = true) {.dirty.} =
+template expectedToken(token: TokKind, additionalCheck = true) {.dirty.} =
   lexer.next()
   check:
     lexer.tok == token
-    additionalTest
+    bool(additionalCheck)
 
 template lexerTest(name, input: string, expectations) {.dirty.} =
   test name:
@@ -27,7 +27,7 @@ suite "lexer tests":
     expectedToken tkCurlyLe
     expectedToken tkString,   lexer.strVal == "x"
     expectedToken tkColon
-    expectedToken tkInt,      lexer.intVal == 10
+    expectedToken tkInt,      lexer.absIntVal == 10
     expectedToken tkComma
     expectedToken tkString,   lexer.strVal == "y"
     expectedToken tkColon
@@ -37,11 +37,11 @@ suite "lexer tests":
     expectedToken tkEof # check that reading past the end is benign
 
   lexerTest "int literal",    "190":
-    expectedToken tkInt,      lexer.intVal == 190
+    expectedToken tkInt,      lexer.absIntVal == 190
     expectedToken tkEof
 
   lexerTest "int64 literal",  "3568257348920230622":
-    expectedToken tkInt,      lexer.intVal == 3568257348920230622'i64
+    expectedToken tkInt,      lexer.absIntVal == 3568257348920230622'u64
     expectedToken tkEof
 
   lexerTest "float literal",  ".340":
@@ -54,7 +54,7 @@ suite "lexer tests":
 
   lexerTest "mixed array", "[1, 2.0, \"test\", {}, [],]":
     expectedToken tkBracketLe
-    expectedToken tkInt,      lexer.intVal == 1
+    expectedToken tkInt,      lexer.absIntVal == 1
     expectedToken tkComma
     expectedToken tkFloat,    lexer.floatVal =~ 2.0
     expectedToken tkComma

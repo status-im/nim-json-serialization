@@ -11,11 +11,7 @@ requires "nim >= 0.17.0",
          "serialization",
          "stew"
 
-task test, "Run tests":
-  for filename in [
-      "test_lexer",
-      "test_serialization",
-    ]:
-    exec "nim c -r tests/" & filename
-    rmFile "tests/" & filename
+task test, "Run all tests":
+  exec "nim c -r --threads:off tests/test_all"
+  exec "nim c -r --threads:on tests/test_all"
 
