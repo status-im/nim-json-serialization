@@ -22,6 +22,19 @@ type
     # Using Nim reserved keyword
     `type`: string
 
+  MyKind = enum
+    Apple
+    Banana
+
+  MyCaseObject = object
+    name: string
+    case kind: MyKind
+    of Banana: banana: int
+    of Apple: apple: string
+
+  MyUseCaseObject = object
+    field: MyCaseObject
+
 # TODO `borrowSerialization` still doesn't work
 # properly when it's placed in another module:
 Meter.borrowSerialization int
@@ -125,4 +138,14 @@ suite "toJson tests":
 
     Json.roundtripTest h1, """{"r":null,"o":{"distance":3,"x":1,"y":"2"}}"""
     Json.roundtripTest h2, """{"r":{"distance":3,"x":1,"y":"2"},"o":null}"""
+
+  test "Case object as field":
+    let
+      original = MyUseCaseObject(field: MyCaseObject(name: "hello",
+                                                     kind: Apple,
+                                                     apple: "world"))
+      decoded = Json.decode(Json.encode(original), MyUseCaseObject)
+
+    check:
+       $original == $decoded
 
