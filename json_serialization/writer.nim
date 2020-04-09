@@ -9,7 +9,7 @@ type
     AfterField
 
   JsonWriter* = object
-    stream*: OutputStreamVar
+    stream*: OutputStream
     hasTypeAnnotations: bool
     hasPrettyOutput*: bool # read-only
     nestingLevel*: int     # read-only
@@ -17,7 +17,7 @@ type
 
   JsonString* = distinct string
 
-proc init*(T: type JsonWriter, stream: OutputStreamVar,
+proc init*(T: type JsonWriter, stream: OutputStream,
            pretty = false, typeAnnotations = false): T =
   result.stream = stream
   result.hasPrettyOutput = pretty
