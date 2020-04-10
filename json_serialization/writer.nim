@@ -199,7 +199,7 @@ proc writeValue*(w: var JsonWriter, value: auto) =
 proc toJson*(v: auto, pretty = false, typeAnnotations = false): string =
   mixin writeValue
 
-  var s = init OutputStream
+  var s = memoryOutput()
   var w = JsonWriter.init(s, pretty, typeAnnotations)
   w.writeValue v
   return s.getOutput(string)

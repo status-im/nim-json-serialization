@@ -10,7 +10,7 @@ template expectedToken(token: TokKind, additionalCheck = true) {.dirty.} =
 
 template lexerTest(name, input: string, expectations) {.dirty.} =
   test name:
-    var stream = memoryStream(dedent(input))
+    var stream = memoryInput(dedent(input))
     var lexer = JsonLexer.init stream
     expectations
 

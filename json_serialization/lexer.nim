@@ -41,7 +41,7 @@ type
     errNonPortableInt       = "number is outside the range of portable values"
 
   JsonLexer* = object
-    stream: ref AsciiStream
+    stream: AsciiInputStream
     mode*: JsonMode
 
     line*: int
@@ -72,12 +72,12 @@ proc isDigit(c: char): bool {.inline.} =
   return (c >= '0' and c <= '9')
 
 proc col*(lexer: JsonLexer): int =
-  lexer.stream[].pos - lexer.lineStartPos
+  lexer.stream.pos - lexer.lineStartPos
 
 proc tokenStartCol*(lexer: JsonLexer): int =
   1 + lexer.tokenStart - lexer.lineStartPos
 
-proc init*(T: type JsonLexer, stream: ref AsciiStream, mode = defaultJsonMode): T =
+proc init*(T: type JsonLexer, stream: AsciiInputStream, mode = defaultJsonMode): T =
   T(stream: stream,
     mode: mode,
     line: 1,
@@ -89,9 +89,8 @@ proc init*(T: type JsonLexer, stream: ref AsciiStream, mode = defaultJsonMode): 
     floatVal: 0'f,
     strVal: "")
 
-proc init*(T: type JsonLexer, stream: ref ByteStream, mode = defaultJsonMode): auto =
-  type AS = ref AsciiStream
-  init(JsonLexer, AS(stream), mode)
+proc init*(T: type JsonLexer, stream: InputStream, mode = defaultJsonMode): T =
+  init(JsonLexer, AsciiInputStream(stream), mode)
 
 template error(error: JsonErrorKind) {.dirty.} =
   lexer.err = error
@@ -99,11 +98,11 @@ template error(error: JsonErrorKind) {.dirty.} =
   return
 
 template checkForUnexpectedEof {.dirty.} =
-  if lexer.stream[].eof: error errUnexpectedEof
+  if lexer.stream.eof: error errUnexpectedEof
 
 template requireNextChar(): char =
   checkForUnexpectedEof()
-  lexer.stream[].read()
+  lexer.stream.read()
 
 template checkForNonPortableInt(val: uint64) =
   if lexer.mode == Portable and val > uint64(maxPortableInt):
@@ -118,9 +117,9 @@ proc scanHexRune(lexer: var JsonLexer): int =
 proc scanString(lexer: var JsonLexer) =
   lexer.tok = tkString
   lexer.strVal.setLen 0
-  lexer.tokenStart = lexer.stream[].pos
+  lexer.tokenStart = lexer.stream.pos
 
-  advance lexer.stream[]
+  advance lexer.stream
 
   while true:
     var c = requireNextChar()
@@ -167,32 +166,32 @@ proc scanString(lexer: var JsonLexer) =
       lexer.strVal.add c
 
 proc handleLF(lexer: var JsonLexer) {.inline.} =
-  advance lexer.stream[]
+  advance lexer.stream
   lexer.line += 1
-  lexer.lineStartPos = lexer.stream[].pos
+  lexer.lineStartPos = lexer.stream.pos
 
 proc skipWhitespace(lexer: var JsonLexer) =
   template handleCR =
     # Beware: this is a template, because the return
     # statement has to exit `skipWhitespace`.
-    advance lexer.stream[]
-    if lexer.stream[].eof: return
-    if lexer.stream[].peek() == '\n': advance lexer.stream[]
+    advance lexer.stream
+    if lexer.stream.eof: return
+    if lexer.stream.peek() == '\n': advance lexer.stream
     lexer.line += 1
-    lexer.lineStartPos = lexer.stream[].pos
+    lexer.lineStartPos = lexer.stream.pos
 
   while true:
-    if lexer.stream[].eof: return
-    case lexer.stream[].peek()
+    if lexer.stream.eof: return
+    case lexer.stream.peek()
     of '/':
-      advance lexer.stream[]
+      advance lexer.stream
       checkForUnexpectedEof()
-      case lexer.stream[].peek()
+      case lexer.stream.peek()
       of '/':
         while true:
-          advance lexer.stream[]
-          if lexer.stream[].eof: return
-          case lexer.stream[].peek()
+          advance lexer.stream
+          if lexer.stream.eof: return
+          case lexer.stream.peek()
           of '\r':
             handleCR()
           of '\n':
@@ -201,25 +200,25 @@ proc skipWhitespace(lexer: var JsonLexer) =
             discard
       of '*':
         while true:
-          advance lexer.stream[]
-          if lexer.stream[].eof: return
-          case lexer.stream[].peek()
+          advance lexer.stream
+          if lexer.stream.eof: return
+          case lexer.stream.peek()
           of '\r':
             handleCR()
           of '\n':
             lexer.handleLF()
           of '*':
-            advance lexer.stream[]
+            advance lexer.stream
             checkForUnexpectedEof()
-            if lexer.stream[].peek() == '/':
-              advance lexer.stream[]
+            if lexer.stream.peek() == '/':
+              advance lexer.stream
               return
           else:
             discard
       else:
         error errCommentExpected
     of ' ', '\t':
-      advance lexer.stream[]
+      advance lexer.stream
     of '\r':
       handleCR()
     of '\n':
@@ -228,32 +227,32 @@ proc skipWhitespace(lexer: var JsonLexer) =
       break
 
 template requireMoreNumberChars(elseClause) =
-  if lexer.stream[].eof:
+  if lexer.stream.eof:
     elseClause
     error errNumberExpected
 
 template eatDigitAndPeek: char =
-  advance lexer.stream[]
-  if lexer.stream[].eof: return
-  lexer.stream[].peek()
+  advance lexer.stream
+  if lexer.stream.eof: return
+  lexer.stream.peek()
 
 proc scanSign(lexer: var JsonLexer): int =
   # Returns +1 or -1
   # If a sign character is present, it must be followed
   # by more characters representing the number. If this
   # is not the case, the return value will be 0.
-  let c = lexer.stream[].peek()
+  let c = lexer.stream.peek()
   if c == '-':
     requireMoreNumberChars: result = 0
-    advance lexer.stream[]
+    advance lexer.stream
     return -1
   elif c == '+':
     requireMoreNumberChars: result = 0
-    advance lexer.stream[]
+    advance lexer.stream
   return 1
 
 proc scanInt(lexer: var JsonLexer): uint64 =
-  var c = lexer.stream[].peek()
+  var c = lexer.stream.peek()
   result = uint64(ord(c) - ord('0'))
 
   c = eatDigitAndPeek()
@@ -264,21 +263,21 @@ proc scanInt(lexer: var JsonLexer): uint64 =
 proc scanNumber(lexer: var JsonLexer) =
   var sign = lexer.scanSign()
   if sign == 0: return
-  var c = lexer.stream[].peek()
+  var c = lexer.stream.peek()
 
   if c == '.':
-    advance lexer.stream[]
+    advance lexer.stream
     requireMoreNumberChars: discard
     lexer.tok = tkFloat
-    c = lexer.stream[].peek()
+    c = lexer.stream.peek()
   elif c.isDigit:
     lexer.tok = if sign > 0: tkInt
                 else: tkNegativeInt
     let scannedValue = lexer.scanInt()
     checkForNonPortableInt scannedValue
     lexer.absIntVal = scannedValue
-    if lexer.stream[].eof: return
-    c = lexer.stream[].peek()
+    if lexer.stream.eof: return
+    c = lexer.stream.peek()
     if c == '.':
       lexer.tok = tkFloat
       lexer.floatVal = float(lexer.absIntVal) * float(sign)
@@ -293,11 +292,11 @@ proc scanNumber(lexer: var JsonLexer) =
     c = eatDigitAndPeek()
 
   if c in {'E', 'e'}:
-    advance lexer.stream[]
+    advance lexer.stream
     requireMoreNumberChars: discard
     let sign = lexer.scanSign()
     if sign == 0: return
-    if not isDigit lexer.stream[].peek():
+    if not isDigit lexer.stream.peek():
       error errNumberExpected
 
     let exponent = lexer.scanInt()
@@ -312,7 +311,7 @@ proc scanNumber(lexer: var JsonLexer) =
 proc scanIdentifier(lexer: var JsonLexer,
                     expectedIdent: string, expectedTok: TokKind) =
   for c in expectedIdent:
-    if c != lexer.stream[].read():
+    if c != lexer.stream.read():
       lexer.tok = tkError
       return
   lexer.tok = expectedTok
@@ -320,33 +319,33 @@ proc scanIdentifier(lexer: var JsonLexer,
 proc next*(lexer: var JsonLexer) =
   lexer.skipWhitespace()
 
-  if lexer.stream[].eof:
+  if lexer.stream.eof:
     lexer.tok = tkEof
     return
 
-  let c = lexer.stream[].peek()
+  let c = lexer.stream.peek()
   case c
   of '+', '-', '.', '0'..'9':
     lexer.scanNumber()
   of '"':
     lexer.scanString()
   of '[':
-    advance lexer.stream[]
+    advance lexer.stream
     lexer.tok = tkBracketLe
   of '{':
-    advance lexer.stream[]
+    advance lexer.stream
     lexer.tok = tkCurlyLe
   of ']':
-    advance lexer.stream[]
+    advance lexer.stream
     lexer.tok = tkBracketRi
   of '}':
-    advance lexer.stream[]
+    advance lexer.stream
     lexer.tok = tkCurlyRi
   of ',':
-    advance lexer.stream[]
+    advance lexer.stream
     lexer.tok = tkComma
   of ':':
-    advance lexer.stream[]
+    advance lexer.stream
     lexer.tok = tkColon
   of '\0':
     lexer.tok = tkEof
@@ -354,6 +353,6 @@ proc next*(lexer: var JsonLexer) =
   of 't': lexer.scanIdentifier("true", tkTrue)
   of 'f': lexer.scanIdentifier("false", tkFalse)
   else:
-    advance lexer.stream[]
+    advance lexer.stream
     lexer.tok = tkError
 
