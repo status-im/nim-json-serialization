@@ -61,9 +61,6 @@ method formatMsg*(err: ref GenericJsonReaderError, filename: string): string =
 method formatMsg*(err: ref IntOverflowError, filename: string): string =
   fmt"{filename}({err.line}, {err.col}) The value '{err.valueStr}' is outside of the allowed range"
 
-template init*(T: type JsonReader, stream: InputStream, mode = defaultJsonMode): auto =
-  init JsonReader, AsciiInputStream(stream), mode
-
 proc assignLineNumber*(ex: ref JsonReaderError, r: JsonReader) =
   ex.line = r.lexer.line
   ex.col = r.lexer.tokenStartCol
@@ -100,7 +97,7 @@ proc handleReadException*(r: JsonReader,
   ex.innerException = err
   raise ex
 
-proc init*(T: type JsonReader, stream: AsciiInputStream, mode = defaultJsonMode): T =
+proc init*(T: type JsonReader, stream: InputStream, mode = defaultJsonMode): T =
   result.lexer = JsonLexer.init(stream, mode)
   result.lexer.next()
 

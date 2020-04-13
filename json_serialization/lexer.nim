@@ -41,7 +41,7 @@ type
     errNonPortableInt       = "number is outside the range of portable values"
 
   JsonLexer* = object
-    stream: AsciiInputStream
+    stream: InputStream
     mode*: JsonMode
 
     line*: int
@@ -61,6 +61,12 @@ const
                  1e20, 1e21, 1e22] # TODO: this table should be much larger
                                    # The largest JSON number value is 1E308
 
+template peek(s: InputStream): char =
+  char input_stream.peek(s)
+
+template read(s: InputStream): char =
+  char input_stream.read(s)
+
 proc hexCharValue(c: char): int {.inline.} =
   case c
   of '0'..'9': ord(c) - ord('0')
@@ -77,7 +83,7 @@ proc col*(lexer: JsonLexer): int =
 proc tokenStartCol*(lexer: JsonLexer): int =
   1 + lexer.tokenStart - lexer.lineStartPos
 
-proc init*(T: type JsonLexer, stream: AsciiInputStream, mode = defaultJsonMode): T =
+proc init*(T: type JsonLexer, stream: InputStream, mode = defaultJsonMode): T =
   T(stream: stream,
     mode: mode,
     line: 1,
@@ -88,9 +94,6 @@ proc init*(T: type JsonLexer, stream: AsciiInputStream, mode = defaultJsonMode):
     absIntVal: uint64 0,
     floatVal: 0'f,
     strVal: "")
-
-proc init*(T: type JsonLexer, stream: InputStream, mode = defaultJsonMode): T =
-  init(JsonLexer, AsciiInputStream(stream), mode)
 
 template error(error: JsonErrorKind) {.dirty.} =
   lexer.err = error
