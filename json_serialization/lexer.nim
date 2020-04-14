@@ -101,7 +101,8 @@ template error(error: JsonErrorKind) {.dirty.} =
   return
 
 template checkForUnexpectedEof {.dirty.} =
-  if lexer.stream.eof: error errUnexpectedEof
+  if not lexer.stream.readable:
+    error errUnexpectedEof
 
 template requireNextChar(): char =
   checkForUnexpectedEof()
@@ -178,13 +179,12 @@ proc skipWhitespace(lexer: var JsonLexer) =
     # Beware: this is a template, because the return
     # statement has to exit `skipWhitespace`.
     advance lexer.stream
-    if lexer.stream.eof: return
+    if not lexer.stream.readable: return
     if lexer.stream.peek() == '\n': advance lexer.stream
     lexer.line += 1
     lexer.lineStartPos = lexer.stream.pos
 
-  while true:
-    if lexer.stream.eof: return
+  while lexer.stream.readable:
     case lexer.stream.peek()
     of '/':
       advance lexer.stream
@@ -193,7 +193,7 @@ proc skipWhitespace(lexer: var JsonLexer) =
       of '/':
         while true:
           advance lexer.stream
-          if lexer.stream.eof: return
+          if not lexer.stream.readable: return
           case lexer.stream.peek()
           of '\r':
             handleCR()
@@ -204,7 +204,7 @@ proc skipWhitespace(lexer: var JsonLexer) =
       of '*':
         while true:
           advance lexer.stream
-          if lexer.stream.eof: return
+          if not lexer.stream.readable: return
           case lexer.stream.peek()
           of '\r':
             handleCR()
@@ -230,13 +230,13 @@ proc skipWhitespace(lexer: var JsonLexer) =
       break
 
 template requireMoreNumberChars(elseClause) =
-  if lexer.stream.eof:
+  if not lexer.stream.readable:
     elseClause
     error errNumberExpected
 
 template eatDigitAndPeek: char =
   advance lexer.stream
-  if lexer.stream.eof: return
+  if not lexer.stream.readable: return
   lexer.stream.peek()
 
 proc scanSign(lexer: var JsonLexer): int =
@@ -279,7 +279,7 @@ proc scanNumber(lexer: var JsonLexer) =
     let scannedValue = lexer.scanInt()
     checkForNonPortableInt scannedValue
     lexer.absIntVal = scannedValue
-    if lexer.stream.eof: return
+    if not lexer.stream.readable: return
     c = lexer.stream.peek()
     if c == '.':
       lexer.tok = tkFloat
@@ -322,7 +322,7 @@ proc scanIdentifier(lexer: var JsonLexer,
 proc next*(lexer: var JsonLexer) =
   lexer.skipWhitespace()
 
-  if lexer.stream.eof:
+  if not lexer.stream.readable:
     lexer.tok = tkEof
     return
 
