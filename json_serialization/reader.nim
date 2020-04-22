@@ -1,3 +1,5 @@
+{.experimental: "notnil".}
+
 import
   strutils, typetraits, macros, strformat,
   faststreams/input_stream, serialization/[object_serialization, errors],
@@ -164,6 +166,9 @@ func maxAbsValue(T: type[SomeInteger]): uint64 {.compileTime.} =
   elif T is int64: 9223372036854775808'u64
   else: uint64(high(T))
 
+proc isNotNilCheck[T](x: ref T not nil) {.compileTime.} = discard
+proc isNotNilCheck[T](x: ptr T not nil) {.compileTime.} = discard
+
 proc readValue*(r: var JsonReader, value: var auto) =
   mixin readValue
 
@@ -182,12 +187,16 @@ proc readValue*(r: var JsonReader, value: var auto) =
     r.lexer.next()
 
   elif value is ref|ptr:
-    if tok == tkNull:
-      value = nil
-      r.lexer.next()
-    else:
+    when compiles(isNotNilCheck(value)):
       allocPtr value
       value[] = readValue(r, type(value[]))
+    else:
+      if tok == tkNull:
+        value = nil
+        r.lexer.next()
+      else:
+        allocPtr value
+        value[] = readValue(r, type(value[]))
 
   elif value is enum:
     case tok
