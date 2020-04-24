@@ -124,8 +124,15 @@ proc writeIterable*(w: var JsonWriter, collection: auto) =
 
   append ']'
 
-proc writeArray[T](w: var JsonWriter, elements: openarray[T]) =
+proc writeArray*[T](w: var JsonWriter, elements: openarray[T]) =
   writeIterable(w, elements)
+
+# this construct catches `array[N, char]` which otherwise won't decompose into
+# openArray[char] - we treat any array-like thing-of-characters as a string in
+# the output
+template isStringLike(v: string|cstring|openArray[char]|seq[char]): bool = true
+template isStringLike[N](v: array[N, char]): bool = true
+template isStringLike(v: auto): bool = false
 
 proc writeValue*(w: var JsonWriter, value: auto) =
   mixin enumInstanceSerializedFields, writeValue, writeFieldIMPL
@@ -140,7 +147,7 @@ proc writeValue*(w: var JsonWriter, value: auto) =
       append "null"
     else:
       writeValue(w, value[])
-  elif value is string|cstring:
+  elif isStringLike(value):
     append '"'
 
     template addPrefixSlash(c) =

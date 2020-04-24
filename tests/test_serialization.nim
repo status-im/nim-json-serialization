@@ -149,3 +149,8 @@ suite "toJson tests":
     check:
        $original == $decoded
 
+  test "openArray[char]":
+    check:
+      "abc" == Json.decode(Json.encode(['a', 'b', 'c']), string)
+      "abc" == Json.decode(Json.encode(@['a', 'b', 'c']), string)
+
