@@ -1,6 +1,6 @@
 import
   unicode,
-  faststreams/input_stream, stew/objects,
+  faststreams/input_stream,
   types
 
 export
