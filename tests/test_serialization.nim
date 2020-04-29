@@ -149,8 +149,16 @@ suite "toJson tests":
     check:
        $original == $decoded
 
-  test "openArray[char]":
+  test "stringLike":
     check:
       "abc" == Json.decode(Json.encode(['a', 'b', 'c']), string)
       "abc" == Json.decode(Json.encode(@['a', 'b', 'c']), string)
+      ['a', 'b', 'c'] == Json.decode(Json.encode(@['a', 'b', 'c']), seq[char])
+      ['a', 'b', 'c'] == Json.decode(Json.encode("abc"), seq[char])
+      ['a', 'b', 'c'] == Json.decode(Json.encode(@['a', 'b', 'c']), array[3, char])
 
+    expect JsonReaderError: # too short
+      discard Json.decode(Json.encode(@['a', 'b']), array[3, char])
+
+    expect JsonReaderError: # too long
+      discard Json.decode(Json.encode(@['a', 'b']), array[1, char])

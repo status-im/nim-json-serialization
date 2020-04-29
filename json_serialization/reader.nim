@@ -169,6 +169,12 @@ func maxAbsValue(T: type[SomeInteger]): uint64 {.compileTime.} =
 proc isNotNilCheck[T](x: ref T not nil) {.compileTime.} = discard
 proc isNotNilCheck[T](x: ptr T not nil) {.compileTime.} = discard
 
+# this construct catches `array[N, char]` which otherwise won't decompose into
+# openArray[char] - we treat any array-like thing-of-characters as a string in
+# the output
+template isCharArray[N](v: array[N, char]): bool = true
+template isCharArray(v: auto): bool = false
+
 proc readValue*(r: var JsonReader, value: var auto) =
   mixin readValue
 
@@ -178,7 +184,20 @@ proc readValue*(r: var JsonReader, value: var auto) =
     r.requireToken tkString
     value = r.lexer.strVal
     r.lexer.next()
-
+  elif value is seq[char]:
+    r.requireToken tkString
+    value.setLen(r.lexer.strVal.len)
+    for i in 0..<r.lexer.strVal.len:
+      value[i] = r.lexer.strVal[i]
+    r.lexer.next()
+  elif isCharArray(value):
+    r.requireToken tkString
+    if r.lexer.strVal.len != value.len:
+      # Raise tkString because we expected a `"` earlier
+      r.raiseUnexpectedToken(etString)
+    for i in 0..<value.len:
+      value[i] = r.lexer.strVal[i]
+    r.lexer.next()
   elif value is bool:
     case tok
     of tkTrue: value = true
