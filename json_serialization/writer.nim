@@ -1,6 +1,6 @@
 import
   typetraits,
-  faststreams/output_stream, serialization, json
+  faststreams/[outputs, textio], serialization, json
 
 type
   JsonWriterState = enum
@@ -30,7 +30,7 @@ proc beginRecord*(w: var JsonWriter)
 proc writeValue*(w: var JsonWriter, value: auto)
 
 template append(x: untyped) =
-  w.stream.append x
+  write w.stream, x
 
 template indent =
   for i in 0 ..< w.nestingLevel:
@@ -178,15 +178,17 @@ proc writeValue*(w: var JsonWriter, value: auto) =
   elif value is bool:
     append if value: "true" else: "false"
   elif value is enum:
-    w.stream.append $ord(value)
+    w.stream.writeText ord(value)
   elif value is range:
     when low(value) < 0:
-      w.stream.append $int64(value)
+      w.stream.writeText int64(value)
     else:
-      w.stream.append $uint64(value)
+      w.stream.writeText uint64(value)
   elif value is SomeInteger:
-    w.stream.append $value
+    w.stream.writeText value
   elif value is SomeFloat:
+    # TODO Implement writeText for floats
+    #      to avoid the allocation here:
     append $value
   elif value is (seq or array or openArray):
     w.writeArray(value)

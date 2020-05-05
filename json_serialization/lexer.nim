@@ -1,10 +1,10 @@
 import
   unicode,
-  faststreams/input_stream,
+  faststreams/inputs,
   types
 
 export
-  input_stream
+  inputs
 
 type
   TokKind* = enum
@@ -62,10 +62,10 @@ const
                                    # The largest JSON number value is 1E308
 
 template peek(s: InputStream): char =
-  char input_stream.peek(s)
+  char inputs.peek(s)
 
 template read(s: InputStream): char =
-  char input_stream.read(s)
+  char inputs.read(s)
 
 proc hexCharValue(c: char): int {.inline.} =
   case c

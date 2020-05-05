@@ -2,7 +2,7 @@
 
 import
   strutils, typetraits, macros, strformat,
-  faststreams/input_stream, serialization/[object_serialization, errors],
+  faststreams/inputs, serialization/[object_serialization, errors],
   types, lexer
 
 export

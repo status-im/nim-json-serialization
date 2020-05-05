@@ -8,9 +8,10 @@ template expectedToken(token: TokKind, additionalCheck = true) {.dirty.} =
     lexer.tok == token
     bool(additionalCheck)
 
-template lexerTest(name, input: string, expectations) {.dirty.} =
+template lexerTest(name, inputParam: string, expectations) {.dirty.} =
   test name:
-    var stream = memoryInput(dedent(input))
+    var input = dedent(inputParam)
+    var stream = unsafeMemoryInput(input)
     var lexer = JsonLexer.init stream
     expectations
 
