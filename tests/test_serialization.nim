@@ -18,9 +18,10 @@ type
   Invalid = object
     distance: Mile
 
-  Reserved = object
+  HasUnusualFieldNames = object
     # Using Nim reserved keyword
     `type`: string
+    renamedField {.serializedFieldName("renamed").}: string
 
   MyKind = enum
     Apple
@@ -125,11 +126,11 @@ suite "toJson tests":
     expect JsonReaderError:
       discard Json.decode(jsonValue, uint64, mode = Portable)
 
-  test "Using Nim reserved keyword `type`":
-    let r = Reserved(`type`: "uint8")
+  test "Unusual field names":
+    let r = HasUnusualFieldNames(`type`: "uint8", renamedField: "field")
     check:
-      r.toJSON == """{"type":"uint8"}"""
-      r == Json.decode("""{"type":"uint8"}""", Reserved)
+      r.toJSON == """{"type":"uint8","renamed":"field"}"""
+      r == Json.decode("""{"type":"uint8", "renamed":"field"}""", HasUnusualFieldNames)
 
   test "Option types":
     let
