@@ -35,9 +35,11 @@ type
     deserializedField*: string
     innerException*: ref CatchableError
 
-  UnexpectedToken* = object of JsonReaderError
+  UnexpectedTokenError* = object of JsonReaderError
     encountedToken*: TokKind
     expectedToken*: ExpectedTokenCategory
+
+  UnexpectedValueError* = object of JsonReaderError
 
   IntOverflowError* = object of JsonReaderError
     isNegative: bool
@@ -54,7 +56,7 @@ method formatMsg*(err: ref JsonReaderError, filename: string): string =
 method formatMsg*(err: ref UnexpectedField, filename: string): string =
   fmt"{filename}({err.line}, {err.col}) Unexpected field '{err.encounteredField}' while deserializing {err.deserializedType}"
 
-method formatMsg*(err: ref UnexpectedToken, filename: string): string =
+method formatMsg*(err: ref UnexpectedTokenError, filename: string): string =
   fmt"{filename}({err.line}, {err.col}) Unexpected token '{err.encountedToken}' in place of '{err.expectedToken}'"
 
 method formatMsg*(err: ref GenericJsonReaderError, filename: string): string =
@@ -63,15 +65,25 @@ method formatMsg*(err: ref GenericJsonReaderError, filename: string): string =
 method formatMsg*(err: ref IntOverflowError, filename: string): string =
   fmt"{filename}({err.line}, {err.col}) The value '{err.valueStr}' is outside of the allowed range"
 
+method formatMsg*(err: ref UnexpectedValueError, filename: string): string =
+  fmt"{filename}({err.line}, {err.col}) {err.msg}"
+
 proc assignLineNumber*(ex: ref JsonReaderError, r: JsonReader) =
   ex.line = r.lexer.line
   ex.col = r.lexer.tokenStartCol
 
-proc raiseUnexpectedToken*(r: JsonReader, expected: ExpectedTokenCategory) {.noreturn.} =
-  var ex = new UnexpectedToken
+proc raiseUnexpectedToken*(r: JsonReader, expected: ExpectedTokenCategory)
+                          {.noreturn.} =
+  var ex = new UnexpectedTokenError
   ex.assignLineNumber(r)
   ex.encountedToken = r.lexer.tok
   ex.expectedToken = expected
+  raise ex
+
+proc raiseUnexpectedValue*(r: JsonReader, msg: string) {.noreturn.} =
+  var ex = new UnexpectedValueError
+  ex.assignLineNumber(r)
+  ex.msg = msg
   raise ex
 
 proc raiseIntOverflow*(r: JsonReader, absIntVal: uint64, isNegative: bool) {.noreturn.} =
