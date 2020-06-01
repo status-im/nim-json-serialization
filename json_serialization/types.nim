@@ -11,6 +11,8 @@ type
 
   JsonError* = object of SerializationError
 
+  JsonString* = distinct string
+
 const
   defaultJsonMode* = JsonMode.Relaxed
   minPortableInt* = -9007199254740991 # -2**53 + 1

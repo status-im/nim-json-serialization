@@ -1,6 +1,7 @@
 import
   typetraits,
-  faststreams/[outputs, textio], serialization, json
+  faststreams/[outputs, textio], serialization, json,
+  types
 
 type
   JsonWriterState = enum
@@ -15,7 +16,8 @@ type
     nestingLevel*: int     # read-only
     state: JsonWriterState
 
-  JsonString* = distinct string
+export
+  JsonString
 
 proc init*(T: type JsonWriter, stream: OutputStream,
            pretty = false, typeAnnotations = false): T =
