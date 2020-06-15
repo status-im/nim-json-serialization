@@ -50,23 +50,27 @@ func valueStr(err: ref IntOverflowError): string =
     result.add '-'
   result.add($err.absIntVal)
 
+template tryFmt(expr: untyped): string =
+  try: expr
+  except CatchableError: ""
+
 method formatMsg*(err: ref JsonReaderError, filename: string): string =
-  fmt"{filename}({err.line}, {err.col}) Error while reading json file"
+  tryFmt: fmt"{filename}({err.line}, {err.col}) Error while reading json file"
 
 method formatMsg*(err: ref UnexpectedField, filename: string): string =
-  fmt"{filename}({err.line}, {err.col}) Unexpected field '{err.encounteredField}' while deserializing {err.deserializedType}"
+  tryFmt: fmt"{filename}({err.line}, {err.col}) Unexpected field '{err.encounteredField}' while deserializing {err.deserializedType}"
 
 method formatMsg*(err: ref UnexpectedTokenError, filename: string): string =
-  fmt"{filename}({err.line}, {err.col}) Unexpected token '{err.encountedToken}' in place of '{err.expectedToken}'"
+  tryFmt: fmt"{filename}({err.line}, {err.col}) Unexpected token '{err.encountedToken}' in place of '{err.expectedToken}'"
 
 method formatMsg*(err: ref GenericJsonReaderError, filename: string): string =
-  fmt"{filename}({err.line}, {err.col}) Exception encountered while deserializing '{err.deserializedField}': [{err.innerException.name}] {err.innerException.msg}"
+  tryFmt: fmt"{filename}({err.line}, {err.col}) Exception encountered while deserializing '{err.deserializedField}': [{err.innerException.name}] {err.innerException.msg}"
 
 method formatMsg*(err: ref IntOverflowError, filename: string): string =
-  fmt"{filename}({err.line}, {err.col}) The value '{err.valueStr}' is outside of the allowed range"
+  tryFmt: fmt"{filename}({err.line}, {err.col}) The value '{err.valueStr}' is outside of the allowed range"
 
 method formatMsg*(err: ref UnexpectedValueError, filename: string): string =
-  fmt"{filename}({err.line}, {err.col}) {err.msg}"
+  tryFmt: fmt"{filename}({err.line}, {err.col}) {err.msg}"
 
 proc assignLineNumber*(ex: ref JsonReaderError, r: JsonReader) =
   ex.line = r.lexer.line
@@ -187,7 +191,8 @@ proc isNotNilCheck[T](x: ptr T not nil) {.compileTime.} = discard
 template isCharArray[N](v: array[N, char]): bool = true
 template isCharArray(v: auto): bool = false
 
-proc readValue*(r: var JsonReader, value: var auto) =
+proc readValue*(r: var JsonReader, value: var auto)
+               {.raises: [SerializationError, IOError, Defect].} =
   mixin readValue
 
   let tok {.used.} = r.lexer.tok
