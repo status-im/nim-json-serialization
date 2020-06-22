@@ -52,7 +52,7 @@ func valueStr(err: ref IntOverflowError): string =
 
 template tryFmt(expr: untyped): string =
   try: expr
-  except CatchableError: ""
+  except CatchableError as err: err.msg
 
 method formatMsg*(err: ref JsonReaderError, filename: string): string =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Error while reading json file"
@@ -191,8 +191,8 @@ proc isNotNilCheck[T](x: ptr T not nil) {.compileTime.} = discard
 template isCharArray[N](v: array[N, char]): bool = true
 template isCharArray(v: auto): bool = false
 
-proc readValue*(r: var JsonReader, value: var auto)
-               {.raises: [SerializationError, IOError, Defect].} =
+proc readValue*[T](r: var JsonReader, value: var T)
+                  {.raises: [SerializationError, IOError, Defect].} =
   mixin readValue
 
   let tok {.used.} = r.lexer.tok
@@ -237,8 +237,11 @@ proc readValue*(r: var JsonReader, value: var auto)
   elif value is enum:
     case tok
     of tkString:
-      # TODO: don't proprage the `parseEnum` exception
-      value.setParsed(r.lexer.strVal)
+      try:
+        value.setParsed(r.lexer.strVal)
+      except ValueError as err:
+        const typeName = typetraits.name(T)
+        r.raiseUnexpectedValue("Expected valid '" & typeName & "' value")
     of tkInt:
       # TODO: validate that the value is in range
       value = type(value)(r.lexer.absIntVal)
@@ -328,5 +331,5 @@ proc readValue*(r: var JsonReader, value: var auto)
     r.skipToken tkCurlyRi
 
   else:
-    const typeName = typetraits.name(value.type)
+    const typeName = typetraits.name(T)
     {.error: "Failed to convert to JSON an unsupported type: " & typeName.}
