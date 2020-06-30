@@ -11,6 +11,7 @@ export
 type
   JsonReader* = object
     lexer*: JsonLexer
+    forwardCompatible: bool
 
   JsonReaderError* = object of JsonError
     line*, col*: int
@@ -20,6 +21,7 @@ type
     deserializedType*: cstring
 
   ExpectedTokenCategory* = enum
+    etValue = "value"
     etBool = "bool literal"
     etInt = "integer"
     etEnum = "enum value (int or string)"
@@ -115,7 +117,11 @@ proc handleReadException*(r: JsonReader,
   ex.innerException = err
   raise ex
 
-proc init*(T: type JsonReader, stream: InputStream, mode = defaultJsonMode): T =
+proc init*(T: type JsonReader,
+           stream: InputStream,
+           mode = defaultJsonMode,
+           forwardCompatible = false): T =
+  result.forwardCompatible = forwardCompatible
   result.lexer = JsonLexer.init(stream, mode)
   result.lexer.next()
 
@@ -137,6 +143,39 @@ proc requireToken*(r: JsonReader, tk: TokKind) =
 proc skipToken*(r: var JsonReader, tk: TokKind) =
   r.requireToken tk
   r.lexer.next()
+
+proc skipSingleJsValue(r: var JsonReader) =
+  case r.lexer.tok
+  of tkCurlyLe:
+    r.lexer.next()
+    if r.lexer.tok != tkCurlyRi:
+      while true:
+        r.skipToken tkString
+        r.skipToken tkColon
+        r.skipSingleJsValue()
+        if r.lexer.tok == tkCurlyRi:
+          break
+        r.skipToken tkComma
+    # Skip over the last tkCurlyRi
+    r.lexer.next()
+
+  of tkBracketLe:
+    r.lexer.next()
+    if r.lexer.tok != tkBracketRi:
+      while true:
+        r.skipSingleJsValue()
+        if r.lexer.tok == tkBracketRi:
+          break
+        else:
+          r.skipToken tkComma
+    # Skip over the last tkBracketRi
+    r.lexer.next()
+
+  of tkColon, tkComma, tkEof, tkError, tkBracketRi, tkCurlyRi:
+    r.raiseUnexpectedToken etValue
+
+  of tkString, tkInt, tkNegativeInt, tkFloat, tkTrue, tkFalse, tkNull:
+    r.lexer.next()
 
 proc allocPtr[T](p: var ptr T) =
   p = create(T)
@@ -320,6 +359,8 @@ proc readValue*[T](r: var JsonReader, value: var T)
         r.skipToken tkColon
         if reader != nil:
           reader(value, r)
+        elif r.forwardCompatible:
+          r.skipSingleJsValue()
         else:
           const typeName = typetraits.name(T)
           r.raiseUnexpectedField(r.lexer.strVal, typeName)

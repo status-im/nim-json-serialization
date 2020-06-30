@@ -101,6 +101,27 @@ suite "toJson tests":
       decoded.y == "test"
       decoded.distance.int == 20
 
+  test "handle additional fields":
+    let json = dedent"""
+        {
+          "x": -20,
+          "futureObject": {"a": -1, "b": [1, 2.0, 3.1], "c": null, "d": true},
+          "futureBool": false,
+          "y": "y value"
+        }
+      """
+
+    let decoded = Json.decode(json, Simple, forwardCompatible = true)
+
+    check:
+      decoded.x == -20
+      decoded.y == "y value"
+      decoded.distance.int == 0
+
+    expect UnexpectedField:
+      let shouldNotDecode = Json.decode(json, Simple)
+      echo "This should not have decoded ", shouldNotDecode
+
   test "arrays are printed correctly":
     var x = HoldsArray(data: @[1, 2, 3, 4])
 
