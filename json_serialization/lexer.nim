@@ -41,7 +41,7 @@ type
     errNonPortableInt       = "number is outside the range of portable values"
 
   JsonLexer* = object
-    stream: InputStream
+    stream*: InputStream
     mode*: JsonMode
 
     line*: int
@@ -60,6 +60,23 @@ const
                  1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
                  1e20, 1e21, 1e22] # TODO: this table should be much larger
                                    # The largest JSON number value is 1E308
+
+proc renderTok*(s: JsonLexer): string =
+  case s.tok
+  of tkError, tkEof: ""
+  of tkString: ""
+  of tkInt: ""
+  of tkNegativeInt: ""
+  of tkFloat: ""
+  of tkTrue: "true"
+  of tkFalse: "false"
+  of tkNull: "null"
+  of tkCurlyLe: "{"
+  of tkCurlyRi: "}"
+  of tkBracketLe: "["
+  of tkBracketRi: "]"
+  of tkColon: ":"
+  of tkComma: ","
 
 template peek(s: InputStream): char =
   char inputs.peek(s)

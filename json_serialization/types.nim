@@ -1,4 +1,5 @@
 import
+  tables,
   serialization/errors
 
 export
@@ -17,4 +18,7 @@ const
   defaultJsonMode* = JsonMode.Relaxed
   minPortableInt* = -9007199254740991 # -2**53 + 1
   maxPortableInt* =  9007199254740991 # +2**53 - 1
+
+template `==`*(lhs, rhs: JsonString): bool =
+  string(lhs) == string(rhs)
 

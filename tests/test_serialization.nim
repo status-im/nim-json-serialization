@@ -36,6 +36,11 @@ type
   MyUseCaseObject = object
     field: MyCaseObject
 
+  HasJsonString = object
+    name: string
+    data: JsonString
+    id: int
+
 # TODO `borrowSerialization` still doesn't work
 # properly when it's placed in another module:
 Meter.borrowSerialization int
@@ -111,7 +116,7 @@ suite "toJson tests":
         }
       """
 
-    let decoded = Json.decode(json, Simple, forwardCompatible = true)
+    let decoded = Json.decode(json, Simple, allowUnknownFields = true)
 
     check:
       decoded.x == -20
@@ -184,3 +189,51 @@ suite "toJson tests":
 
     expect JsonReaderError: # too long
       discard Json.decode(Json.encode(@['a', 'b']), array[1, char])
+
+  test "Holders of JsonString":
+    let
+      data1 = dedent"""
+        {
+          "name": "Data 1",
+          "data": [1, 2, 3, 4],
+          "id": 101
+        }
+      """
+    let
+      data2 = dedent"""
+        {
+          "name": "Data 2",
+          "data": "some string",
+          "id": 1002
+        }
+      """
+    let
+      data3 = dedent"""
+        {
+          "name": "Data 3",
+          "data": {"field1": 10, "field2": [1, 2, 3], "field3": "test"},
+          "id": 10003
+        }
+      """
+
+    try:
+      let
+        d1 = Json.decode(data1, HasJsonString)
+        d2 = Json.decode(data2, HasJsonString)
+        d3 = Json.decode(data3, HasJsonString)
+
+      check:
+        d1.name == "Data 1"
+        d1.data == JsonString "[1, 2, 3, 4]"
+        d1.id == 101
+
+        d2.name == "Data 2"
+        d2.data == JsonString "\"some string\""
+        d2.id == 1002
+
+        d3.name == "Data 3"
+        d3.data == JsonString """{"field1": 10, "field2": [1, 2, 3], "field3": "test"}"""
+        d3.id == 10003
+    except SerializationError as e:
+      echo e.formatMsg("<>")
+

@@ -11,7 +11,7 @@ export
 type
   JsonReader* = object
     lexer*: JsonLexer
-    forwardCompatible: bool
+    allowUnknownFields: bool
 
   JsonReaderError* = object of JsonError
     line*, col*: int
@@ -120,8 +120,8 @@ proc handleReadException*(r: JsonReader,
 proc init*(T: type JsonReader,
            stream: InputStream,
            mode = defaultJsonMode,
-           forwardCompatible = false): T =
-  result.forwardCompatible = forwardCompatible
+           allowUnknownFields = false): T =
+  result.allowUnknownFields = allowUnknownFields
   result.lexer = JsonLexer.init(stream, mode)
   result.lexer.next()
 
@@ -177,12 +177,23 @@ proc skipSingleJsValue(r: var JsonReader) =
   of tkString, tkInt, tkNegativeInt, tkFloat, tkTrue, tkFalse, tkNull:
     r.lexer.next()
 
+proc captureSingleJsValue(r: var JsonReader, value: var string) =
+  value = $r.lexer.tok
+  let pos = r.lexer.stream.createRewindPoint()
+  echo "skipiing ", pos
+  r.skipSingleJsValue()
+  let finalPos = r.lexer.stream.pos
+  echo "done ", finalPos
+  echo "Rewiding ", finalPos - pos
+  r.lexer.stream.rewindTo pos
+  value.setLen(finalPos - pos)
+  doAssert r.lexer.stream.readInto(value)
+
 proc allocPtr[T](p: var ptr T) =
   p = create(T)
 
 proc allocPtr[T](p: var ref T) =
   p = new(T)
-
 
 iterator readArray*(r: var JsonReader, ElemType: typedesc): ElemType =
   mixin readValue
@@ -240,12 +251,14 @@ proc readValue*[T](r: var JsonReader, value: var T)
     r.requireToken tkString
     value = r.lexer.strVal
     r.lexer.next()
+  
   elif value is seq[char]:
     r.requireToken tkString
     value.setLen(r.lexer.strVal.len)
     for i in 0..<r.lexer.strVal.len:
       value[i] = r.lexer.strVal[i]
     r.lexer.next()
+  
   elif isCharArray(value):
     r.requireToken tkString
     if r.lexer.strVal.len != value.len:
@@ -254,6 +267,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
     for i in 0..<value.len:
       value[i] = r.lexer.strVal[i]
     r.lexer.next()
+  
   elif value is bool:
     case tok
     of tkTrue: value = true
@@ -342,6 +356,9 @@ proc readValue*[T](r: var JsonReader, value: var T)
     readValue(r, value[high(value)])
     r.skipToken tkBracketRi
 
+  elif value is JsonString:
+    r.captureSingleJsValue(string value)
+
   elif value is (object or tuple):
     type T = type(value)
     r.skipToken tkCurlyLe
@@ -359,7 +376,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
         r.skipToken tkColon
         if reader != nil:
           reader(value, r)
-        elif r.forwardCompatible:
+        elif r.allowUnknownFields:
           r.skipSingleJsValue()
         else:
           const typeName = typetraits.name(T)
