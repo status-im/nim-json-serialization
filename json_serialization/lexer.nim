@@ -1,5 +1,5 @@
 import
-  unicode,
+  unicode, json,
   faststreams/inputs,
   types
 
@@ -61,22 +61,39 @@ const
                  1e20, 1e21, 1e22] # TODO: this table should be much larger
                                    # The largest JSON number value is 1E308
 
-proc renderTok*(s: JsonLexer): string =
-  case s.tok
-  of tkError, tkEof: ""
-  of tkString: ""
-  of tkInt: ""
-  of tkNegativeInt: ""
-  of tkFloat: ""
-  of tkTrue: "true"
-  of tkFalse: "false"
-  of tkNull: "null"
-  of tkCurlyLe: "{"
-  of tkCurlyRi: "}"
-  of tkBracketLe: "["
-  of tkBracketRi: "]"
-  of tkColon: ":"
-  of tkComma: ","
+proc renderTok*(lexer: JsonLexer, output: var string) =
+  case lexer.tok
+  of tkError, tkEof:
+    discard
+  of tkString:
+    output.add '"'
+    lexer.strVal.escapeJsonUnquoted output
+    output.add '"'
+  of tkInt:
+    output.add $lexer.absIntVal
+  of tkNegativeInt:
+    output.add '-'
+    output.add $lexer.absIntVal
+  of tkFloat:
+    output.add $lexer.floatVal
+  of tkTrue:
+    output.add "true"
+  of tkFalse:
+    output.add "false"
+  of tkNull:
+    output.add "null"
+  of tkCurlyLe:
+    output.add '{'
+  of tkCurlyRi:
+    output.add '}'
+  of tkBracketLe:
+    output.add '['
+  of tkBracketRi:
+    output.add ']'
+  of tkColon:
+    output.add ':'
+  of tkComma:
+    output.add ','
 
 template peek(s: InputStream): char =
   char inputs.peek(s)

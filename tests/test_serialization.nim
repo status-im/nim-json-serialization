@@ -224,7 +224,7 @@ suite "toJson tests":
 
       check:
         d1.name == "Data 1"
-        d1.data == JsonString "[1, 2, 3, 4]"
+        d1.data == JsonString "[1,2,3,4]"
         d1.id == 101
 
         d2.name == "Data 2"
@@ -232,7 +232,7 @@ suite "toJson tests":
         d2.id == 1002
 
         d3.name == "Data 3"
-        d3.data == JsonString """{"field1": 10, "field2": [1, 2, 3], "field3": "test"}"""
+        d3.data == JsonString """{"field1":10,"field2":[1,2,3],"field3":"test"}"""
         d3.id == 10003
     except SerializationError as e:
       echo e.formatMsg("<>")

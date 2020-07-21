@@ -177,17 +177,48 @@ proc skipSingleJsValue(r: var JsonReader) =
   of tkString, tkInt, tkNegativeInt, tkFloat, tkTrue, tkFalse, tkNull:
     r.lexer.next()
 
-proc captureSingleJsValue(r: var JsonReader, value: var string) =
-  value = $r.lexer.tok
-  let pos = r.lexer.stream.createRewindPoint()
-  echo "skipiing ", pos
-  r.skipSingleJsValue()
-  let finalPos = r.lexer.stream.pos
-  echo "done ", finalPos
-  echo "Rewiding ", finalPos - pos
-  r.lexer.stream.rewindTo pos
-  value.setLen(finalPos - pos)
-  doAssert r.lexer.stream.readInto(value)
+proc captureSingleJsValue(r: var JsonReader, output: var string) =
+  r.lexer.renderTok output
+  case r.lexer.tok
+  of tkCurlyLe:
+    r.lexer.next()
+    if r.lexer.tok != tkCurlyRi:
+      while true:
+        r.lexer.renderTok output
+        r.skipToken tkString
+        r.lexer.renderTok output
+        r.skipToken tkColon
+        r.captureSingleJsValue(output)
+        r.lexer.renderTok output
+        if r.lexer.tok == tkCurlyRi:
+          break
+        else:
+          r.skipToken tkComma
+    else:
+      output.add '}'
+    # Skip over the last tkCurlyRi
+    r.lexer.next()
+
+  of tkBracketLe:
+    r.lexer.next()
+    if r.lexer.tok != tkBracketRi:
+      while true:
+        r.captureSingleJsValue(output)
+        r.lexer.renderTok output
+        if r.lexer.tok == tkBracketRi:
+          break
+        else:
+          r.skipToken tkComma
+    else:
+      output.add ']'
+    # Skip over the last tkBracketRi
+    r.lexer.next()
+
+  of tkColon, tkComma, tkEof, tkError, tkBracketRi, tkCurlyRi:
+    r.raiseUnexpectedToken etValue
+
+  of tkString, tkInt, tkNegativeInt, tkFloat, tkTrue, tkFalse, tkNull:
+    r.lexer.next()
 
 proc allocPtr[T](p: var ptr T) =
   p = create(T)
@@ -251,14 +282,14 @@ proc readValue*[T](r: var JsonReader, value: var T)
     r.requireToken tkString
     value = r.lexer.strVal
     r.lexer.next()
-  
+
   elif value is seq[char]:
     r.requireToken tkString
     value.setLen(r.lexer.strVal.len)
     for i in 0..<r.lexer.strVal.len:
       value[i] = r.lexer.strVal[i]
     r.lexer.next()
-  
+
   elif isCharArray(value):
     r.requireToken tkString
     if r.lexer.strVal.len != value.len:
@@ -267,7 +298,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
     for i in 0..<value.len:
       value[i] = r.lexer.strVal[i]
     r.lexer.next()
-  
+
   elif value is bool:
     case tok
     of tkTrue: value = true
