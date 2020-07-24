@@ -142,13 +142,16 @@ proc writeValue*(w: var JsonWriter, value: auto) =
   when value is JsonNode:
     append if w.hasPrettyOutput: value.pretty
            else: $value
+
   elif value is JsonString:
     append string(value)
+
   elif value is ref:
     if value == nil:
       append "null"
     else:
       writeValue(w, value[])
+
   elif isStringLike(value):
     append '"'
 
@@ -177,23 +180,30 @@ proc writeValue*(w: var JsonWriter, value: auto) =
       else: append c
 
     append '"'
+
   elif value is bool:
     append if value: "true" else: "false"
+
   elif value is enum:
     w.stream.writeText ord(value)
+
   elif value is range:
     when low(value) < 0:
       w.stream.writeText int64(value)
     else:
       w.stream.writeText uint64(value)
+
   elif value is SomeInteger:
     w.stream.writeText value
+
   elif value is SomeFloat:
     # TODO Implement writeText for floats
     #      to avoid the allocation here:
     append $value
+
   elif value is (seq or array or openArray):
     w.writeArray(value)
+
   elif value is (object or tuple):
     w.beginRecord(type(value))
     type RecordType = type value
@@ -203,6 +213,7 @@ proc writeValue*(w: var JsonWriter, value: auto) =
       w.writeFieldIMPL(FieldTag[RecordType, fieldName, FieldType], field, value)
       w.state = AfterField
     w.endRecord()
+
   else:
     const typeName = typetraits.name(value.type)
     {.fatal: "Failed to convert to JSON an unsupported type: " & typeName.}

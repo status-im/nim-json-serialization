@@ -1,5 +1,5 @@
 import
-  strutils, unittest,
+  strutils, unittest, json,
   serialization/object_serialization,
   serialization/testing/generic_suite,
   ../json_serialization, ./utils,
@@ -39,6 +39,11 @@ type
   HasJsonString = object
     name: string
     data: JsonString
+    id: int
+
+  HasJsonNode = object
+    name: string
+    data: JsonNode
     id: int
 
 # TODO `borrowSerialization` still doesn't work
@@ -190,7 +195,7 @@ suite "toJson tests":
     expect JsonReaderError: # too long
       discard Json.decode(Json.encode(@['a', 'b']), array[1, char])
 
-  test "Holders of JsonString":
+  proc testJsonHolders(HasJsonData: type) =
     let
       data1 = dedent"""
         {
@@ -218,22 +223,41 @@ suite "toJson tests":
 
     try:
       let
-        d1 = Json.decode(data1, HasJsonString)
-        d2 = Json.decode(data2, HasJsonString)
-        d3 = Json.decode(data3, HasJsonString)
+        d1 = Json.decode(data1, HasJsonData)
+        d2 = Json.decode(data2, HasJsonData)
+        d3 = Json.decode(data3, HasJsonData)
 
       check:
         d1.name == "Data 1"
-        d1.data == JsonString "[1,2,3,4]"
+        $d1.data == "[1,2,3,4]"
         d1.id == 101
 
         d2.name == "Data 2"
-        d2.data == JsonString "\"some string\""
+        $d2.data == "\"some string\""
         d2.id == 1002
 
         d3.name == "Data 3"
-        d3.data == JsonString """{"field1":10,"field2":[1,2,3],"field3":"test"}"""
+        $d3.data == """{"field1":10,"field2":[1,2,3],"field3":"test"}"""
         d3.id == 10003
+
+      let
+        d1Encoded = Json.encode(d1)
+        d2Encoded = Json.encode(d2)
+        d3Encoded = Json.encode(d3)
+
+      check:
+        d1Encoded == $parseJson(data1)
+        d2Encoded == $parseJson(data2)
+        d3Encoded == $parseJson(data3)
+
     except SerializationError as e:
+      echo e.getStackTrace
       echo e.formatMsg("<>")
+      raise e
+
+  test "Holders of JsonString":
+    testJsonHolders HasJsonString
+
+  test "Holders of JsonNode":
+    testJsonHolders HasJsonNode
 

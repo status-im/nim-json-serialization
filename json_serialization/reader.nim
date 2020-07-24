@@ -1,9 +1,11 @@
 {.experimental: "notnil".}
 
 import
-  strutils, typetraits, macros, strformat,
+  tables, strutils, typetraits, macros, strformat,
   faststreams/inputs, serialization/[object_serialization, errors],
   types, lexer
+
+from json import JsonNode, JsonNodeKind
 
 export
   types, errors
@@ -144,6 +146,93 @@ proc skipToken*(r: var JsonReader, tk: TokKind) =
   r.requireToken tk
   r.lexer.next()
 
+func maxAbsValue(T: type[SomeInteger]): uint64 {.compileTime.} =
+  when T is int8 : 128'u64
+  elif T is int16: 32768'u64
+  elif T is int32: 2147483648'u64
+  elif T is int64: 9223372036854775808'u64
+  else: uint64(high(T))
+
+proc parseJsonNode(r: var JsonReader): JsonNode
+                  {.gcsafe, raises: [IOError, JsonReaderError, Defect].}
+
+proc readJsonNodeField(r: var JsonReader, field: var JsonNode) =
+  if field != nil:
+    r.raiseUnexpectedValue("Unexpected duplicated field name")
+
+  r.lexer.next()
+  r.skipToken tkColon
+
+  field = r.parseJsonNode()
+
+proc parseJsonNode(r: var JsonReader): JsonNode =
+  const maxIntValue = maxAbsValue(BiggestInt)
+
+  case r.lexer.tok
+  of tkCurlyLe:
+    result = JsonNode(kind: JObject)
+    r.lexer.next()
+    if r.lexer.tok != tkCurlyRi:
+      while r.lexer.tok == tkString:
+        r.readJsonNodeField(result.fields.mgetOrPut(r.lexer.strVal, nil))
+        if r.lexer.tok == tkComma:
+          r.lexer.next()
+        else:
+          break
+    r.skipToken tkCurlyRi
+
+  of tkBracketLe:
+    result = JsonNode(kind: JArray)
+    r.lexer.next()
+    if r.lexer.tok != tkBracketRi:
+      while true:
+        result.elems.add r.parseJsonNode()
+        if r.lexer.tok == tkBracketRi:
+          break
+        else:
+          r.skipToken tkComma
+    # Skip over the last tkBracketRi
+    r.lexer.next()
+
+  of tkColon, tkComma, tkEof, tkError, tkBracketRi, tkCurlyRi:
+    r.raiseUnexpectedToken etValue
+
+  of tkString:
+    result = JsonNode(kind: JString, str: r.lexer.strVal)
+    r.lexer.next()
+
+  of tkInt:
+    if r.lexer.absIntVal > maxIntValue:
+      r.raiseIntOverflow(r.lexer.absIntVal, false)
+    else:
+      result = JsonNode(kind: JInt, num: BiggestInt r.lexer.absIntVal)
+      r.lexer.next()
+
+  of tkNegativeInt:
+    if r.lexer.absIntVal > maxIntValue + 1:
+      r.raiseIntOverflow(r.lexer.absIntVal, true)
+    else:
+      # `0 - x` is a magical trick that turns the unsigned
+      # value into its negative signed counterpart:
+      result = JsonNode(kind: JInt, num: cast[int64](uint64(0) - r.lexer.absIntVal))
+      r.lexer.next()
+
+  of tkFloat:
+    result = JsonNode(kind: JFloat, fnum: r.lexer.floatVal)
+    r.lexer.next()
+
+  of tkTrue:
+    result = JsonNode(kind: JBool, bval: true)
+    r.lexer.next()
+
+  of tkFalse:
+    result = JsonNode(kind: JBool, bval: false)
+    r.lexer.next()
+
+  of tkNull:
+    result = JsonNode(kind: JNull)
+    r.lexer.next()
+
 proc skipSingleJsValue(r: var JsonReader) =
   case r.lexer.tok
   of tkCurlyLe:
@@ -256,13 +345,6 @@ iterator readObject*(r: var JsonReader, KeyType: typedesc, ValueType: typedesc):
       r.lexer.next()
   r.skipToken tkCurlyRi
 
-func maxAbsValue(T: type[SomeInteger]): uint64 {.compileTime.} =
-  when T is int8 : 128'u64
-  elif T is int16: 32768'u64
-  elif T is int32: 2147483648'u64
-  elif T is int64: 9223372036854775808'u64
-  else: uint64(high(T))
-
 proc isNotNilCheck[T](x: ref T not nil) {.compileTime.} = discard
 proc isNotNilCheck[T](x: ptr T not nil) {.compileTime.} = discard
 
@@ -278,7 +360,13 @@ proc readValue*[T](r: var JsonReader, value: var T)
 
   let tok {.used.} = r.lexer.tok
 
-  when value is string:
+  when value is JsonString:
+    r.captureSingleJsValue(string value)
+
+  elif value is JsonNode:
+    value = r.parseJsonNode()
+
+  elif value is string:
     r.requireToken tkString
     value = r.lexer.strVal
     r.lexer.next()
@@ -337,8 +425,9 @@ proc readValue*[T](r: var JsonReader, value: var T)
     type TargetType = type(value)
     const maxValidValue = maxAbsValue(TargetType)
 
-    if r.lexer.absIntVal > maxValidValue:
-      r.raiseIntOverflow r.lexer.absIntVal, tok == tkNegativeInt
+    let isNegative = tok == tkNegativeInt
+    if r.lexer.absIntVal > maxValidValue + uint64(isNegative):
+      r.raiseIntOverflow r.lexer.absIntVal, isNegative
 
     case tok
     of tkInt:
@@ -386,9 +475,6 @@ proc readValue*[T](r: var JsonReader, value: var T)
       r.skipToken tkComma
     readValue(r, value[high(value)])
     r.skipToken tkBracketRi
-
-  elif value is JsonString:
-    r.captureSingleJsValue(string value)
 
   elif value is (object or tuple):
     type T = type(value)
