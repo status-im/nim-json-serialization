@@ -30,6 +30,7 @@ type
     etNumber = "number"
     etString = "string"
     etComma = "comma"
+    etColon = "colon"
     etBracketLe = "array start bracket"
     etBracketRi = "array end bracker"
     etCurrlyLe = "object start bracket"
@@ -140,6 +141,7 @@ proc requireToken*(r: JsonReader, tk: TokKind) =
       of tkBracketLe: etBracketLe
       of tkCurlyRi: etCurrlyRi
       of tkCurlyLe: etCurrlyLe
+      of tkColon: etColon
       else: (doAssert false; etBool)
 
 proc skipToken*(r: var JsonReader, tk: TokKind) =
