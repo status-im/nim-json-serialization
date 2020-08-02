@@ -226,3 +226,7 @@ proc toJson*(v: auto, pretty = false, typeAnnotations = false): string =
   w.writeValue v
   return s.getOutput(string)
 
+template serializesAsTextInJson*(T: type[enum]) =
+  template writeValue*(w: var JsonWriter, val: T) =
+    w.writeValue $val
+
