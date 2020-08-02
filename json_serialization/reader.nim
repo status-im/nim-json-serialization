@@ -330,22 +330,31 @@ iterator readArray*(r: var JsonReader, ElemType: typedesc): ElemType =
       r.lexer.next()
   r.skipToken tkBracketRi
 
-iterator readObject*(r: var JsonReader, KeyType: typedesc, ValueType: typedesc): (KeyType, ValueType) =
+iterator readObjectFields*(r: var JsonReader,
+                           KeyType: type): KeyType =
   mixin readValue
 
   r.skipToken tkCurlyLe
   if r.lexer.tok != tkCurlyRi:
     while true:
       var key: KeyType
-      var value: ValueType
       readValue(r, key)
       if r.lexer.tok != tkColon: break
       r.lexer.next()
-      readValue(r, value)
-      yield (key, value)
+      yield key
       if r.lexer.tok != tkComma: break
       r.lexer.next()
   r.skipToken tkCurlyRi
+
+iterator readObject*(r: var JsonReader,
+                     KeyType: type,
+                     ValueType: type): (KeyType, ValueType) =
+  mixin readValue
+
+  for fieldName in readObjectFields(r, KeyType):
+    var value: ValueType
+    readValue(r, value)
+    yield (fieldName, value)
 
 proc isNotNilCheck[T](x: ref T not nil) {.compileTime.} = discard
 proc isNotNilCheck[T](x: ptr T not nil) {.compileTime.} = discard
