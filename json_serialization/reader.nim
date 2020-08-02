@@ -519,3 +519,8 @@ proc readValue*[T](r: var JsonReader, value: var T)
   else:
     const typeName = typetraits.name(T)
     {.error: "Failed to convert to JSON an unsupported type: " & typeName.}
+
+iterator readObjectFields*(r: var JsonReader): string =
+  for key in readObjectFields(r, string):
+    yield key
+
