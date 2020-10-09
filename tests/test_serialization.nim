@@ -261,3 +261,13 @@ suite "toJson tests":
   test "Holders of JsonNode":
     testJsonHolders HasJsonNode
 
+  test "Json with comments":
+    const jsonContent = staticRead "./cases/comments.json"
+
+    try:
+      let decoded = Json.decode(jsonContent, JsonNode)
+      check decoded["tasks"][0]["label"] == newJString("nim-beacon-chain build")
+    except SerializationError as err:
+      checkpoint err.formatMsg("./cases/comments.json")
+      fail
+

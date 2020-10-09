@@ -225,19 +225,21 @@ proc skipWhitespace(lexer: var JsonLexer) =
       checkForUnexpectedEof()
       case lexer.stream.peek()
       of '/':
+        advance lexer.stream
         while true:
-          advance lexer.stream
           if not lexer.stream.readable: return
           case lexer.stream.peek()
           of '\r':
             handleCR()
+            break
           of '\n':
             lexer.handleLF()
+            break
           else:
-            discard
+            advance lexer.stream
       of '*':
+        advance lexer.stream
         while true:
-          advance lexer.stream
           if not lexer.stream.readable: return
           case lexer.stream.peek()
           of '\r':
@@ -249,9 +251,9 @@ proc skipWhitespace(lexer: var JsonLexer) =
             checkForUnexpectedEof()
             if lexer.stream.peek() == '/':
               advance lexer.stream
-              return
+              break
           else:
-            discard
+            advance lexer.stream
       else:
         error errCommentExpected
     of ' ', '\t':
