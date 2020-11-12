@@ -181,6 +181,9 @@ proc writeValue*(w: var JsonWriter, value: auto) =
 
     append '"'
 
+  elif value is TaintedString:
+    writeValue(w, string value)
+
   elif value is bool:
     append if value: "true" else: "false"
 
