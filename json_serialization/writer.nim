@@ -70,6 +70,9 @@ proc writeField*(w: var JsonWriter, name: string, value: auto) =
 
   w.state = AfterField
 
+template fieldWritten*(w: var JsonWriter) =
+  w.state = AfterField
+
 proc beginRecord*(w: var JsonWriter) =
   doAssert w.state == RecordExpected
 
