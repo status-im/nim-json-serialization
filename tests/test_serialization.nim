@@ -270,4 +270,3 @@ suite "toJson tests":
     except SerializationError as err:
       checkpoint err.formatMsg("./cases/comments.json")
       fail
-
