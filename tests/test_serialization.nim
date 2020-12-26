@@ -269,5 +269,4 @@ suite "toJson tests":
       check decoded["tasks"][0]["label"] == newJString("nim-beacon-chain build")
     except SerializationError as err:
       checkpoint err.formatMsg("./cases/comments.json")
-      fail
-
+      check false

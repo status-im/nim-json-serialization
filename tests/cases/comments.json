@@ -1,0 +1,8 @@
+/* comments */
+{
+  "tasks": [
+    {
+      "label": "nim-beacon-chain build"
+    }
+  ]
+}

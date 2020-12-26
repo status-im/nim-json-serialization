@@ -11,7 +11,17 @@ requires "nim >= 0.17.0",
          "serialization",
          "stew"
 
-task test, "Run all tests":
-  exec "nim c -r --threads:off tests/test_all"
-  exec "nim c -r --threads:on tests/test_all"
+proc test(env, path: string) =
+  # Compilation language is controlled by TEST_LANG
+  var lang = "c"
+  if existsEnv"TEST_LANG":
+    lang = getEnv"TEST_LANG"
 
+  if not dirExists "build":
+    mkDir "build"
+  exec "nim " & lang & " " & env &
+    " -r --hints:off --warnings:off " & path
+
+task test, "Run all tests":
+  test "--threads:off", "tests/test_all"
+  test "--threads:on", "tests/test_all"
