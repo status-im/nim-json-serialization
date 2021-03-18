@@ -11,7 +11,7 @@ export
   types, errors
 
 type
-  JsonReader* = object
+  JsonReader*[Flavor = DefaultFlavor] = object
     lexer*: JsonLexer
     allowUnknownFields: bool
 
@@ -176,7 +176,11 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
     r.lexer.next()
     if r.lexer.tok != tkCurlyRi:
       while r.lexer.tok == tkString:
-        r.readJsonNodeField(result.fields.mgetOrPut(r.lexer.strVal, nil))
+        r.readJsonNodeField(
+          try:
+            result.fields.mgetOrPut(r.lexer.strVal, nil)
+          except KeyError:
+            raiseAssert "mgetOrPut should never raise a KeyError")
         if r.lexer.tok == tkComma:
           r.lexer.next()
         else:
@@ -368,6 +372,7 @@ template isCharArray(v: auto): bool = false
 proc readValue*[T](r: var JsonReader, value: var T)
                   {.raises: [SerializationError, IOError, Defect].} =
   mixin readValue
+  type ReaderType = type r
 
   let tok {.used.} = r.lexer.tok
 
@@ -495,7 +500,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
     r.skipToken tkCurlyLe
 
     when T.totalSerializedFields > 0:
-      let fields = T.fieldReadersTable(JsonReader)
+      let fields = T.fieldReadersTable(ReaderType)
       var expectedFieldPos = 0
       while r.lexer.tok == tkString:
         when T is tuple:

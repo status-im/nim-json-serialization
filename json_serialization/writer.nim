@@ -9,7 +9,7 @@ type
     RecordStarted
     AfterField
 
-  JsonWriter* = object
+  JsonWriter*[Flavor = DefaultFlavor] = object
     stream*: OutputStream
     hasTypeAnnotations: bool
     hasPrettyOutput*: bool # read-only
@@ -19,13 +19,13 @@ type
 export
   JsonString
 
-proc init*(T: type JsonWriter, stream: OutputStream,
-           pretty = false, typeAnnotations = false): T =
-  result.stream = stream
-  result.hasPrettyOutput = pretty
-  result.hasTypeAnnotations = typeAnnotations
-  result.nestingLevel = if pretty: 0 else: -1
-  result.state = RecordExpected
+proc init*(W: type JsonWriter, stream: OutputStream,
+           pretty = false, typeAnnotations = false): W =
+  W(stream: stream,
+    hasPrettyOutput: pretty,
+    hasTypeAnnotations: typeAnnotations,
+    nestingLevel: if pretty: 0 else: -1,
+    state: RecordExpected)
 
 proc beginRecord*(w: var JsonWriter, T: type)
 proc beginRecord*(w: var JsonWriter)
@@ -228,7 +228,7 @@ proc toJson*(v: auto, pretty = false, typeAnnotations = false): string =
   mixin writeValue
 
   var s = memoryOutput()
-  var w = JsonWriter.init(s, pretty, typeAnnotations)
+  var w = JsonWriter[DefaultFlavor].init(s, pretty, typeAnnotations)
   w.writeValue v
   return s.getOutput(string)
 
