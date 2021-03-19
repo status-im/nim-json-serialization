@@ -1,14 +1,14 @@
 {.experimental: "notnil".}
 
 import
-  tables, strutils, typetraits, macros, strformat,
-  faststreams/inputs, serialization/[object_serialization, errors],
-  types, lexer
+  std/[tables, strutils, typetraits, macros, strformat],
+  faststreams/inputs, serialization/[formats, object_serialization, errors],
+  format, types, lexer
 
 from json import JsonNode, JsonNodeKind
 
 export
-  types, errors
+  format, types, errors
 
 type
   JsonReader*[Flavor = DefaultFlavor] = object
@@ -49,6 +49,8 @@ type
   IntOverflowError* = object of JsonReaderError
     isNegative: bool
     absIntVal: uint64
+
+Json.setReader JsonReader
 
 func valueStr(err: ref IntOverflowError): string =
   if err.isNegative:
@@ -176,11 +178,10 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
     r.lexer.next()
     if r.lexer.tok != tkCurlyRi:
       while r.lexer.tok == tkString:
-        r.readJsonNodeField(
-          try:
-            result.fields.mgetOrPut(r.lexer.strVal, nil)
-          except KeyError:
-            raiseAssert "mgetOrPut should never raise a KeyError")
+        try:
+          r.readJsonNodeField(result.fields.mgetOrPut(r.lexer.strVal, nil))
+        except KeyError:
+          raiseAssert "mgetOrPut should never raise a KeyError"
         if r.lexer.tok == tkComma:
           r.lexer.next()
         else:
