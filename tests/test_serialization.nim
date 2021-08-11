@@ -132,6 +132,85 @@ suite "toJson tests":
       let shouldNotDecode = Json.decode(json, Simple)
       echo "This should not have decoded ", shouldNotDecode
 
+  test "all fields are required and present":
+    let json = dedent"""
+        {
+          "x": 20,
+          "distance": 10,
+          "y": "y value"
+        }
+      """
+
+    let decoded = Json.decode(json, Simple, requireAllFields = true)
+
+    check:
+      decoded.x == 20
+      decoded.y == "y value"
+      decoded.distance.int == 10
+
+  test "all fields were required, but not all were provided":
+    let json = dedent"""
+      {
+        "x": -20,
+        "distance": 10
+      }
+    """
+
+    expect IncompleteObjectError:
+      let shouldNotDecode = Json.decode(json, Simple, requireAllFields = true)
+      echo "This should not have decoded ", shouldNotDecode
+
+  test "all fields were required, but not all were provided (additional fields present instead)":
+    let json = dedent"""
+      {
+        "futureBool": false,
+        "y": "y value",
+        "futureObject": {"a": -1, "b": [1, 2.0, 3.1], "c": null, "d": true},
+        "distance": 10
+      }
+    """
+
+    expect IncompleteObjectError:
+      let shouldNotDecode = Json.decode(json, Simple,
+                                        requireAllFields = true,
+                                        allowUnknownFields = true)
+      echo "This should not have decoded ", shouldNotDecode
+
+  test "all fields were required, but none were provided":
+    let json = "{}"
+
+    expect IncompleteObjectError:
+      let shouldNotDecode = Json.decode(json, Simple, requireAllFields = true)
+      echo "This should not have decoded ", shouldNotDecode
+
+  test "all fields are required and provided, and additional ones are present":
+    let json = dedent"""
+      {
+        "x": 20,
+        "distance": 10,
+        "futureBool": false,
+        "y": "y value",
+        "futureObject": {"a": -1, "b": [1, 2.0, 3.1], "c": null, "d": true},
+      }
+      """
+
+    let decoded = try:
+      Json.decode(json, Simple, requireAllFields = true, allowUnknownFields = true)
+    except SerializationError as err:
+      checkpoint "Unexpected deserialization failure: " & err.formatMsg("<input>")
+      raise
+
+    check:
+      decoded.x == 20
+      decoded.y == "y value"
+      decoded.distance.int == 10
+
+    expect UnexpectedField:
+      let shouldNotDecode = Json.decode(json, Simple,
+                                        requireAllFields = true,
+                                        allowUnknownFields = false)
+      echo "This should not have decoded ", shouldNotDecode
+
   test "arrays are printed correctly":
     var x = HoldsArray(data: @[1, 2, 3, 4])
 

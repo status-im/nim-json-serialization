@@ -14,6 +14,7 @@ type
   JsonReader*[Flavor = DefaultFlavor] = object
     lexer*: JsonLexer
     allowUnknownFields: bool
+    requireAllFields: bool
 
   JsonReaderError* = object of JsonError
     line*, col*: int
@@ -45,6 +46,9 @@ type
     expectedToken*: ExpectedTokenCategory
 
   UnexpectedValueError* = object of JsonReaderError
+
+  IncompleteObjectError* = object of JsonReaderError
+    objectType: cstring
 
   IntOverflowError* = object of JsonReaderError
     isNegative: bool
@@ -79,6 +83,9 @@ method formatMsg*(err: ref IntOverflowError, filename: string): string =
 method formatMsg*(err: ref UnexpectedValueError, filename: string): string =
   tryFmt: fmt"{filename}({err.line}, {err.col}) {err.msg}"
 
+method formatMsg*(err: ref IncompleteObjectError, filename: string): string =
+  tryFmt: fmt"{filename}({err.line}, {err.col}) Not all required fields were specified when reading '{err.objectType}'"
+
 proc assignLineNumber*(ex: ref JsonReaderError, r: JsonReader) =
   ex.line = r.lexer.line
   ex.col = r.lexer.tokenStartCol
@@ -111,6 +118,12 @@ proc raiseUnexpectedField*(r: JsonReader, fieldName, deserializedType: cstring) 
   ex.deserializedType = deserializedType
   raise ex
 
+proc raiseIncompleteObject*(r: JsonReader, objectType: cstring) {.noreturn.} =
+  var ex = new IncompleteObjectError
+  ex.assignLineNumber(r)
+  ex.objectType = objectType
+  raise ex
+
 proc handleReadException*(r: JsonReader,
                           Record: type,
                           fieldName: string,
@@ -125,8 +138,10 @@ proc handleReadException*(r: JsonReader,
 proc init*(T: type JsonReader,
            stream: InputStream,
            mode = defaultJsonMode,
-           allowUnknownFields = false): T =
+           allowUnknownFields = false,
+           requireAllFields = false): T =
   result.allowUnknownFields = allowUnknownFields
+  result.requireAllFields = requireAllFields
   result.lexer = JsonLexer.init(stream, mode)
   result.lexer.next()
 
@@ -500,7 +515,9 @@ proc readValue*[T](r: var JsonReader, value: var T)
     type T = type(value)
     r.skipToken tkCurlyLe
 
-    when T.totalSerializedFields > 0:
+    const expectedFields = T.totalSerializedFields
+    var readFields = 0
+    when expectedFields > 0:
       let fields = T.fieldReadersTable(ReaderType)
       var expectedFieldPos = 0
       while r.lexer.tok == tkString:
@@ -513,6 +530,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
         r.skipToken tkColon
         if reader != nil:
           reader(value, r)
+          inc readFields
         elif r.allowUnknownFields:
           r.skipSingleJsValue()
         else:
@@ -522,6 +540,10 @@ proc readValue*[T](r: var JsonReader, value: var T)
           r.lexer.next()
         else:
           break
+
+    if r.requireAllFields and readFields != expectedFields:
+      const typeName = typetraits.name(T)
+      r.raiseIncompleteObject(typeName)
 
     r.skipToken tkCurlyRi
 
