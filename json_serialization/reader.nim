@@ -396,7 +396,7 @@ template isCharArray(v: auto): bool = false
 proc readValue*[T](r: var JsonReader, value: var T)
                   {.raises: [UnexpectedValueError, SerializationError, IOError, Defect].} =
   mixin readValue
-  type ReaderType = type r
+  type ReaderType {.used.} = type r
 
   let tok {.used.} = r.lexer.tok
 
