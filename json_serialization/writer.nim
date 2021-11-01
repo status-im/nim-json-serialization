@@ -159,6 +159,11 @@ proc writeValue*(w: var JsonWriter, value: auto) =
       writeValue(w, value[])
 
   elif isStringLike(value):
+    when value is cstring:
+      if value == nil:
+        append "null"
+        return
+
     append '"'
 
     template addPrefixSlash(c) =

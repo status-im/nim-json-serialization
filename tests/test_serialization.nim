@@ -46,6 +46,10 @@ type
     data: JsonNode
     id: int
 
+  HasCstring = object
+    notNilStr: cstring
+    nilStr: cstring
+
 # TODO `borrowSerialization` still doesn't work
 # properly when it's placed in another module:
 Meter.borrowSerialization int
@@ -349,3 +353,21 @@ suite "toJson tests":
     except SerializationError as err:
       checkpoint err.formatMsg("./cases/comments.json")
       check false
+
+  test "A nil cstring":
+    let
+      obj1 = HasCstring(notNilStr: "foo", nilStr: nil)
+      obj2 = HasCstring(notNilStr: "", nilStr: nil)
+      str: cstring = "some value"
+
+    check:
+      Json.encode(obj1) == """{"notNilStr":"foo","nilStr":null}"""
+      Json.encode(obj2) == """{"notNilStr":"","nilStr":null}"""
+      Json.encode(str) == "\"some value\""
+      Json.encode(cstring nil) == "null"
+
+    reject:
+      # Decoding cstrings is not supported due to lack of
+      # clarity regarding the memory allocation approach
+      Json.decode("null", cstring)
+
