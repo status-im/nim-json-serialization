@@ -65,25 +65,32 @@ template tryFmt(expr: untyped): string =
   try: expr
   except CatchableError as err: err.msg
 
-method formatMsg*(err: ref JsonReaderError, filename: string): string =
+method formatMsg*(err: ref JsonReaderError, filename: string):
+    string {.gcsafe, raises: [Defect].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Error while reading json file"
 
-method formatMsg*(err: ref UnexpectedField, filename: string): string =
+method formatMsg*(err: ref UnexpectedField, filename: string):
+    string {.gcsafe, raises: [Defect].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Unexpected field '{err.encounteredField}' while deserializing {err.deserializedType}"
 
-method formatMsg*(err: ref UnexpectedTokenError, filename: string): string =
+method formatMsg*(err: ref UnexpectedTokenError, filename: string):
+    string {.gcsafe, raises: [Defect].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Unexpected token '{err.encountedToken}' in place of '{err.expectedToken}'"
 
-method formatMsg*(err: ref GenericJsonReaderError, filename: string): string =
+method formatMsg*(err: ref GenericJsonReaderError, filename: string):
+    string {.gcsafe, raises: [Defect].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Exception encountered while deserializing '{err.deserializedField}': [{err.innerException.name}] {err.innerException.msg}"
 
-method formatMsg*(err: ref IntOverflowError, filename: string): string =
+method formatMsg*(err: ref IntOverflowError, filename: string):
+    string {.gcsafe, raises: [Defect].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) The value '{err.valueStr}' is outside of the allowed range"
 
-method formatMsg*(err: ref UnexpectedValueError, filename: string): string =
+method formatMsg*(err: ref UnexpectedValueError, filename: string):
+    string {.gcsafe, raises: [Defect].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) {err.msg}"
 
-method formatMsg*(err: ref IncompleteObjectError, filename: string): string =
+method formatMsg*(err: ref IncompleteObjectError, filename: string):
+    string {.gcsafe, raises: [Defect].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Not all required fields were specified when reading '{err.objectType}'"
 
 proc assignLineNumber*(ex: ref JsonReaderError, r: JsonReader) =
