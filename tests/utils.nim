@@ -1,7 +1,9 @@
 import
   strutils
 
-proc dedent*(s: string): string =
+# `dedent` exists in newer nim version
+# and doesn't behave the same
+proc test_dedent*(s: string): string =
   var s = s.strip(leading = false)
   var minIndent = high(int)
   for l in s.splitLines:

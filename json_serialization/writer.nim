@@ -132,7 +132,7 @@ proc writeIterable*(w: var JsonWriter, collection: auto) =
 
   append ']'
 
-proc writeArray*[T](w: var JsonWriter, elements: openarray[T]) =
+proc writeArray*[T](w: var JsonWriter, elements: openArray[T]) =
   writeIterable(w, elements)
 
 # this construct catches `array[N, char]` which otherwise won't decompose into
