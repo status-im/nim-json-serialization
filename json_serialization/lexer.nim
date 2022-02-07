@@ -282,12 +282,12 @@ proc scanSign(lexer: var JsonLexer): int =
   # is not the case, the return value will be 0.
   let c = lexer.stream.peek()
   if c == '-':
-    requireMoreNumberChars: result = 0
     advance lexer.stream
+    requireMoreNumberChars: result = 0
     return -1
   elif c == '+':
-    requireMoreNumberChars: result = 0
     advance lexer.stream
+    requireMoreNumberChars: result = 0
   return 1
 
 proc scanInt(lexer: var JsonLexer): uint64 =
