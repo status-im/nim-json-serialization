@@ -1,3 +1,3 @@
-import fuzzing, std/json
+import json_fuzzing, std/json
 
 jsonFuzzingTest JsonNode
