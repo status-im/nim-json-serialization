@@ -183,7 +183,7 @@ proc parseJsonNode(r: var JsonReader): JsonNode
                   {.gcsafe, raises: [UnexpectedValueError, IOError, JsonReaderError, Defect].}
 
 proc readJsonNodeField(r: var JsonReader, field: var JsonNode) {.
-    raises: [UnexpectedValueError, UnexpectedTokenError, JsonReaderError, KeyError, IOError].} =
+    raises: [UnexpectedValueError, UnexpectedTokenError, JsonReaderError, KeyError, IOError, Defect].} =
   if field != nil:
     r.raiseUnexpectedValue("Unexpected duplicated field name")
 
