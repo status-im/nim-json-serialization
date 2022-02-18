@@ -180,9 +180,10 @@ func maxAbsValue(T: type[SomeInteger]): uint64 {.compileTime.} =
   else: uint64(high(T))
 
 proc parseJsonNode(r: var JsonReader): JsonNode
-                  {.gcsafe, raises: [IOError, JsonReaderError, Defect].}
+                  {.gcsafe, raises: [UnexpectedValueError, IOError, JsonReaderError, Defect].}
 
-proc readJsonNodeField(r: var JsonReader, field: var JsonNode) =
+proc readJsonNodeField(r: var JsonReader, field: var JsonNode) {.
+    raises: [UnexpectedValueError, UnexpectedTokenError, JsonReaderError, KeyError, IOError, Defect].} =
   if field != nil:
     r.raiseUnexpectedValue("Unexpected duplicated field name")
 
@@ -393,7 +394,7 @@ template isCharArray[N](v: array[N, char]): bool = true
 template isCharArray(v: auto): bool = false
 
 proc readValue*[T](r: var JsonReader, value: var T)
-                  {.raises: [SerializationError, IOError, Defect].} =
+                  {.raises: [UnexpectedValueError, SerializationError, IOError, Defect].} =
   mixin readValue
   type ReaderType = type r
 
