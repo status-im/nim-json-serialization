@@ -3,12 +3,12 @@
 import
   std/[tables, strutils, typetraits, macros, strformat],
   faststreams/inputs, serialization/[formats, object_serialization, errors],
-  format, types, lexer
+  "."/[format, types, lexer]
 
 from json import JsonNode, JsonNodeKind
 
 export
-  format, types, errors
+  inputs, format, types, errors
 
 type
   JsonReader*[Flavor = DefaultFlavor] = object

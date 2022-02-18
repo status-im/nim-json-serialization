@@ -1,10 +1,10 @@
 import
-  unicode, json,
+  std/[unicode, json],
   faststreams/inputs,
   types
 
 export
-  inputs
+  inputs, types
 
 type
   TokKind* = enum

@@ -1,10 +1,10 @@
 import
-  std/typetraits,
-  faststreams/[outputs, textio], serialization, json,
-  format, types
+  std/[json, typetraits],
+  faststreams/[outputs, textio], serialization,
+  "."/[format, types]
 
 export
-  format, JsonString, DefaultFlavor
+  outputs, format, types, JsonString, DefaultFlavor
 
 type
   JsonWriterState = enum
