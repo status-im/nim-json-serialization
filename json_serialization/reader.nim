@@ -67,7 +67,7 @@ template tryFmt(expr: untyped): string =
 
 method formatMsg*(err: ref JsonReaderError, filename: string):
     string {.gcsafe, raises: [Defect].} =
-  tryFmt: fmt"{filename}({err.line}, {err.col}) Error while reading json file"
+  tryFmt: fmt"{filename}({err.line}, {err.col}) Error while reading json file: {err.msg}"
 
 method formatMsg*(err: ref UnexpectedField, filename: string):
     string {.gcsafe, raises: [Defect].} =
