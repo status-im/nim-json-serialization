@@ -52,6 +52,7 @@ type
     err*: JsonErrorKind
 
     absIntVal*: uint64 # BEWARE: negative integers will have tok == tkNegativeInt
+    absIntString*: string # stored as string if err == errNonPortableInt
     floatVal*: float
     strVal*: string
 
@@ -142,8 +143,14 @@ template requireNextChar(): char =
   checkForUnexpectedEof()
   lexer.stream.read()
 
-template checkForNonPortableInt(val: uint64) =
+template checkForNonPortableInt(val: uint64; culprit: string) =
+  ## Check for overflow. If the `culprit` argument is a non-empty string,
+  ## there was a uint64 variable overflow.
   if lexer.mode == Portable and val > uint64(maxPortableInt):
+    lexer.absIntString = $val
+    error errNonPortableInt
+  elif val == uint64.high and 0 < culprit.len:
+    lexer.absIntString = culprit
     error errNonPortableInt
 
 proc scanHexRune(lexer: var JsonLexer): int =
@@ -290,14 +297,34 @@ proc scanSign(lexer: var JsonLexer): int =
     advance lexer.stream
   return 1
 
-proc scanInt(lexer: var JsonLexer): uint64 =
-  var c = lexer.stream.peek()
-  result = uint64(ord(c) - ord('0'))
+proc scanInt(lexer: var JsonLexer): (uint64,string) =
+  ## Scan unsigned integer into uint64 if possible.
+  ## If all goes ok, the tuple `(parsed-value,"")` is returned.
+  ## On overflow, the tuple `(uint64.high,"digits-string-causing-overflow")`
+  ## is returned.
+  var
+    c = lexer.stream.peek()
+    overflow = false
+  const
+    spaceOkUpperBound = (result[0].high - 9) div 10
 
-  c = eatDigitAndPeek()
+  result[0] = uint64(ord(c) - ord('0'))
+
+  c = eatDigitAndPeek() # implicit auto-return
   while c.isDigit:
-    result = result * 10 + uint64(ord(c) - ord('0'))
-    c = eatDigitAndPeek()
+    if overflow:
+      result[1] &= $c
+    else:
+      let lsDgt = uint64(ord(c) - ord('0'))
+      if spaceOkUpperBound < result[0] and
+         (result[0].high - lsDgt) div 10 < result[0]:
+        overflow = true
+        result[1] = $result[0] & $c
+        result[0] = result[0].high
+      else:
+        result[0] = result[0] * 10 + lsDgt
+    c = eatDigitAndPeek() # implicit auto-return
+
 
 proc scanNumber(lexer: var JsonLexer) =
   var sign = lexer.scanSign()
@@ -312,8 +339,8 @@ proc scanNumber(lexer: var JsonLexer) =
   elif c.isDigit:
     lexer.tok = if sign > 0: tkInt
                 else: tkNegativeInt
-    let scannedValue = lexer.scanInt()
-    checkForNonPortableInt scannedValue
+    let (scannedValue,unparsedOnError) = lexer.scanInt()
+    checkForNonPortableInt scannedValue, unparsedOnError
     lexer.absIntVal = scannedValue
     if not lexer.stream.readable: return
     c = lexer.stream.peek()
@@ -338,7 +365,7 @@ proc scanNumber(lexer: var JsonLexer) =
     if not isDigit lexer.stream.peek():
       error errNumberExpected
 
-    let exponent = lexer.scanInt()
+    let (exponent,_) = lexer.scanInt()
     if exponent >= uint64(len(powersOfTen)):
       error errExponentTooLarge
 
