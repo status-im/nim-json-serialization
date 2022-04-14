@@ -306,7 +306,7 @@ proc scanInt(lexer: var JsonLexer): (uint64,string) =
     c = lexer.stream.peek()
     overflow = false
   const
-    spaceOkUpperBound = (result[0].high - 9) div 10
+    spaceOkUpperBound = (uint64.high - 9) div 10
 
   result[0] = uint64(ord(c) - ord('0'))
 
@@ -317,10 +317,10 @@ proc scanInt(lexer: var JsonLexer): (uint64,string) =
     else:
       let lsDgt = uint64(ord(c) - ord('0'))
       if spaceOkUpperBound < result[0] and
-         (result[0].high - lsDgt) div 10 < result[0]:
+          (uint64.high - lsDgt) div 10 < result[0]:
         overflow = true
         result[1] = $result[0] & $c
-        result[0] = result[0].high
+        result[0] = uint64.high
       else:
         result[0] = result[0] * 10 + lsDgt
     c = eatDigitAndPeek() # implicit auto-return
