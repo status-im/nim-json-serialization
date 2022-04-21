@@ -142,8 +142,8 @@ template requireNextChar(): char =
   checkForUnexpectedEof()
   lexer.stream.read()
 
-template checkForNonPortableInt(val: uint64) =
-  if lexer.mode == Portable and val > uint64(maxPortableInt):
+template checkForNonPortableInt(val: uint64; overflow: bool) =
+  if overflow or (lexer.mode == Portable and val > uint64(maxPortableInt)):
     error errNonPortableInt
 
 proc scanHexRune(lexer: var JsonLexer): int =
@@ -290,14 +290,31 @@ proc scanSign(lexer: var JsonLexer): int =
     advance lexer.stream
   return 1
 
-proc scanInt(lexer: var JsonLexer): uint64 =
+proc scanInt(lexer: var JsonLexer): (uint64,bool) =
+  ## Scan unsigned integer into uint64 if possible.
+  ## If all goes ok, the tuple `(parsed-value,false)` is returned.
+  ## On overflow, the tuple `(uint64.high,true)` is returned.
   var c = lexer.stream.peek()
-  result = uint64(ord(c) - ord('0'))
 
-  c = eatDigitAndPeek()
+  # Always possible to append `9` is result[0] is not larger
+  const canAppendDigit9 = (uint64.high - 9) div 10
+
+  result[0] = uint64(ord(c) - ord('0'))
+
+  c = eatDigitAndPeek() # implicit auto-return
   while c.isDigit:
-    result = result * 10 + uint64(ord(c) - ord('0'))
-    c = eatDigitAndPeek()
+    # Process next digit unless overflow
+    if not result[1]:
+      let lsDgt = uint64(ord(c) - ord('0'))
+      if canAppendDigit9 < result[0] and
+          (uint64.high - lsDgt) div 10 < result[0]:
+        result[1] = true
+        result[0] = uint64.high
+      else:
+        result[0] = result[0] * 10 + lsDgt
+    # Fetch next digit
+    c = eatDigitAndPeek() # implicit auto-return
+
 
 proc scanNumber(lexer: var JsonLexer) =
   var sign = lexer.scanSign()
@@ -312,8 +329,8 @@ proc scanNumber(lexer: var JsonLexer) =
   elif c.isDigit:
     lexer.tok = if sign > 0: tkInt
                 else: tkNegativeInt
-    let scannedValue = lexer.scanInt()
-    checkForNonPortableInt scannedValue
+    let (scannedValue,overflow) = lexer.scanInt()
+    checkForNonPortableInt scannedValue, overflow
     lexer.absIntVal = scannedValue
     if not lexer.stream.readable: return
     c = lexer.stream.peek()
@@ -338,7 +355,7 @@ proc scanNumber(lexer: var JsonLexer) =
     if not isDigit lexer.stream.peek():
       error errNumberExpected
 
-    let exponent = lexer.scanInt()
+    let (exponent,_) = lexer.scanInt()
     if exponent >= uint64(len(powersOfTen)):
       error errExponentTooLarge
 
