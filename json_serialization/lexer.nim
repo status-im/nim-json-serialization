@@ -6,7 +6,13 @@ import
 export
   inputs, types
 
+{.push raises: [Defect].}
+
 type
+  CustomIntHandler* = ##\
+    ## Custom decimal integer parser, return value needs to be captured
+    proc(dgt: int) {.gcsafe, raises: [Defect].}
+
   TokKind* = enum
     tkError,
     tkEof,
@@ -22,7 +28,10 @@ type
     tkBracketLe,
     tkBracketRi,
     tkColon,
-    tkComma
+    tkComma,
+
+    tkNumeric ##\
+      ## unfinished/lazy type, any of tkInt, tkNegativeInt, tkFloat
 
   JsonErrorKind* = enum
     errNone                 = "no error",
@@ -39,6 +48,7 @@ type
     errCommentExpected      = "comment expected"
     errOrphanSurrogate      = "unicode surrogates must be followed by another unicode character"
     errNonPortableInt       = "number is outside the range of portable values"
+    errCustomIntExpexted    = "not a customised integer"
 
   JsonLexer* = object
     stream*: InputStream
@@ -48,7 +58,7 @@ type
     lineStartPos: int
     tokenStart: int
 
-    tok*: TokKind
+    tokKind: TokKind   # formerly `tok`, now accessible by getter
     err*: JsonErrorKind
 
     absIntVal*: uint64 # BEWARE: negative integers will have tok == tkNegativeInt
@@ -61,9 +71,20 @@ const
                  1e20, 1e21, 1e22] # TODO: this table should be much larger
                                    # The largest JSON number value is 1E308
 
-proc renderTok*(lexer: JsonLexer, output: var string) =
-  case lexer.tok
-  of tkError, tkEof:
+# needed in renderTok()
+proc scanNumber(lexer: var JsonLexer) {.gcsafe, raises: [Defect,IOError].}
+
+proc renderTok*(lexer: var JsonLexer, output: var string)
+    {.gcsafe, raises: [Defect,IOError].} =
+  # The lazy part
+  case lexer.tokKind
+  of tkNumeric:
+    lexer.scanNumber
+  else:
+    discard
+  # The real stuff
+  case lexer.tokKind
+  of tkError, tkEof, tkNumeric:
     discard
   of tkString:
     output.add '"'
@@ -123,7 +144,7 @@ proc init*(T: type JsonLexer, stream: InputStream, mode = defaultJsonMode): T =
     line: 1,
     lineStartPos: 0,
     tokenStart: -1,
-    tok: tkError,
+    tokKind: tkError,
     err: errNone,
     absIntVal: uint64 0,
     floatVal: 0'f,
@@ -131,7 +152,7 @@ proc init*(T: type JsonLexer, stream: InputStream, mode = defaultJsonMode): T =
 
 template error(error: JsonErrorKind) {.dirty.} =
   lexer.err = error
-  lexer.tok = tkError
+  lexer.tokKind = tkError
   return
 
 template checkForUnexpectedEof {.dirty.} =
@@ -146,14 +167,16 @@ template checkForNonPortableInt(val: uint64; overflow: bool) =
   if overflow or (lexer.mode == Portable and val > uint64(maxPortableInt)):
     error errNonPortableInt
 
-proc scanHexRune(lexer: var JsonLexer): int =
+proc scanHexRune(lexer: var JsonLexer): int
+    {.gcsafe, raises: [Defect,IOError].} =
   for i in 0..3:
     let hexValue = hexCharValue requireNextChar()
     if hexValue == -1: error errHexCharExpected
     result = (result shl 4) or hexValue
 
-proc scanString(lexer: var JsonLexer) =
-  lexer.tok = tkString
+proc scanString(lexer: var JsonLexer)
+    {.gcsafe, raises: [Defect,IOError].} =
+  lexer.tokKind = tkString
   lexer.strVal.setLen 0
   lexer.tokenStart = lexer.stream.pos
 
@@ -185,13 +208,13 @@ proc scanString(lexer: var JsonLexer) =
         lexer.strVal.add '\x00'
       of 'u':
         var rune = lexer.scanHexRune()
-        if lexer.tok == tkError: return
+        if lexer.tokKind == tkError: return
         # Deal with surrogates
         if (rune and 0xfc00) == 0xd800:
           if requireNextChar() != '\\': error errOrphanSurrogate
           if requireNextChar() != 'u': error errOrphanSurrogate
           let nextRune = lexer.scanHexRune()
-          if lexer.tok == tkError: return
+          if lexer.tokKind == tkError: return
           if (nextRune and 0xfc00) == 0xdc00:
             rune = 0x10000 + (((rune - 0xd800) shl 10) or (nextRune - 0xdc00))
         lexer.strVal.add toUTF8(Rune(rune))
@@ -208,7 +231,8 @@ proc handleLF(lexer: var JsonLexer) {.inline.} =
   lexer.line += 1
   lexer.lineStartPos = lexer.stream.pos
 
-proc skipWhitespace(lexer: var JsonLexer) =
+proc skipWhitespace(lexer: var JsonLexer)
+    {.gcsafe, raises: [Defect,IOError].} =
   template handleCR =
     # Beware: this is a template, because the return
     # statement has to exit `skipWhitespace`.
@@ -275,7 +299,8 @@ template eatDigitAndPeek: char =
   if not lexer.stream.readable: return
   lexer.stream.peek()
 
-proc scanSign(lexer: var JsonLexer): int =
+proc scanSign(lexer: var JsonLexer): int
+    {.gcsafe, raises: [Defect,IOError].} =
   # Returns +1 or -1
   # If a sign character is present, it must be followed
   # by more characters representing the number. If this
@@ -290,7 +315,8 @@ proc scanSign(lexer: var JsonLexer): int =
     advance lexer.stream
   return 1
 
-proc scanInt(lexer: var JsonLexer): (uint64,bool) =
+proc scanInt(lexer: var JsonLexer): (uint64,bool)
+    {.gcsafe, raises: [Defect,IOError].} =
   ## Scan unsigned integer into uint64 if possible.
   ## If all goes ok, the tuple `(parsed-value,false)` is returned.
   ## On overflow, the tuple `(uint64.high,true)` is returned.
@@ -316,7 +342,8 @@ proc scanInt(lexer: var JsonLexer): (uint64,bool) =
     c = eatDigitAndPeek() # implicit auto-return
 
 
-proc scanNumber(lexer: var JsonLexer) =
+proc scanNumber(lexer: var JsonLexer)
+    {.gcsafe, raises: [Defect,IOError].} =
   var sign = lexer.scanSign()
   if sign == 0: return
   var c = lexer.stream.peek()
@@ -324,18 +351,18 @@ proc scanNumber(lexer: var JsonLexer) =
   if c == '.':
     advance lexer.stream
     requireMoreNumberChars: discard
-    lexer.tok = tkFloat
+    lexer.tokKind = tkFloat
     c = lexer.stream.peek()
   elif c.isDigit:
-    lexer.tok = if sign > 0: tkInt
-                else: tkNegativeInt
+    lexer.tokKind = if sign > 0: tkInt
+                    else: tkNegativeInt
     let (scannedValue,overflow) = lexer.scanInt()
     checkForNonPortableInt scannedValue, overflow
     lexer.absIntVal = scannedValue
     if not lexer.stream.readable: return
     c = lexer.stream.peek()
     if c == '.':
-      lexer.tok = tkFloat
+      lexer.tokKind = tkFloat
       lexer.floatVal = float(lexer.absIntVal) * float(sign)
       c = eatDigitAndPeek()
   else:
@@ -368,47 +395,100 @@ proc scanIdentifier(lexer: var JsonLexer,
                     expectedIdent: string, expectedTok: TokKind) =
   for c in expectedIdent:
     if c != lexer.stream.read():
-      lexer.tok = tkError
+      lexer.tokKind = tkError
       return
-  lexer.tok = expectedTok
+  lexer.tokKind = expectedTok
 
-proc next*(lexer: var JsonLexer) =
+proc accept*(lexer: var JsonLexer)
+    {.gcsafe, raises: [Defect,IOError].} =
+  ## Finalise token by parsing the value. Note that this might change
+  ## the token type
+  case lexer.tokKind
+  of tkNumeric:
+    lexer.scanNumber
+  else:
+    discard
+
+proc next*(lexer: var JsonLexer)
+    {.gcsafe, raises: [Defect,IOError].} =
   lexer.skipWhitespace()
 
   if not lexer.stream.readable:
-    lexer.tok = tkEof
+    lexer.tokKind = tkEof
     return
+
+  # in case that was missing, implies `lexer.valueOk = true`
+  lexer.accept()
 
   let c = lexer.stream.peek()
   case c
   of '+', '-', '.', '0'..'9':
-    lexer.scanNumber()
+    lexer.tokKind = tkNumeric
   of '"':
-    lexer.scanString()
+    lexer.scanString
   of '[':
     advance lexer.stream
-    lexer.tok = tkBracketLe
+    lexer.tokKind = tkBracketLe
   of '{':
     advance lexer.stream
-    lexer.tok = tkCurlyLe
+    lexer.tokKind = tkCurlyLe
   of ']':
     advance lexer.stream
-    lexer.tok = tkBracketRi
+    lexer.tokKind = tkBracketRi
   of '}':
     advance lexer.stream
-    lexer.tok = tkCurlyRi
+    lexer.tokKind = tkCurlyRi
   of ',':
     advance lexer.stream
-    lexer.tok = tkComma
+    lexer.tokKind = tkComma
   of ':':
     advance lexer.stream
-    lexer.tok = tkColon
+    lexer.tokKind = tkColon
   of '\0':
-    lexer.tok = tkEof
+    lexer.tokKind = tkEof
   of 'n': lexer.scanIdentifier("null", tkNull)
   of 't': lexer.scanIdentifier("true", tkTrue)
   of 'f': lexer.scanIdentifier("false", tkFalse)
   else:
     advance lexer.stream
-    lexer.tok = tkError
+    lexer.tokKind = tkError
 
+proc tok*(lexer: var JsonLexer): TokKind
+    {.gcsafe, raises: [Defect,IOError].} =
+  ## Getter, implies full token parsing
+  lexer.accept
+  lexer.tokKind
+
+proc lazyTok*(lexer: var JsonLexer): TokKind =
+  ## Look ahead token unless accepted, already
+  lexer.tokKind
+
+proc customIntHandler*(lexer: var JsonLexer; handler: CustomIntHandler)
+    {.gcsafe, raises: [Defect,IOError].} =
+
+  proc customScan(lexer: var JsonLexer)
+    {.gcsafe, raises: [Defect,IOError].} =
+    var c = lexer.stream.peek()
+    handler(ord(c) - ord('0'))
+    c = eatDigitAndPeek()   # implicit auto-return
+    while c.isDigit:
+      handler(ord(c) - ord('0'))
+      c = eatDigitAndPeek() # implicit auto-return
+
+  if lexer.tokKind == tkNumeric:
+    var sign = lexer.scanSign()
+    if sign != 0:
+      if lexer.stream.peek.isDigit:
+        lexer.tokKind = if 0 < sign: tkInt else: tkNegativeInt
+        lexer.customScan
+        if not lexer.stream.readable or lexer.stream.peek != '.':
+          return
+
+  error errCustomIntExpexted
+
+template customIntValueIt*(lexer: var JsonLexer; body: untyped): untyped =
+  var handler: CustomIntHandler =
+    proc(digit: int) =
+      let it {.inject.} = digit
+      body
+  lexer.customIntHandler(handler)

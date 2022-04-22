@@ -97,7 +97,7 @@ proc assignLineNumber*(ex: ref JsonReaderError, r: JsonReader) =
   ex.line = r.lexer.line
   ex.col = r.lexer.tokenStartCol
 
-proc raiseUnexpectedToken*(r: JsonReader, expected: ExpectedTokenCategory)
+proc raiseUnexpectedToken*(r: var JsonReader, expected: ExpectedTokenCategory)
                           {.noreturn.} =
   var ex = new UnexpectedTokenError
   ex.assignLineNumber(r)
@@ -155,7 +155,7 @@ proc init*(T: type JsonReader,
 proc setParsed[T: enum](e: var T, s: string) =
   e = parseEnum[T](s)
 
-proc requireToken*(r: JsonReader, tk: TokKind) =
+proc requireToken*(r: var JsonReader, tk: TokKind) =
   if r.lexer.tok != tk:
     r.raiseUnexpectedToken case tk
       of tkString: etString
@@ -250,6 +250,9 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
     result = JsonNode(kind: JFloat, fnum: r.lexer.floatVal)
     r.lexer.next()
 
+  of tkNumeric:
+    raiseAssert "generic type tkNumeric is not applicable"
+
   of tkTrue:
     result = JsonNode(kind: JBool, bval: true)
     r.lexer.next()
@@ -292,7 +295,8 @@ proc skipSingleJsValue(r: var JsonReader) =
   of tkColon, tkComma, tkEof, tkError, tkBracketRi, tkCurlyRi:
     r.raiseUnexpectedToken etValue
 
-  of tkString, tkInt, tkNegativeInt, tkFloat, tkTrue, tkFalse, tkNull:
+  of tkString, tkInt, tkNegativeInt, tkFloat, tkNumeric,
+     tkTrue, tkFalse, tkNull:
     r.lexer.next()
 
 proc captureSingleJsValue(r: var JsonReader, output: var string) =
@@ -335,7 +339,8 @@ proc captureSingleJsValue(r: var JsonReader, output: var string) =
   of tkColon, tkComma, tkEof, tkError, tkBracketRi, tkCurlyRi:
     r.raiseUnexpectedToken etValue
 
-  of tkString, tkInt, tkNegativeInt, tkFloat, tkTrue, tkFalse, tkNull:
+  of tkString, tkInt, tkNegativeInt, tkFloat, tkNumeric,
+     tkTrue, tkFalse, tkNull:
     r.lexer.next()
 
 proc allocPtr[T](p: var ptr T) =
