@@ -97,11 +97,11 @@ proc assignLineNumber*(ex: ref JsonReaderError, r: JsonReader) =
   ex.line = r.lexer.line
   ex.col = r.lexer.tokenStartCol
 
-proc raiseUnexpectedToken*(r: var JsonReader, expected: ExpectedTokenCategory)
+proc raiseUnexpectedToken*(r: JsonReader, expected: ExpectedTokenCategory)
                           {.noreturn.} =
   var ex = new UnexpectedTokenError
   ex.assignLineNumber(r)
-  ex.encountedToken = r.lexer.tok
+  ex.encountedToken = r.lexer.lazyTok
   ex.expectedToken = expected
   raise ex
 
@@ -250,9 +250,6 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
     result = JsonNode(kind: JFloat, fnum: r.lexer.floatVal)
     r.lexer.next()
 
-  of tkNumeric:
-    raiseAssert "generic type tkNumeric is not applicable"
-
   of tkTrue:
     result = JsonNode(kind: JBool, bval: true)
     r.lexer.next()
@@ -264,6 +261,10 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
   of tkNull:
     result = JsonNode(kind: JNull)
     r.lexer.next()
+
+  of tkQuoted, tkExBlob, tkNumeric, tkExInt, tkExNegInt:
+    raiseAssert "generic type " & $r.lexer.lazyTok & " is not applicable"
+
 
 proc skipSingleJsValue(r: var JsonReader) =
   case r.lexer.tok
@@ -295,7 +296,8 @@ proc skipSingleJsValue(r: var JsonReader) =
   of tkColon, tkComma, tkEof, tkError, tkBracketRi, tkCurlyRi:
     r.raiseUnexpectedToken etValue
 
-  of tkString, tkInt, tkNegativeInt, tkFloat, tkNumeric,
+  of tkString, tkQuoted, tkExBlob,
+     tkInt, tkNegativeInt, tkFloat, tkNumeric, tkExInt, tkExNegInt,
      tkTrue, tkFalse, tkNull:
     r.lexer.next()
 
@@ -339,7 +341,8 @@ proc captureSingleJsValue(r: var JsonReader, output: var string) =
   of tkColon, tkComma, tkEof, tkError, tkBracketRi, tkCurlyRi:
     r.raiseUnexpectedToken etValue
 
-  of tkString, tkInt, tkNegativeInt, tkFloat, tkNumeric,
+  of tkString, tkQuoted, tkExBlob,
+     tkInt, tkNegativeInt, tkFloat, tkNumeric, tkExInt, tkExNegInt,
      tkTrue, tkFalse, tkNull:
     r.lexer.next()
 
@@ -418,14 +421,17 @@ proc readValue*[T](r: var JsonReader, value: var T)
   ##         # lazyTok: Check token before the value is available
   ##         var accu: FancyUint
   ##         # custom parser (the directive `customIntValueIt()` is a
-  ##         # conveience wrapper around `customIntHandler()`.)
+  ##         # convenience wrapper around `customIntHandler()`.)
   ##         reader.lexer.customIntValueIt:
   ##           accu = accu * 10 + it.u256
   ##         value = accu
-  ##       elif reader.lexer.tok == tkString:
-  ##         # tok: Parse value and provide it in the lexer descriptor. This implies
-  ##         #      the invocation of reader.lexer.accept used in the earlier example
-  ##         value = reader.lexer.strVal.parseUint.FancyUint
+  ##       elif reader.lexer.lazyTok == tkQuoted:
+  ##         var accu = string
+  ##         # The following is really for demo only (inefficient,
+  ##         # lacks hex encoding)
+  ##         reader.lexer.customTextValueIt:
+  ##           accu &= it
+  ##         value = accu.parseUint.FancyUint
   ##       ...
   ##       # prepare next parser cycle
   ##       reader.lexer.next
@@ -436,7 +442,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
   when value is (object or tuple):
     let tok {.used.} = r.lexer.lazyTok
   else:
-    let tok {.used.} = r.lexer.tok
+    let tok {.used.} = r.lexer.tok # resove lazy token
 
   when value is JsonString:
     r.captureSingleJsValue(string value)
@@ -566,8 +572,13 @@ proc readValue*[T](r: var JsonReader, value: var T)
     when expectedFields > 0:
       let fields = T.fieldReadersTable(ReaderType)
       var expectedFieldPos = 0
-      while r.lexer.lazyTok == tkString:
-        r.lexer.accept
+      while true:
+        # Have the assignment parsed of the AVP
+        if r.lexer.lazyTok == tkQuoted:
+          r.lexer.accept
+        if r.lexer.lazyTok != tkString:
+          break
+        # Calculate/assemble handler
         when T is tuple:
           var reader = fields[][expectedFieldPos].reader
           expectedFieldPos += 1

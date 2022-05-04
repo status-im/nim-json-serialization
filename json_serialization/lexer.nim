@@ -10,8 +10,25 @@ export
 
 type
   CustomIntHandler* = ##\
-    ## Custom decimal integer parser, return value needs to be captured
+    ## Custom decimal integer parser, result values need to be captured
     proc(dgt: int) {.gcsafe, raises: [Defect].}
+
+  CustomByteAction* = enum
+    Continue ##\
+      ## Default initialisation when provided to a `CustomBlobHandler` parser\
+      ## function type via call-by-reference
+
+    StopBeforeByte ##\
+      ## Stop feeding and do not consume the current `byte` argument
+
+    StopSwallowByte ##\
+      ## Stop and discard current `byte` argument (e.g. the last double quote\
+      ## '"' for a genuine string parser.)
+
+  CustomBlobHandler* = ##\
+    ## Custom text or binary parser, result values need to be captured. The\
+    ## second argument `what` controlls the next action.
+    proc(b: byte; what: var CustomByteAction) {.gcsafe, raises: [Defect].}
 
   TokKind* = enum
     tkError,
@@ -30,8 +47,18 @@ type
     tkColon,
     tkComma,
 
-    tkNumeric ##\
-      ## unfinished/lazy type, any of tkInt, tkNegativeInt, tkFloat
+    tkQuoted, ##\
+      ## unfinished/lazy type, eventally becomes `tkString`
+    tkExBlob, ##\
+      ## externally held string value after successful custom parsing
+
+    tkNumeric, ##\
+      ## unfinished/lazy type, any of `tkInt`, `tkNegativeInt`, `tkFloat`
+    tkExInt, ##\
+      ## externally held non-negative integer value after successful custom\
+      ## parsing
+    tkExNegInt
+      ## externally held negative integer value after successful custom parsing
 
   JsonErrorKind* = enum
     errNone                 = "no error",
@@ -49,6 +76,7 @@ type
     errOrphanSurrogate      = "unicode surrogates must be followed by another unicode character"
     errNonPortableInt       = "number is outside the range of portable values"
     errCustomIntExpexted    = "not a customised integer"
+    errCustomBlobExpexted   = "not a customised quoted blob"
 
   JsonLexer* = object
     stream*: InputStream
@@ -73,6 +101,7 @@ const
 
 # needed in renderTok()
 proc scanNumber(lexer: var JsonLexer) {.gcsafe, raises: [Defect,IOError].}
+proc scanString(lexer: var JsonLexer) {.gcsafe, raises: [Defect,IOError].}
 
 proc renderTok*(lexer: var JsonLexer, output: var string)
     {.gcsafe, raises: [Defect,IOError].} =
@@ -80,11 +109,13 @@ proc renderTok*(lexer: var JsonLexer, output: var string)
   case lexer.tokKind
   of tkNumeric:
     lexer.scanNumber
+  of tkQuoted:
+    lexer.scanString
   else:
     discard
   # The real stuff
   case lexer.tokKind
-  of tkError, tkEof, tkNumeric:
+  of tkError, tkEof, tkNumeric, tkExInt, tkExNegInt, tkQuoted, tkExBlob:
     discard
   of tkString:
     output.add '"'
@@ -122,14 +153,14 @@ template peek(s: InputStream): char =
 template read(s: InputStream): char =
   char inputs.read(s)
 
-proc hexCharValue(c: char): int {.inline.} =
+proc hexCharValue(c: char): int =
   case c
   of '0'..'9': ord(c) - ord('0')
   of 'a'..'f': ord(c) - ord('a') + 10
   of 'A'..'F': ord(c) - ord('A') + 10
   else: -1
 
-proc isDigit(c: char): bool {.inline.} =
+proc isDigit(c: char): bool =
   return (c >= '0' and c <= '9')
 
 proc col*(lexer: JsonLexer): int =
@@ -174,8 +205,7 @@ proc scanHexRune(lexer: var JsonLexer): int
     if hexValue == -1: error errHexCharExpected
     result = (result shl 4) or hexValue
 
-proc scanString(lexer: var JsonLexer)
-    {.gcsafe, raises: [Defect,IOError].} =
+proc scanString(lexer: var JsonLexer) =
   lexer.tokKind = tkString
   lexer.strVal.setLen 0
   lexer.tokenStart = lexer.stream.pos
@@ -226,7 +256,7 @@ proc scanString(lexer: var JsonLexer)
     else:
       lexer.strVal.add c
 
-proc handleLF(lexer: var JsonLexer) {.inline.} =
+proc handleLF(lexer: var JsonLexer) =
   advance lexer.stream
   lexer.line += 1
   lexer.lineStartPos = lexer.stream.pos
@@ -406,6 +436,8 @@ proc accept*(lexer: var JsonLexer)
   case lexer.tokKind
   of tkNumeric:
     lexer.scanNumber
+  of tkQuoted:
+    lexer.scanString
   else:
     discard
 
@@ -417,15 +449,16 @@ proc next*(lexer: var JsonLexer)
     lexer.tokKind = tkEof
     return
 
-  # in case that was missing, implies `lexer.valueOk = true`
+  # in case the value parsing was missing
   lexer.accept()
+  lexer.strVal.setLen 0 # release memory (if any)
 
   let c = lexer.stream.peek()
   case c
   of '+', '-', '.', '0'..'9':
     lexer.tokKind = tkNumeric
   of '"':
-    lexer.scanString
+    lexer.tokKind = tkQuoted
   of '[':
     advance lexer.stream
     lexer.tokKind = tkBracketLe
@@ -459,13 +492,16 @@ proc tok*(lexer: var JsonLexer): TokKind
   lexer.accept
   lexer.tokKind
 
-proc lazyTok*(lexer: var JsonLexer): TokKind =
-  ## Look ahead token unless accepted, already
+proc lazyTok*(lexer: JsonLexer): TokKind =
+  ## Preliminary token state unless accepted, already
   lexer.tokKind
+
 
 proc customIntHandler*(lexer: var JsonLexer; handler: CustomIntHandler)
     {.gcsafe, raises: [Defect,IOError].} =
-
+  ## Apply the `handler` argument function for parsing a `tkNumeric` type
+  ## value. This function sets the token state to `tkExInt`, `tkExNegInt`,
+  ## or `tkError`.
   proc customScan(lexer: var JsonLexer)
     {.gcsafe, raises: [Defect,IOError].} =
     var c = lexer.stream.peek()
@@ -479,16 +515,80 @@ proc customIntHandler*(lexer: var JsonLexer; handler: CustomIntHandler)
     var sign = lexer.scanSign()
     if sign != 0:
       if lexer.stream.peek.isDigit:
-        lexer.tokKind = if 0 < sign: tkInt else: tkNegativeInt
+        lexer.tokKind = if 0 < sign: tkExInt else: tkExNegInt
         lexer.customScan
         if not lexer.stream.readable or lexer.stream.peek != '.':
           return
 
   error errCustomIntExpexted
 
+proc customBlobHandler*(lexer: var JsonLexer; handler: CustomBlobHandler)
+    {.gcsafe, raises: [Defect,IOError].} =
+  ## Apply the `handler` argument function for parsing a `tkQuoted` type
+  ## value. This function sets the token state to `tkExBlob`, or `tkError`.
+  proc customScan(lexer: var JsonLexer)
+      {.gcsafe, raises: [Defect,IOError].} =
+    var what = Continue
+    while lexer.stream.readable:
+      var c = lexer.stream.peek
+      handler(c.byte, what)
+      case what
+      of StopBeforeByte:
+        break
+      of StopSwallowByte:
+        advance lexer.stream
+        break
+      of Continue:
+        advance lexer.stream
+
+  if lexer.tokKind == tkQuoted:
+    advance lexer.stream
+    lexer.customScan
+    lexer.tokKind = tkExBlob
+    return
+
+  error errCustomBlobExpexted
+
+
 template customIntValueIt*(lexer: var JsonLexer; body: untyped): untyped =
+  ## Convenience wrapper around `customIntHandler()` for parsing integers.
+  ##
+  ## The `body` argument represents a virtual function body. So the current
+  ## digit processing can be exited with `return`.
   var handler: CustomIntHandler =
     proc(digit: int) =
       let it {.inject.} = digit
       body
   lexer.customIntHandler(handler)
+
+template customBlobValueIt*(lexer: var JsonLexer; body: untyped): untyped =
+  ## Convenience wrapper around `customBlobHandler()` for parsing any byte
+  ## object. The body function needs to terminate explicitely with the typical
+  ## phrase `doNext = StopSwallowByte` or with the more unusual phrase
+  ## `doNext = StopBeforeByte`.
+  ##
+  ## The `body` argument represents a virtual function body. So the current
+  ## byte processing can be exited with `return`.
+  var handler: CustomBlobHandler =
+    proc(c: byte; what: var CustomByteAction) =
+      let it {.inject.} = c
+      var doNext {.inject.} = what
+      body
+      what = doNext
+  lexer.customBlobHandler(handler)
+
+template customTextValueIt*(lexer: var JsonLexer; body: untyped): untyped =
+  ## Convenience wrapper around `customBlobHandler()` for parsing a text
+  ## terminating with a double quote character '"' (no inner double quote
+  ## allowed.)
+  ##
+  ## The `body` argument represents a virtual function body. So the current
+  ## character processing can be exited with `return`.
+  var handler: CustomBlobHandler =
+    proc(c: byte; what: var CustomByteAction) =
+      let it {.inject.} = c.chr
+      if it == '"':
+        what = StopSwallowByte
+      else:
+        body
+  lexer.customBlobHandler(handler)
