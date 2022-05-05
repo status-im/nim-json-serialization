@@ -3,6 +3,7 @@ import
   serialization/object_serialization,
   serialization/testing/generic_suite,
   ../json_serialization, ./utils,
+  ../json_serialization/lexer,
   ../json_serialization/std/[options, sets, tables]
 
 type
@@ -49,6 +50,80 @@ type
   HasCstring = object
     notNilStr: cstring
     nilStr: cstring
+
+  # Customised parser tests
+  FancyInt = distinct int
+  FancyUInt = distinct uint
+  FancyText = distinct string
+
+  HasFancyInt = object
+    name: string
+    data: FancyInt
+
+  HasFancyUInt = object
+    name: string
+    data: FancyUInt
+
+  HasFancyText = object
+    name: string
+    data: FancyText
+
+  TokenRegistry = tuple
+    entry, exit: TokKind
+    dup: bool
+
+var
+  customVisit: TokenRegistry
+
+template registerVisit(reader: var JsonReader; body: untyped): untyped =
+  if customVisit.entry == tkError:
+    customVisit.entry = reader.lexer.lazyTok
+    body
+    customVisit.exit = reader.lexer.lazyTok
+  else:
+    customVisit.dup = true
+
+# Customised parser referring to other parser
+proc readValue(reader: var JsonReader, value: var FancyInt) =
+  reader.registerVisit:
+    value = reader.readValue(int).FancyInt
+
+# Customised numeric parser for integer and stringified integer
+proc readValue(reader: var JsonReader, value: var FancyUInt) =
+  reader.registerVisit:
+    var accu = 0u
+    case reader.lexer.lazyTok
+    of tkNumeric:
+      reader.lexer.customIntValueIt:
+        accu = accu * 10u + it.uint
+    of tkQuoted:
+      var s =  ""
+      reader.lexer.customTextValueIt:
+        s &= it
+      accu = s.parseUInt
+    else:
+      discard
+    value = accu.FancyUInt
+  reader.lexer.next
+
+# Customised numeric parser for text, accepts embedded quote
+proc readValue(reader: var JsonReader, value: var FancyText) =
+  reader.registerVisit:
+    var (s, esc) = ("",false)
+    reader.lexer.customBlobValueIt:
+      let c = it.chr
+      if esc:
+        s &= c
+        esc = false
+      elif c == '\\':
+        esc = true
+      elif c != '"':
+        s &= c
+      else:
+        doNext = StopSwallowByte
+    value = s.FancyText
+  reader.lexer.next
+
 
 # TODO `borrowSerialization` still doesn't work
 # properly when it's placed in another module:
@@ -371,3 +446,67 @@ suite "toJson tests":
       # clarity regarding the memory allocation approach
       Json.decode("null", cstring)
 
+suite "Custom parser tests":
+  test "Fall back to int parser":
+    customVisit = TokenRegistry.default
+
+    let
+      jData = test_dedent"""
+        {
+          "name": "FancyInt",
+          "data": -12345
+        }
+      """
+      dData = Json.decode(jData, HasFancyInt)
+
+    check dData.name == "FancyInt"
+    check dData.data.int == -12345
+    check customVisit == (tkNumeric, tkCurlyRi, false)
+
+  test "Uint parser on negative integer":
+    customVisit = TokenRegistry.default
+
+    let
+      jData = test_dedent"""
+        {
+          "name": "FancyUInt",
+          "data": -12345
+        }
+      """
+      dData = Json.decode(jData, HasFancyUInt)
+
+    check dData.name == "FancyUInt"
+    check dData.data.uint == 12345u # abs value
+    check customVisit == (tkNumeric, tkExNegInt, false)
+
+  test "Uint parser on string integer":
+    customVisit = TokenRegistry.default
+
+    let
+      jData = test_dedent"""
+        {
+          "name": "FancyUInt",
+          "data": "12345"
+        }
+      """
+      dData = Json.decode(jData, HasFancyUInt)
+
+    check dData.name == "FancyUInt"
+    check dData.data.uint == 12345u
+    check customVisit == (tkQuoted, tkExBlob, false)
+
+  test "Parser on text blob with embedded quote (backlash escape support)":
+    customVisit = TokenRegistry.default
+
+    let
+      jData = test_dedent"""
+        {
+          "name": "FancyText",
+          "data": "a\bc\"\\def"
+        }
+      """
+      dData = Json.decode(jData, HasFancyText)
+
+    check dData.name == "FancyText"
+    check dData.data.string == "abc\"\\def"
+    check customVisit == (tkQuoted, tkExBlob, false)

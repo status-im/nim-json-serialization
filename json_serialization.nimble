@@ -16,6 +16,7 @@ proc test(args, path: string) =
     mkDir "build"
 
   exec "nim " & getEnv("TEST_LANG", "c") & " " & getEnv("NIMFLAGS") & " " & args &
+    " -d:nimOldCaseObjects " &
     " -r --hints:off --skipParentCfg --styleCheck:usages --styleCheck:error " & path
 
 task test, "Run all tests":

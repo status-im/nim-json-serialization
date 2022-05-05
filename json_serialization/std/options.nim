@@ -8,7 +8,7 @@ proc writeValue*(writer: var JsonWriter, value: Option) =
     writer.writeValue JsonString("null")
 
 proc readValue*[T](reader: var JsonReader, value: var Option[T]) =
-  let tok = reader.lexer.tok
+  let tok = reader.lexer.lazyTok
   if tok == tkNull:
     reset value
     reader.lexer.next()

@@ -101,7 +101,7 @@ proc raiseUnexpectedToken*(r: JsonReader, expected: ExpectedTokenCategory)
                           {.noreturn.} =
   var ex = new UnexpectedTokenError
   ex.assignLineNumber(r)
-  ex.encountedToken = r.lexer.tok
+  ex.encountedToken = r.lexer.lazyTok
   ex.expectedToken = expected
   raise ex
 
@@ -155,7 +155,7 @@ proc init*(T: type JsonReader,
 proc setParsed[T: enum](e: var T, s: string) =
   e = parseEnum[T](s)
 
-proc requireToken*(r: JsonReader, tk: TokKind) =
+proc requireToken*(r: var JsonReader, tk: TokKind) =
   if r.lexer.tok != tk:
     r.raiseUnexpectedToken case tk
       of tkString: etString
@@ -262,6 +262,10 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
     result = JsonNode(kind: JNull)
     r.lexer.next()
 
+  of tkQuoted, tkExBlob, tkNumeric, tkExInt, tkExNegInt:
+    raiseAssert "generic type " & $r.lexer.lazyTok & " is not applicable"
+
+
 proc skipSingleJsValue(r: var JsonReader) =
   case r.lexer.tok
   of tkCurlyLe:
@@ -292,7 +296,9 @@ proc skipSingleJsValue(r: var JsonReader) =
   of tkColon, tkComma, tkEof, tkError, tkBracketRi, tkCurlyRi:
     r.raiseUnexpectedToken etValue
 
-  of tkString, tkInt, tkNegativeInt, tkFloat, tkTrue, tkFalse, tkNull:
+  of tkString, tkQuoted, tkExBlob,
+     tkInt, tkNegativeInt, tkFloat, tkNumeric, tkExInt, tkExNegInt,
+     tkTrue, tkFalse, tkNull:
     r.lexer.next()
 
 proc captureSingleJsValue(r: var JsonReader, output: var string) =
@@ -335,7 +341,9 @@ proc captureSingleJsValue(r: var JsonReader, output: var string) =
   of tkColon, tkComma, tkEof, tkError, tkBracketRi, tkCurlyRi:
     r.raiseUnexpectedToken etValue
 
-  of tkString, tkInt, tkNegativeInt, tkFloat, tkTrue, tkFalse, tkNull:
+  of tkString, tkQuoted, tkExBlob,
+     tkInt, tkNegativeInt, tkFloat, tkNumeric, tkExInt, tkExNegInt,
+     tkTrue, tkFalse, tkNull:
     r.lexer.next()
 
 proc allocPtr[T](p: var ptr T) =
@@ -348,7 +356,7 @@ iterator readArray*(r: var JsonReader, ElemType: typedesc): ElemType =
   mixin readValue
 
   r.skipToken tkBracketLe
-  if r.lexer.tok != tkBracketRi:
+  if r.lexer.lazyTok != tkBracketRi:
     while true:
       var res: ElemType
       readValue(r, res)
@@ -362,14 +370,14 @@ iterator readObjectFields*(r: var JsonReader,
   mixin readValue
 
   r.skipToken tkCurlyLe
-  if r.lexer.tok != tkCurlyRi:
+  if r.lexer.lazyTok != tkCurlyRi:
     while true:
       var key: KeyType
       readValue(r, key)
-      if r.lexer.tok != tkColon: break
+      if r.lexer.lazyTok != tkColon: break
       r.lexer.next()
       yield key
-      if r.lexer.tok != tkComma: break
+      if r.lexer.lazyTok != tkComma: break
       r.lexer.next()
   r.skipToken tkCurlyRi
 
@@ -394,10 +402,47 @@ template isCharArray(v: auto): bool = false
 
 proc readValue*[T](r: var JsonReader, value: var T)
                   {.raises: [SerializationError, IOError, Defect].} =
+  ## Master filed/object parser. This function relies on customised sub-mixins for particular
+  ## object types.
+  ##
+  ## Customised readValue() examples:
+  ## ::
+  ##     type
+  ##       FancyInt = distinct int
+  ##       FancyUInt = distinct uint
+  ##
+  ##     proc readValue(reader: var JsonReader, value: var FancyInt) =
+  ##       ## Refer to another readValue() instance
+  ##       value = reader.readValue(int).FancyInt
+  ##
+  ##     proc readValue(reader: var JsonReader, value: var FancyUInt) =
+  ##       ## Provide a full custum version of a readValue() instance
+  ##       if reader.lexer.lazyTok == tkNumeric:
+  ##         # lazyTok: Check token before the value is available
+  ##         var accu: FancyUInt
+  ##         # custom parser (the directive `customIntValueIt()` is a
+  ##         # convenience wrapper around `customIntHandler()`.)
+  ##         reader.lexer.customIntValueIt:
+  ##           accu = accu * 10 + it.u256
+  ##         value = accu
+  ##       elif reader.lexer.lazyTok == tkQuoted:
+  ##         var accu = string
+  ##         # The following is really for demo only (inefficient,
+  ##         # lacks hex encoding)
+  ##         reader.lexer.customTextValueIt:
+  ##           accu &= it
+  ##         value = accu.parseUInt.FancyUInt
+  ##       ...
+  ##       # prepare next parser cycle
+  ##       reader.lexer.next
+  ##
   mixin readValue
   type ReaderType {.used.} = type r
 
-  let tok {.used.} = r.lexer.tok
+  when value is (object or tuple):
+    let tok {.used.} = r.lexer.lazyTok
+  else:
+    let tok {.used.} = r.lexer.tok # resove lazy token
 
   when value is JsonString:
     r.captureSingleJsValue(string value)
@@ -527,23 +572,32 @@ proc readValue*[T](r: var JsonReader, value: var T)
     when expectedFields > 0:
       let fields = T.fieldReadersTable(ReaderType)
       var expectedFieldPos = 0
-      while r.lexer.tok == tkString:
+      while true:
+        # Have the assignment parsed of the AVP
+        if r.lexer.lazyTok == tkQuoted:
+          r.lexer.accept
+        if r.lexer.lazyTok != tkString:
+          break
+        # Calculate/assemble handler
         when T is tuple:
           var reader = fields[][expectedFieldPos].reader
           expectedFieldPos += 1
         else:
           var reader = findFieldReader(fields[], r.lexer.strVal, expectedFieldPos)
-        r.lexer.next()
-        r.skipToken tkColon
         if reader != nil:
+          r.lexer.next()
+          r.skipToken tkColon
           reader(value, r)
           inc readFields
-        elif r.allowUnknownFields:
-          r.skipSingleJsValue()
         else:
-          const typeName = typetraits.name(T)
-          r.raiseUnexpectedField(r.lexer.strVal, typeName)
-        if r.lexer.tok == tkComma:
+          r.lexer.next()
+          r.skipToken tkColon
+          if r.allowUnknownFields:
+            r.skipSingleJsValue()
+          else:
+            const typeName = typetraits.name(T)
+            r.raiseUnexpectedField(r.lexer.strVal, typeName)
+        if r.lexer.lazyTok == tkComma:
           r.lexer.next()
         else:
           break
@@ -552,6 +606,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
       const typeName = typetraits.name(T)
       r.raiseIncompleteObject(typeName)
 
+    r.lexer.accept
     r.skipToken tkCurlyRi
 
   else:
