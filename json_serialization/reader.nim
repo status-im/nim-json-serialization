@@ -409,17 +409,17 @@ proc readValue*[T](r: var JsonReader, value: var T)
   ## ::
   ##     type
   ##       FancyInt = distinct int
-  ##       FancyUint = distinct uint
+  ##       FancyUInt = distinct uint
   ##
   ##     proc readValue(reader: var JsonReader, value: var FancyInt) =
   ##       ## Refer to another readValue() instance
   ##       value = reader.readValue(int).FancyInt
   ##
-  ##     proc readValue(reader: var JsonReader, value: var FancyUint) =
+  ##     proc readValue(reader: var JsonReader, value: var FancyUInt) =
   ##       ## Provide a full custum version of a readValue() instance
   ##       if reader.lexer.lazyTok == tkNumeric:
   ##         # lazyTok: Check token before the value is available
-  ##         var accu: FancyUint
+  ##         var accu: FancyUInt
   ##         # custom parser (the directive `customIntValueIt()` is a
   ##         # convenience wrapper around `customIntHandler()`.)
   ##         reader.lexer.customIntValueIt:
@@ -431,7 +431,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
   ##         # lacks hex encoding)
   ##         reader.lexer.customTextValueIt:
   ##           accu &= it
-  ##         value = accu.parseUint.FancyUint
+  ##         value = accu.parseUInt.FancyUInt
   ##       ...
   ##       # prepare next parser cycle
   ##       reader.lexer.next

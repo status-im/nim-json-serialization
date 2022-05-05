@@ -543,8 +543,8 @@ proc customBlobHandler*(lexer: var JsonLexer; handler: CustomBlobHandler)
 
   if lexer.tokKind == tkQuoted:
     advance lexer.stream
-    lexer.customScan
     lexer.tokKind = tkExBlob
+    lexer.customScan
     return
 
   error errCustomBlobExpexted

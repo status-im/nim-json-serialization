@@ -53,7 +53,7 @@ type
 
   # Customised parser tests
   FancyInt = distinct int
-  FancyUint = distinct uint
+  FancyUInt = distinct uint
   FancyText = distinct string
 
   HasFancyInt = object
@@ -100,10 +100,10 @@ proc readValue(reader: var JsonReader, value: var FancyUInt) =
       var s =  ""
       reader.lexer.customTextValueIt:
         s &= it
-      accu = s.parseUint
+      accu = s.parseUInt
     else:
       discard
-    value = accu.FancyUint
+    value = accu.FancyUInt
   reader.lexer.next
 
 # Customised numeric parser for text, accepts embedded quote
