@@ -455,9 +455,6 @@ proc readValue*[T](r: var JsonReader, value: var T)
     value = r.lexer.strVal
     r.lexer.next()
 
-  elif value is TaintedString:
-    value = TaintedString r.readValue(string)
-
   elif value is seq[char]:
     r.requireToken tkString
     value.setLen(r.lexer.strVal.len)
