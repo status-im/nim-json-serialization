@@ -593,7 +593,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
             r.skipSingleJsValue()
           else:
             const typeName = typetraits.name(T)
-            r.raiseUnexpectedField(r.lexer.strVal, string typeName)
+            r.raiseUnexpectedField(r.lexer.strVal, typeName)
         if r.lexer.lazyTok == tkComma:
           r.lexer.next()
         else:
