@@ -21,7 +21,7 @@ type
 
   UnexpectedField* = object of JsonReaderError
     encounteredField*: string
-    deserializedType*: cstring
+    deserializedType*: string
 
   ExpectedTokenCategory* = enum
     etValue = "value"
@@ -118,7 +118,7 @@ proc raiseIntOverflow*(r: JsonReader, absIntVal: uint64, isNegative: bool) {.nor
   ex.isNegative = isNegative
   raise ex
 
-proc raiseUnexpectedField*(r: JsonReader, fieldName: string, deserializedType: cstring) {.noreturn.} =
+proc raiseUnexpectedField*(r: JsonReader, fieldName, deserializedType: string) {.noreturn.} =
   var ex = new UnexpectedField
   ex.assignLineNumber(r)
   ex.encounteredField = fieldName
@@ -593,7 +593,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
             r.skipSingleJsValue()
           else:
             const typeName = typetraits.name(T)
-            r.raiseUnexpectedField(r.lexer.strVal, string typeName)
+            r.raiseUnexpectedField(r.lexer.strVal, typeName)
         if r.lexer.lazyTok == tkComma:
           r.lexer.next()
         else:
