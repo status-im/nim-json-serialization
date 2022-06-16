@@ -4,7 +4,8 @@ import
   serialization/testing/generic_suite,
   ../json_serialization, ./utils,
   ../json_serialization/lexer,
-  ../json_serialization/std/[options, sets, tables]
+  ../json_serialization/std/[options, sets, tables],
+  ../json_serialization/stew/results
 
 type
   Foo = object
@@ -71,6 +72,10 @@ type
   TokenRegistry = tuple
     entry, exit: TokKind
     dup: bool
+
+  HoldsResultOpt* = object
+    r*: ref Simple
+    o*: Opt[Simple]
 
 var
   customVisit: TokenRegistry
@@ -327,7 +332,15 @@ suite "toJson tests":
       h2 = HoldsOption(r: newSimple(1, "2", Meter(3)))
 
     Json.roundtripTest h1, """{"r":null,"o":{"distance":3,"x":1,"y":"2"}}"""
-    Json.roundtripTest h2, """{"r":{"distance":3,"x":1,"y":"2"},"o":null}"""
+    Json.roundtripTest h2, """{"r":{"distance":3,"x":1,"y":"2"}}"""
+
+  test "Result Opt types":
+    let
+      h1 = HoldsResultOpt(o: Opt[Simple].ok Simple(x: 1, y: "2", distance: Meter(3)))
+      h2 = HoldsResultOpt(r: newSimple(1, "2", Meter(3)))
+
+    Json.roundtripTest h1, """{"r":null,"o":{"distance":3,"x":1,"y":"2"}}"""
+    Json.roundtripTest h2, """{"r":{"distance":3,"x":1,"y":"2"}}"""
 
   test "Case object as field":
     let
