@@ -103,9 +103,7 @@ template endRecordField*(w: var JsonWriter) =
   endRecord(w)
   w.state = AfterField
 
-proc writeIterable*(w: var JsonWriter, collection: auto) =
-  mixin writeValue
-
+iterator stepwiseArrayCreation*[C](w: var JsonWriter, collection: C): auto =
   append '['
 
   if w.hasPrettyOutput:
@@ -122,7 +120,7 @@ proc writeIterable*(w: var JsonWriter, collection: auto) =
         indent()
 
     w.state = RecordExpected
-    w.writeValue(e)
+    yield e
     first = false
 
   if w.hasPrettyOutput:
@@ -131,6 +129,11 @@ proc writeIterable*(w: var JsonWriter, collection: auto) =
     indent()
 
   append ']'
+
+proc writeIterable*(w: var JsonWriter, collection: auto) =
+  mixin writeValue
+  for e in w.stepwiseArrayCreation(collection):
+    w.writeValue(e)
 
 proc writeArray*[T](w: var JsonWriter, elements: openArray[T]) =
   writeIterable(w, elements)
