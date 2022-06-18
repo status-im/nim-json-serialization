@@ -146,17 +146,19 @@ template isStringLike[N](v: array[N, char]): bool = true
 template isStringLike(v: auto): bool = false
 
 template writeField*[FieldType, RecordType](w: var JsonWriter,
+                                            record: RecordType,
                                             fieldName: static string,
-                                            field: FieldType,
-                                            record: RecordType) =
-  mixin writeFieldIMPL
+                                            field: FieldType) =
+  mixin writeFieldIMPL, writeValue
 
   type
-    F = type field
     R = type record
 
   w.writeFieldName(fieldName)
-  w.writeFieldIMPL(FieldTag[R, fieldName, F], field, record)
+  when RecordType is tuple:
+    w.writeValue(field)
+  else:
+    w.writeFieldIMPL(FieldTag[R, fieldName], field, record)
 
 proc writeValue*(w: var JsonWriter, value: auto) =
   mixin enumInstanceSerializedFields, writeValue
@@ -236,7 +238,7 @@ proc writeValue*(w: var JsonWriter, value: auto) =
     w.beginRecord RecordType
     value.enumInstanceSerializedFields(fieldName, field):
       mixin writeField
-      writeField(w, fieldName, field, value)
+      writeField(w, value, fieldName, field)
       w.state = AfterField
     w.endRecord()
 

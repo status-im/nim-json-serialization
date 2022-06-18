@@ -5,11 +5,11 @@ export
   results
 
 template writeField*[T](w: var JsonWriter,
+                        record: auto,
                         fieldName: static string,
-                        field: Result[T, void],
-                        record: auto) =
+                        field: Result[T, void]) =
   if field.isOk:
-    writeField(w, fieldName, field.get, record)
+    writeField(w, record, fieldName, field.get)
 
 proc writeValue*[T](writer: var JsonWriter, value: Result[T, void]) =
   if value.isOk:

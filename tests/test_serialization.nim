@@ -77,8 +77,21 @@ type
     r*: ref Simple
     o*: Opt[Simple]
 
+  WithCustomFieldRule* = object
+    str*: string
+    intVal*: int
+
 var
   customVisit: TokenRegistry
+
+Json.useCustomSerialization(WithCustomFieldRule.intVal):
+  read:
+    try:
+      parseInt reader.readValue(string)
+    except ValueError:
+      reader.raiseUnexpectedValue("string encoded integer expected")
+  write:
+    writer.writeValue $value
 
 template registerVisit(reader: var JsonReader; body: untyped): untyped =
   if customVisit.entry == tkError:
@@ -341,6 +354,10 @@ suite "toJson tests":
 
     Json.roundtripTest h1, """{"r":null,"o":{"distance":3,"x":1,"y":"2"}}"""
     Json.roundtripTest h2, """{"r":{"distance":3,"x":1,"y":"2"}}"""
+
+  test "Custom field serialization":
+    let obj = WithCustomFieldRule(str: "test", intVal: 10)
+    Json.roundtripTest obj, """{"str":"test","intVal":"10"}"""
 
   test "Case object as field":
     let
