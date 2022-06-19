@@ -1,14 +1,14 @@
 import std/options, ../../json_serialization/[reader, writer, lexer]
 export options
 
-template writeField*(w: var JsonWriter,
-                     record: auto,
-                     fieldName: static string,
-                     field: Option) =
-  mixin writeField
+template writeObjectField*(w: var JsonWriter,
+                           record: auto,
+                           fieldName: static string,
+                           field: Option) =
+  mixin writeObjectField
 
   if field.isSome:
-    writeField(w, record, fieldName, field.get)
+    writeObjectField(w, record, fieldName, field.get)
 
 proc writeValue*(writer: var JsonWriter, value: Option) =
   mixin writeValue
