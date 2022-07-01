@@ -217,7 +217,7 @@ proc writeValue*(w: var JsonWriter, value: auto) =
     w.stream.writeText ord(value)
 
   elif value is range:
-    when low(value) < 0:
+    when low(typeof(value)) < 0:
       w.stream.writeText int64(value)
     else:
       w.stream.writeText uint64(value)
