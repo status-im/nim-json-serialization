@@ -405,7 +405,7 @@ func totalExpectedFields*(T: type): int {.compileTime.} =
     if isFieldExpected(FieldType):
       inc result
 
-func setBit*(x: var uint, bit: int) {.inline.} =
+func setBitInWord(x: var uint, bit: int) {.inline.} =
   let mask = uint(1) shl bit
   x = x or mask
 
@@ -425,16 +425,16 @@ func expectedFieldsBitmask*(TT: type): auto {.compileTime.} =
   var i = 0
   enumAllSerializedFields(T):
     if isFieldExpected(FieldType):
-      res[i div bitsPerWord].setBit(i mod bitsPerWord)
+      res[i div bitsPerWord].setBitInWord(i mod bitsPerWord)
     inc i
 
   return res
 
-template setBit[N](data: var array[N, uint], bitIdx: int) =
-  when N > 1:
-    data[bitIdx div bitsPerWord].setBit(bitIdx mod bitsPerWord)
+template setBitInArray[N](data: var array[N, uint], bitIdx: int) =
+  when data.len > 1:
+    setBitInWord(data[bitIdx div bitsPerWord], bitIdx mod bitsPerWord)
   else:
-    data[0].setBit(bitIdx)
+    setBitInWord(data[0], bitIdx)
 
 func isBitwiseSubsetOf[N](lhs, rhs: array[N, uint]): bool =
   for i in low(lhs) .. high(lhs):
@@ -643,7 +643,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
           r.lexer.next()
           r.skipToken tkColon
           reader(value, r)
-          encounteredFields.setBit(fieldIdx)
+          encounteredFields.setBitInArray(fieldIdx)
         elif r.allowUnknownFields:
           r.lexer.next()
           r.skipToken tkColon
