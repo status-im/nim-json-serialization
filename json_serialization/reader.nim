@@ -394,6 +394,55 @@ iterator readObject*(r: var JsonReader,
 proc isNotNilCheck[T](x: ref T not nil) {.compileTime.} = discard
 proc isNotNilCheck[T](x: ptr T not nil) {.compileTime.} = discard
 
+func isFieldExpected*(T: type): bool {.compileTime.} =
+  T isnot Option
+
+func totalExpectedFields*(T: type): int {.compileTime.} =
+  mixin isFieldExpected,
+        enumAllSerializedFields
+
+  enumAllSerializedFields(T):
+    if isFieldExpected(FieldType):
+      inc result
+
+func setBit*(x: var uint, bit: int) {.inline.} =
+  let mask = uint(1) shl bit
+  x = x or mask
+
+const bitsPerWord = sizeof(uint) * 8
+
+func expectedFieldsBitmask*(TT: type): auto {.compileTime.} =
+  type T = TT
+
+  mixin isFieldExpected,
+        enumAllSerializedFields
+
+  const requiredWords =
+    (totalExpectedFields(T) + bitsPerWord - 1) div bitsPerWord
+
+  var res: array[requiredWords, uint]
+
+  var i = 0
+  enumAllSerializedFields(T):
+    if isFieldExpected(FieldType):
+      res[i div bitsPerWord].setBit(i mod bitsPerWord)
+    inc i
+
+  return res
+
+template setBit[N](data: var array[N, uint], bitIdx: int) =
+  when N > 1:
+    data[bitIdx div bitsPerWord].setBit(bitIdx mod bitsPerWord)
+  else:
+    data[0].setBit(bitIdx)
+
+func isBitwiseSubsetOf[N](lhs, rhs: array[N, uint]): bool =
+  for i in low(lhs) .. high(lhs):
+    if (lhs[i] and rhs[i]) != lhs[i]:
+      return false
+
+  true
+
 # this construct catches `array[N, char]` which otherwise won't decompose into
 # openArray[char] - we treat any array-like thing-of-characters as a string in
 # the output
@@ -564,44 +613,54 @@ proc readValue*[T](r: var JsonReader, value: var T)
     type T = type(value)
     r.skipToken tkCurlyLe
 
-    const expectedFields = T.totalSerializedFields
-    var readFields = 0
-    when expectedFields > 0:
-      let fields = T.fieldReadersTable(ReaderType)
-      var expectedFieldPos = 0
+    when T.totalSerializedFields > 0:
+      let
+        fieldsTable = T.fieldReadersTable(ReaderType)
+
+      const
+        expectedFields = T.expectedFieldsBitmask
+
+      var
+        encounteredFields: typeof(expectedFields)
+        mostLikelyNextField = 0
+
       while true:
         # Have the assignment parsed of the AVP
         if r.lexer.lazyTok == tkQuoted:
           r.lexer.accept
         if r.lexer.lazyTok != tkString:
           break
-        # Calculate/assemble handler
+
         when T is tuple:
-          var reader = fields[][expectedFieldPos].reader
-          expectedFieldPos += 1
+          let fieldIdx = mostLikelyNextField
+          mostLikelyNextField += 1
         else:
-          var reader = findFieldReader(fields[], r.lexer.strVal, expectedFieldPos)
-        if reader != nil:
+          let fieldIdx = findFieldIdx(fieldsTable[],
+                                      r.lexer.strVal,
+                                      mostLikelyNextField)
+        if fieldIdx != -1:
+          let reader = fieldsTable[][fieldIdx].reader
           r.lexer.next()
           r.skipToken tkColon
           reader(value, r)
-          inc readFields
-        else:
+          encounteredFields.setBit(fieldIdx)
+        elif r.allowUnknownFields:
           r.lexer.next()
           r.skipToken tkColon
-          if r.allowUnknownFields:
-            r.skipSingleJsValue()
-          else:
-            const typeName = typetraits.name(T)
-            r.raiseUnexpectedField(r.lexer.strVal, cstring typeName)
+          r.skipSingleJsValue()
+        else:
+          const typeName = typetraits.name(T)
+          r.raiseUnexpectedField(r.lexer.strVal, cstring typeName)
+
         if r.lexer.lazyTok == tkComma:
           r.lexer.next()
         else:
           break
 
-    if r.requireAllFields and readFields != expectedFields:
-      const typeName = typetraits.name(T)
-      r.raiseIncompleteObject(typeName)
+      if r.requireAllFields and
+         not expectedFields.isBitwiseSubsetOf(encounteredFields):
+        const typeName = typetraits.name(T)
+        r.raiseIncompleteObject(typeName)
 
     r.lexer.accept
     r.skipToken tkCurlyRi

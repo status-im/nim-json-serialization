@@ -30,3 +30,6 @@ proc readValue*[T](reader: var JsonReader, value: var Result[T, void]) =
     reader.lexer.next()
   else:
     value.ok reader.readValue(T)
+
+func isFieldExpected*[T, E](_: type[Result[T, E]]): bool {.compileTime.} =
+  false

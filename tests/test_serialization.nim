@@ -340,6 +340,13 @@ suite "toJson tests":
       r == Json.decode("""{"type":"uint8", "renamed":"field"}""", HasUnusualFieldNames)
 
   test "Option types":
+    check:
+      2 == static(HoldsOption.totalSerializedFields)
+      1 == static(HoldsOption.totalExpectedFields)
+
+      2 == static(Foo.totalSerializedFields)
+      2 == static(Foo.totalExpectedFields)
+
     let
       h1 = HoldsOption(o: some Simple(x: 1, y: "2", distance: Meter(3)))
       h2 = HoldsOption(r: newSimple(1, "2", Meter(3)))
@@ -347,13 +354,38 @@ suite "toJson tests":
     Json.roundtripTest h1, """{"r":null,"o":{"distance":3,"x":1,"y":"2"}}"""
     Json.roundtripTest h2, """{"r":{"distance":3,"x":1,"y":"2"}}"""
 
+    let
+      h3 = Json.decode("""{"r":{"distance":3,"x":1,"y":"2"}}""",
+                       HoldsOption, requireAllFields = true)
+
+    check h3 == h2
+
+    expect SerializationError:
+     let h4 = Json.decode("""{"o":{"distance":3,"x":1,"y":"2"}}""",
+                          HoldsOption, requireAllFields = true)
+
   test "Result Opt types":
+    check:
+      false == static(isFieldExpected Opt[Simple])
+      2 == static(HoldsResultOpt.totalSerializedFields)
+      1 == static(HoldsResultOpt.totalExpectedFields)
+
     let
       h1 = HoldsResultOpt(o: Opt[Simple].ok Simple(x: 1, y: "2", distance: Meter(3)))
       h2 = HoldsResultOpt(r: newSimple(1, "2", Meter(3)))
 
     Json.roundtripTest h1, """{"r":null,"o":{"distance":3,"x":1,"y":"2"}}"""
     Json.roundtripTest h2, """{"r":{"distance":3,"x":1,"y":"2"}}"""
+
+    let
+      h3 = Json.decode("""{"r":{"distance":3,"x":1,"y":"2"}}""",
+                       HoldsResultOpt, requireAllFields = true)
+
+    check h3 == h2
+
+    expect SerializationError:
+     let h4 = Json.decode("""{"o":{"distance":3,"x":1,"y":"2"}}""",
+                          HoldsResultOpt, requireAllFields = true)
 
   test "Custom field serialization":
     let obj = WithCustomFieldRule(str: "test", intVal: 10)
