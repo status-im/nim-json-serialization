@@ -148,7 +148,7 @@ template isStringLike(v: auto): bool = false
 template writeObjectField*[FieldType, RecordType](w: var JsonWriter,
                                                   record: RecordType,
                                                   fieldName: static string,
-                                                  field: FieldType) =
+                                                  field: FieldType): bool =
   mixin writeFieldIMPL, writeValue
 
   type
@@ -159,6 +159,7 @@ template writeObjectField*[FieldType, RecordType](w: var JsonWriter,
     w.writeValue(field)
   else:
     w.writeFieldIMPL(FieldTag[R, fieldName], field, record)
+  true
 
 proc writeValue*(w: var JsonWriter, value: auto) =
   mixin enumInstanceSerializedFields, writeValue
@@ -238,8 +239,8 @@ proc writeValue*(w: var JsonWriter, value: auto) =
     w.beginRecord RecordType
     value.enumInstanceSerializedFields(fieldName, field):
       mixin writeObjectField
-      writeObjectField(w, value, fieldName, field)
-      w.state = AfterField
+      if writeObjectField(w, value, fieldName, field):
+        w.state = AfterField
     w.endRecord()
 
   else:

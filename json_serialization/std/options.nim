@@ -4,11 +4,13 @@ export options
 template writeObjectField*(w: var JsonWriter,
                            record: auto,
                            fieldName: static string,
-                           field: Option) =
+                           field: Option): bool =
   mixin writeObjectField
 
   if field.isSome:
     writeObjectField(w, record, fieldName, field.get)
+  else:
+    false
 
 proc writeValue*(writer: var JsonWriter, value: Option) =
   mixin writeValue

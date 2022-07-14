@@ -74,12 +74,29 @@ type
     dup: bool
 
   HoldsResultOpt* = object
-    r*: ref Simple
     o*: Opt[Simple]
+    r*: ref Simple
 
   WithCustomFieldRule* = object
     str*: string
     intVal*: int
+
+  OtherOptionTest* = object
+    a*: Option[Meter]
+    b*: Option[Meter]
+
+  NestedOptionTest* = object
+    c*: Option[OtherOptionTest]
+    d*: Option[OtherOptionTest]
+
+  SeqOptionTest* = object
+    a*: seq[Option[Meter]]
+    b*: Meter
+
+  OtherOptionTest2* = object
+    a*: Option[Meter]
+    b*: Option[Meter]
+    c*: Option[Meter]
 
 var
   customVisit: TokenRegistry
@@ -350,19 +367,69 @@ suite "toJson tests":
     let
       h1 = HoldsOption(o: some Simple(x: 1, y: "2", distance: Meter(3)))
       h2 = HoldsOption(r: newSimple(1, "2", Meter(3)))
+      h3 = Json.decode("""{"r":{"distance":3,"x":1,"y":"2"}}""",
+                       HoldsOption, requireAllFields = true)
 
     Json.roundtripTest h1, """{"r":null,"o":{"distance":3,"x":1,"y":"2"}}"""
     Json.roundtripTest h2, """{"r":{"distance":3,"x":1,"y":"2"}}"""
-
-    let
-      h3 = Json.decode("""{"r":{"distance":3,"x":1,"y":"2"}}""",
-                       HoldsOption, requireAllFields = true)
 
     check h3 == h2
 
     expect SerializationError:
      let h4 = Json.decode("""{"o":{"distance":3,"x":1,"y":"2"}}""",
                           HoldsOption, requireAllFields = true)
+
+  test "Nested option types":
+    let
+      h3 = OtherOptionTest()
+      h4 = OtherOptionTest(a: some Meter(1))
+      h5 = OtherOptionTest(b: some Meter(2))
+      h6 = OtherOptionTest(a: some Meter(3), b: some Meter(4))
+
+    Json.roundtripTest h3, """{}"""
+    Json.roundtripTest h4, """{"a":1}"""
+    Json.roundtripTest h5, """{"b":2}"""
+    Json.roundtripTest h6, """{"a":3,"b":4}"""
+
+    let
+      arr = @[some h3, some h4, some h5, some h6, none(OtherOptionTest)]
+      results = @[
+        """{"c":{},"d":{}}""",
+        """{"c":{},"d":{"a":1}}""",
+        """{"c":{},"d":{"b":2}}""",
+        """{"c":{},"d":{"a":3,"b":4}}""",
+        """{"c":{}}""",
+        """{"c":{"a":1},"d":{}}""",
+        """{"c":{"a":1},"d":{"a":1}}""",
+        """{"c":{"a":1},"d":{"b":2}}""",
+        """{"c":{"a":1},"d":{"a":3,"b":4}}""",
+        """{"c":{"a":1}}""",
+        """{"c":{"b":2},"d":{}}""",
+        """{"c":{"b":2},"d":{"a":1}}""",
+        """{"c":{"b":2},"d":{"b":2}}""",
+        """{"c":{"b":2},"d":{"a":3,"b":4}}""",
+        """{"c":{"b":2}}""",
+        """{"c":{"a":3,"b":4},"d":{}}""",
+        """{"c":{"a":3,"b":4},"d":{"a":1}}""",
+        """{"c":{"a":3,"b":4},"d":{"b":2}}""",
+        """{"c":{"a":3,"b":4},"d":{"a":3,"b":4}}""",
+        """{"c":{"a":3,"b":4}}""",
+        """{"d":{}}""",
+        """{"d":{"a":1}}""",
+        """{"d":{"b":2}}""",
+        """{"d":{"a":3,"b":4}}""",
+        """{}"""
+      ]
+
+
+    var r = 0
+    for a in arr:
+      for b in arr:
+        Json.roundtripTest NestedOptionTest(c: a, d: b), results[r]
+        r.inc
+
+    Json.roundtripTest SeqOptionTest(a: @[some 5.Meter, none Meter], b: Meter(5)), """{"a":[5,null],"b":5}"""
+    Json.roundtripTest OtherOptionTest2(a: some 5.Meter, b: none Meter, c: some 10.Meter), """{"a":5,"c":10}"""
 
   test "Result Opt types":
     check:
@@ -374,7 +441,7 @@ suite "toJson tests":
       h1 = HoldsResultOpt(o: Opt[Simple].ok Simple(x: 1, y: "2", distance: Meter(3)))
       h2 = HoldsResultOpt(r: newSimple(1, "2", Meter(3)))
 
-    Json.roundtripTest h1, """{"r":null,"o":{"distance":3,"x":1,"y":"2"}}"""
+    Json.roundtripTest h1, """{"o":{"distance":3,"x":1,"y":"2"},"r":null}"""
     Json.roundtripTest h2, """{"r":{"distance":3,"x":1,"y":"2"}}"""
 
     let

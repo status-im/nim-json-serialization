@@ -418,7 +418,7 @@ func expectedFieldsBitmask*(TT: type): auto {.compileTime.} =
         enumAllSerializedFields
 
   const requiredWords =
-    (totalExpectedFields(T) + bitsPerWord - 1) div bitsPerWord
+    (totalSerializedFields(T) + bitsPerWord - 1) div bitsPerWord
 
   var res: array[requiredWords, uint]
 
