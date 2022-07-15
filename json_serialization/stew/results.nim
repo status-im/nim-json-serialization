@@ -7,11 +7,13 @@ export
 template writeObjectField*[T](w: var JsonWriter,
                               record: auto,
                               fieldName: static string,
-                              field: Result[T, void]) =
+                              field: Result[T, void]): bool =
   mixin writeObjectField
 
   if field.isOk:
     writeObjectField(w, record, fieldName, field.get)
+  else:
+    false
 
 proc writeValue*[T](writer: var JsonWriter, value: Result[T, void]) =
   mixin writeValue
