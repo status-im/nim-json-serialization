@@ -265,8 +265,7 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
   of tkQuoted, tkExBlob, tkNumeric, tkExInt, tkExNegInt:
     raiseAssert "generic type " & $r.lexer.lazyTok & " is not applicable"
 
-
-proc skipSingleJsValue(r: var JsonReader) =
+proc skipSingleJsValue*(r: var JsonReader) =
   case r.lexer.tok
   of tkCurlyLe:
     r.lexer.next()
