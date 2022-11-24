@@ -7,18 +7,28 @@ description   = "Flexible JSON serialization not relying on run-time type inform
 license       = "Apache License 2.0"
 skipDirs      = @["tests"]
 
-requires "nim >= 0.17.0",
+requires "nim >= 1.2.0",
          "serialization",
          "stew"
 
-proc test(args, path: string) =
-  if not dirExists "build":
-    mkDir "build"
+let nimc = getEnv("NIMC", "nim") # Which nim compiler to use
+let lang = getEnv("NIMLANG", "c") # Which backend (c/cpp/js)
+let flags = getEnv("NIMFLAGS", "") # Extra flags for the compiler
+let verbose = getEnv("V", "") notin ["", "0"]
 
-  exec "nim " & getEnv("TEST_LANG", "c") & " " & getEnv("NIMFLAGS") & " " & args &
-    " -d:nimOldCaseObjects " &
-    " -r --hints:off --skipParentCfg --styleCheck:usages --styleCheck:error " & path
+let styleCheckStyle = if (NimMajor, NimMinor) < (1, 6): "hint" else: "error"
+let cfg =
+  " --styleCheck:usages --styleCheck:" & styleCheckStyle &
+  (if verbose: "" else: " --verbosity:0 --hints:off") &
+  " --skipParentCfg --skipUserCfg --outdir:build --nimcache:build/nimcache -f" &
+  " -d:nimOldCaseObjects"
+
+proc build(args, path: string) =
+  exec nimc & " " & lang & " " & cfg & " " & flags & " " & args & " " & path
+
+proc run(args, path: string) =
+  build args & " -r", path
 
 task test, "Run all tests":
-  test "--threads:off", "tests/test_all"
-  test "--threads:on", "tests/test_all"
+  for threads in ["--threads:off", "--threads:on"]:
+    run threads, "tests/test_all"
