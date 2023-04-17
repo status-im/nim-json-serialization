@@ -182,8 +182,9 @@ func maxAbsValue(T: type[SomeInteger]): uint64 {.compileTime.} =
 proc parseJsonNode(r: var JsonReader): JsonNode
                   {.gcsafe, raises: [IOError, JsonReaderError, Defect].}
 
-proc readJsonNodeField(r: var JsonReader, field: var JsonNode) =
-  if field != nil:
+proc readJsonNodeField(r: var JsonReader, field: var JsonNode)
+                  {.gcsafe, raises: [IOError, JsonReaderError, Defect].} =
+  if field.isNil.not:
     r.raiseUnexpectedValue("Unexpected duplicated field name")
 
   r.lexer.next()
@@ -449,7 +450,7 @@ template isCharArray[N](v: array[N, char]): bool = true
 template isCharArray(v: auto): bool = false
 
 proc readValue*[T](r: var JsonReader, value: var T)
-                  {.raises: [SerializationError, IOError, Defect].} =
+                  {.gcsafe, raises: [SerializationError, IOError, Defect].} =
   ## Master filed/object parser. This function relies on customised sub-mixins for particular
   ## object types.
   ##
