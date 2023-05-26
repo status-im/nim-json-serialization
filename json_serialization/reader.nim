@@ -28,7 +28,7 @@ type
     etValue = "value"
     etBool = "bool literal"
     etInt = "integer"
-    etEnumInt = "enum value (int)"
+    etEnumAny = "enum value (int / string)"
     etEnumString = "enum value (string)"
     etNumber = "number"
     etString = "string"
@@ -448,6 +448,42 @@ func isBitwiseSubsetOf[N](lhs, rhs: array[N, uint]): bool =
 template isCharArray[N](v: array[N, char]): bool = true
 template isCharArray(v: auto): bool = false
 
+func parseStringEnum[T](
+    r: var JsonReader, value: var T,
+    normalizer: static[proc(s: string): string]) =
+  try:
+    value = genEnumCaseStmt(
+      T, r.lexer.strVal, default = nil, ord(T.low), ord(T.high), normalizer)
+  except ValueError as err:
+    const typeName = typetraits.name(T)
+    r.raiseUnexpectedValue("Invalid value for '" & typeName & "'")
+
+proc parseEnum[T](
+    r: var JsonReader, value: var T,
+    normalizer: static[proc(s: string): string]) =
+  let tok = r.lexer.tok
+  const style = T.enumStyle
+  case style
+  of EnumStyle.Numeric:
+    case tok:
+    of tkInt:
+      if not value.checkedEnumAssign(r.lexer.absIntVal):
+        const typeName = typetraits.name(T)
+        r.raiseUnexpectedValue("Out of range for '" & typeName & "'")
+    of tkString:
+      r.parseStringEnum(value, normalizer)
+    else:
+      r.raiseUnexpectedToken etEnumAny
+  of EnumStyle.AssociatedStrings:
+    if tok != tkString:
+      r.raiseUnexpectedToken etEnumString
+    r.parseStringEnum(value, normalizer)
+
+proc parseEnum[T](r: var JsonReader, value: var T) =
+  func normalizer(s: string): string =  # Strict comparison with values
+    s
+  r.parseEnum(value, normalizer)
+
 proc readValue*[T](r: var JsonReader, value: var T)
                   {.gcsafe, raises: [SerializationError, IOError, Defect].} =
   ## Master filed/object parser. This function relies on customised sub-mixins for particular
@@ -539,23 +575,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
         value[] = readValue(r, type(value[]))
 
   elif value is enum:
-    const typeName = typetraits.name(T)
-    case typeof(value).enumStyle
-    of EnumStyle.Numeric:
-      if tok != tkInt:
-        r.raiseUnexpectedToken etEnumInt
-      if not value.checkedEnumAssign(r.lexer.absIntVal):
-        r.raiseUnexpectedValue("Out of range for '" & typeName & "'")
-    of EnumStyle.AssociatedStrings:
-      if tok != tkString:
-        r.raiseUnexpectedToken etEnumString
-      try:
-        func normalizer(s: string): string =  # Strict comparison with values
-          s
-        value = genEnumCaseStmt(
-          T, r.lexer.strVal, default = nil, ord(T.low), ord(T.high), normalizer)
-      except ValueError as err:
-        r.raiseUnexpectedValue("Invalid value for '" & typeName & "'")
+    r.parseEnum(value)
     r.lexer.next()
 
   elif value is SomeInteger:
@@ -678,15 +698,7 @@ iterator readObjectFields*(r: var JsonReader): string =
     yield key
 
 template deserializeWithNormalizerInJson*(
-    T: type[enum], normalizer: static[proc(s :string): string]) =
+    T: type[enum], normalizer: static[proc(s: string): string]) =
   proc readValue*(r: var JsonReader, value: var T) {.
       raises: [Defect, IOError, SerializationError].} =
-    static: doAssert enumStyle(T) == EnumStyle.AssociatedStrings
-    var s: string
-    r.readValue(s)
-    try:
-      value = genEnumCaseStmt(
-        T, s, default = nil, ord(T.low), ord(T.high), normalizer)
-    except ValueError as err:
-      const typeName = typetraits.name(T)
-      r.raiseUnexpectedValue("Invalid value for '" & typeName & "'")
+    r.parseEnum(value, normalizer)

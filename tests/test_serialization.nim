@@ -224,6 +224,12 @@ type EnumTestN = enum
   n3 = "ccc"
 EnumTestN.deserializeWithNormalizerInJson(nimIdentNormalize)
 
+type EnumTestO = enum
+  o1,
+  o2,
+  o3
+EnumTestO.deserializeWithNormalizerInJson(nimIdentNormalize)
+
 suite "toJson tests":
   test "encode primitives":
     check:
@@ -252,31 +258,34 @@ suite "toJson tests":
     Json.roundtripTest x0, "0"
     Json.roundtripTest x1, "1"
     Json.roundtripTest x2, "2"
+    check:
+      Json.decode("\"x0\"", EnumTestX) == x0
+      Json.decode("\"x1\"", EnumTestX) == x1
+      Json.decode("\"x2\"", EnumTestX) == x2
     expect UnexpectedValueError:
       discard Json.decode("3", EnumTestX)
-    expect UnexpectedTokenError:
-      discard Json.decode("\"x0\"", EnumTestX)
-    expect UnexpectedTokenError:
-      discard Json.decode("\"x1\"", EnumTestX)
-    expect UnexpectedTokenError:
-      discard Json.decode("\"x2\"", EnumTestX)
-    expect UnexpectedTokenError:
+    expect UnexpectedValueError:
       discard Json.decode("\"X0\"", EnumTestX)
-    expect UnexpectedTokenError:
+    expect UnexpectedValueError:
       discard Json.decode("\"X1\"", EnumTestX)
-    expect UnexpectedTokenError:
+    expect UnexpectedValueError:
       discard Json.decode("\"X2\"", EnumTestX)
-    expect UnexpectedTokenError:
+    expect UnexpectedValueError:
       discard Json.decode("\"x_0\"", EnumTestX)
-    expect UnexpectedTokenError:
+    expect UnexpectedValueError:
       discard Json.decode("\"\"", EnumTestX)
-    expect UnexpectedTokenError:
+    expect UnexpectedValueError:
       discard Json.decode("\"0\"", EnumTestX)
 
     Json.roundtripTest y1, "1"
     Json.roundtripTest y3, "3"
     Json.roundtripTest y4, "4"
     Json.roundtripTest y6, "6"
+    check:
+      Json.decode("\"y1\"", EnumTestY) == y1
+      Json.decode("\"y3\"", EnumTestY) == y3
+      Json.decode("\"y4\"", EnumTestY) == y4
+      Json.decode("\"y6\"", EnumTestY) == y6
     expect UnexpectedValueError:
       discard Json.decode("0", EnumTestY)
     expect UnexpectedValueError:
@@ -285,27 +294,19 @@ suite "toJson tests":
       discard Json.decode("5", EnumTestY)
     expect UnexpectedValueError:
       discard Json.decode("7", EnumTestY)
-    expect UnexpectedTokenError:
-      discard Json.decode("\"y1\"", EnumTestY)
-    expect UnexpectedTokenError:
-      discard Json.decode("\"y3\"", EnumTestY)
-    expect UnexpectedTokenError:
-      discard Json.decode("\"y4\"", EnumTestY)
-    expect UnexpectedTokenError:
-      discard Json.decode("\"y6\"", EnumTestY)
-    expect UnexpectedTokenError:
+    expect UnexpectedValueError:
       discard Json.decode("\"Y1\"", EnumTestY)
-    expect UnexpectedTokenError:
+    expect UnexpectedValueError:
       discard Json.decode("\"Y3\"", EnumTestY)
-    expect UnexpectedTokenError:
+    expect UnexpectedValueError:
       discard Json.decode("\"Y4\"", EnumTestY)
-    expect UnexpectedTokenError:
+    expect UnexpectedValueError:
       discard Json.decode("\"Y6\"", EnumTestY)
-    expect UnexpectedTokenError:
+    expect UnexpectedValueError:
       discard Json.decode("\"y_1\"", EnumTestY)
-    expect UnexpectedTokenError:
+    expect UnexpectedValueError:
       discard Json.decode("\"\"", EnumTestY)
-    expect UnexpectedTokenError:
+    expect UnexpectedValueError:
       discard Json.decode("\"1\"", EnumTestY)
 
     Json.roundtripTest z1, "\"aaa\""
@@ -360,6 +361,28 @@ suite "toJson tests":
       discard Json.decode("\"\"", EnumTestN)
     expect UnexpectedValueError:
       discard Json.decode("\"\ud83d\udc3c\"", EnumTestN)
+
+    Json.roundtripTest o1, "0"
+    Json.roundtripTest o2, "1"
+    Json.roundtripTest o3, "2"
+    check:
+      Json.decode("\"o1\"", EnumTestO) == o1
+      Json.decode("\"o2\"", EnumTestO) == o2
+      Json.decode("\"o3\"", EnumTestO) == o3
+      Json.decode("\"o_1\"", EnumTestO) == o1
+      Json.decode("\"o_2\"", EnumTestO) == o2
+      Json.decode("\"o_3\"", EnumTestO) == o3
+    expect UnexpectedValueError:
+      discard Json.decode("\"O1\"", EnumTestO)
+    expect UnexpectedValueError:
+      discard Json.decode("\"O2\"", EnumTestO)
+    expect UnexpectedValueError:
+      discard Json.decode("\"O3\"", EnumTestO)
+    expect UnexpectedValueError:
+      discard Json.decode("\"_o1\"", EnumTestO)
+      discard Json.decode("\"\"", EnumTestO)
+    expect UnexpectedValueError:
+      discard Json.decode("\"\ud83d\udc3c\"", EnumTestO)
 
   test "simple objects":
     var s = Simple(x: 10, y: "test", distance: Meter(20))
