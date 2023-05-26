@@ -2,7 +2,7 @@
 
 import
   std/[tables, macros, strformat],
-  stew/enums, stew/shims/[enumutils, typetraits],
+  stew/[enums, objects], stew/shims/[enumutils, typetraits],
   faststreams/inputs, serialization/[formats, object_serialization, errors],
   "."/[format, types, lexer]
 
