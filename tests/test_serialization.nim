@@ -218,17 +218,38 @@ when (NimMajor, NimMinor) < (1, 4):  # Copy from `std/strutils`
         inc j
     if j != s.len: setLen(result, j)
 
+type EnumTestX = enum
+  x0,
+  x1,
+  x2
+
+type EnumTestY = enum
+  y1 = 1,
+  y3 = 3,
+  y4,
+  y6 = 6
+EnumTestY.configureJsonDeserialization(
+  allowNumericRepr = true)
+
+type EnumTestZ = enum
+  z1 = "aaa",
+  z2 = "bbb",
+  z3 = "ccc"
+
 type EnumTestN = enum
   n1 = "aaa",
   n2 = "bbb",
   n3 = "ccc"
-EnumTestN.deserializeWithNormalizerInJson(nimIdentNormalize)
+EnumTestN.configureJsonDeserialization(
+  stringNormalizer = nimIdentNormalize)
 
 type EnumTestO = enum
   o1,
   o2,
   o3
-EnumTestO.deserializeWithNormalizerInJson(nimIdentNormalize)
+EnumTestO.configureJsonDeserialization(
+  allowNumericRepr = true,
+  stringNormalizer = nimIdentNormalize)
 
 suite "toJson tests":
   test "encode primitives":
@@ -238,31 +259,16 @@ suite "toJson tests":
       "abc".toJson == "\"abc\""
 
   test "enums":
-    type
-      EnumTestX = enum
-        x0,
-        x1,
-        x2
-
-      EnumTestY = enum
-        y1 = 1,
-        y3 = 3,
-        y4,
-        y6 = 6
-
-      EnumTestZ = enum
-        z1 = "aaa",
-        z2 = "bbb",
-        z3 = "ccc"
-
-    Json.roundtripTest x0, "0"
-    Json.roundtripTest x1, "1"
-    Json.roundtripTest x2, "2"
-    check:
-      Json.decode("\"x0\"", EnumTestX) == x0
-      Json.decode("\"x1\"", EnumTestX) == x1
-      Json.decode("\"x2\"", EnumTestX) == x2
-    expect UnexpectedValueError:
+    Json.roundtripTest x0, "\"x0\""
+    Json.roundtripTest x1, "\"x1\""
+    Json.roundtripTest x2, "\"x2\""
+    expect UnexpectedTokenError:
+      discard Json.decode("0", EnumTestX)
+    expect UnexpectedTokenError:
+      discard Json.decode("1", EnumTestX)
+    expect UnexpectedTokenError:
+      discard Json.decode("2", EnumTestX)
+    expect UnexpectedTokenError:
       discard Json.decode("3", EnumTestX)
     expect UnexpectedValueError:
       discard Json.decode("\"X0\"", EnumTestX)
@@ -277,15 +283,15 @@ suite "toJson tests":
     expect UnexpectedValueError:
       discard Json.decode("\"0\"", EnumTestX)
 
-    Json.roundtripTest y1, "1"
-    Json.roundtripTest y3, "3"
-    Json.roundtripTest y4, "4"
-    Json.roundtripTest y6, "6"
+    Json.roundtripTest y1, "\"y1\""
+    Json.roundtripTest y3, "\"y3\""
+    Json.roundtripTest y4, "\"y4\""
+    Json.roundtripTest y6, "\"y6\""
     check:
-      Json.decode("\"y1\"", EnumTestY) == y1
-      Json.decode("\"y3\"", EnumTestY) == y3
-      Json.decode("\"y4\"", EnumTestY) == y4
-      Json.decode("\"y6\"", EnumTestY) == y6
+      Json.decode("1", EnumTestY) == y1
+      Json.decode("3", EnumTestY) == y3
+      Json.decode("4", EnumTestY) == y4
+      Json.decode("6", EnumTestY) == y6
     expect UnexpectedValueError:
       discard Json.decode("0", EnumTestY)
     expect UnexpectedValueError:
@@ -362,16 +368,18 @@ suite "toJson tests":
     expect UnexpectedValueError:
       discard Json.decode("\"\ud83d\udc3c\"", EnumTestN)
 
-    Json.roundtripTest o1, "0"
-    Json.roundtripTest o2, "1"
-    Json.roundtripTest o3, "2"
+    Json.roundtripTest o1, "\"o1\""
+    Json.roundtripTest o2, "\"o2\""
+    Json.roundtripTest o3, "\"o3\""
     check:
-      Json.decode("\"o1\"", EnumTestO) == o1
-      Json.decode("\"o2\"", EnumTestO) == o2
-      Json.decode("\"o3\"", EnumTestO) == o3
       Json.decode("\"o_1\"", EnumTestO) == o1
       Json.decode("\"o_2\"", EnumTestO) == o2
       Json.decode("\"o_3\"", EnumTestO) == o3
+      Json.decode("0", EnumTestO) == o1
+      Json.decode("1", EnumTestO) == o2
+      Json.decode("2", EnumTestO) == o3
+    expect UnexpectedValueError:
+      discard Json.decode("3", EnumTestO)
     expect UnexpectedValueError:
       discard Json.decode("\"O1\"", EnumTestO)
     expect UnexpectedValueError:
@@ -380,6 +388,7 @@ suite "toJson tests":
       discard Json.decode("\"O3\"", EnumTestO)
     expect UnexpectedValueError:
       discard Json.decode("\"_o1\"", EnumTestO)
+    expect UnexpectedValueError:
       discard Json.decode("\"\"", EnumTestO)
     expect UnexpectedValueError:
       discard Json.decode("\"\ud83d\udc3c\"", EnumTestO)

@@ -450,39 +450,46 @@ template isCharArray(v: auto): bool = false
 
 func parseStringEnum[T](
     r: var JsonReader, value: var T,
-    normalizer: static[proc(s: string): string]) =
+    stringNormalizer: static[proc(s: string): string]) =
   try:
     value = genEnumCaseStmt(
-      T, r.lexer.strVal, default = nil, ord(T.low), ord(T.high), normalizer)
+      T, r.lexer.strVal,
+      default = nil, ord(T.low), ord(T.high), stringNormalizer)
   except ValueError as err:
     const typeName = typetraits.name(T)
     r.raiseUnexpectedValue("Invalid value for '" & typeName & "'")
 
-proc parseEnum[T](
-    r: var JsonReader, value: var T,
-    normalizer: static[proc(s: string): string]) =
-  let tok = r.lexer.tok
-  const style = T.enumStyle
-  case style
-  of EnumStyle.Numeric:
-    case tok:
-    of tkInt:
-      if not value.checkedEnumAssign(r.lexer.absIntVal):
-        const typeName = typetraits.name(T)
-        r.raiseUnexpectedValue("Out of range for '" & typeName & "'")
-    of tkString:
-      r.parseStringEnum(value, normalizer)
-    else:
-      r.raiseUnexpectedToken etEnumAny
-  of EnumStyle.AssociatedStrings:
-    if tok != tkString:
-      r.raiseUnexpectedToken etEnumString
-    r.parseStringEnum(value, normalizer)
+func strictNormalize(s: string): string =  # Match enum value exactly
+  s
 
-proc parseEnum[T](r: var JsonReader, value: var T) =
-  func normalizer(s: string): string =  # Strict comparison with values
-    s
-  r.parseEnum(value, normalizer)
+proc parseEnum[T](
+    r: var JsonReader, value: var T, allowNumericRepr: static[bool] = false,
+    stringNormalizer: static[proc(s: string): string] = strictNormalize) =
+  const style = T.enumStyle
+  let tok = r.lexer.tok
+  case tok
+  of tkString:
+    r.parseStringEnum(value, stringNormalizer)
+  of tkInt:
+    when allowNumericRepr:
+      case style
+      of EnumStyle.Numeric:
+        if not value.checkedEnumAssign(r.lexer.absIntVal):
+          const typeName = typetraits.name(T)
+          r.raiseUnexpectedValue("Out of range for '" & typeName & "'")
+      of EnumStyle.AssociatedStrings:
+        r.raiseUnexpectedToken etEnumString
+    else:
+      r.raiseUnexpectedToken etEnumString
+  else:
+    case style
+    of EnumStyle.Numeric:
+      when allowNumericRepr:
+        r.raiseUnexpectedToken etEnumAny
+      else:
+        r.raiseUnexpectedToken etEnumString
+    of EnumStyle.AssociatedStrings:
+      r.raiseUnexpectedToken etEnumString
 
 proc readValue*[T](r: var JsonReader, value: var T)
                   {.gcsafe, raises: [SerializationError, IOError, Defect].} =
@@ -697,8 +704,10 @@ iterator readObjectFields*(r: var JsonReader): string =
   for key in readObjectFields(r, string):
     yield key
 
-template deserializeWithNormalizerInJson*(
-    T: type[enum], normalizer: static[proc(s: string): string]) =
+template configureJsonDeserialization*(
+    T: type[enum], allowNumericRepr: static[bool] = false,
+    stringNormalizer: static[proc(s: string): string] = strictNormalize) =
   proc readValue*(r: var JsonReader, value: var T) {.
       raises: [Defect, IOError, SerializationError].} =
-    r.parseEnum(value, normalizer)
+    static: doAssert not allowNumericRepr or enumStyle(T) == EnumStyle.Numeric
+    r.parseEnum(value, allowNumericRepr, stringNormalizer)

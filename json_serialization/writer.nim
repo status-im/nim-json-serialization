@@ -1,6 +1,5 @@
 import
   std/[json, typetraits],
-  stew/enums,
   faststreams/[outputs, textio], serialization,
   "."/[format, types]
 
@@ -216,11 +215,7 @@ proc writeValue*(w: var JsonWriter, value: auto) =
     append if value: "true" else: "false"
 
   elif value is enum:
-    case typeof(value).enumStyle
-    of EnumStyle.Numeric:
-      w.stream.writeText ord(value)
-    of EnumStyle.AssociatedStrings:
-      w.writeValue $value
+    w.writeValue $value
 
   elif value is range:
     when low(typeof(value)) < 0:
