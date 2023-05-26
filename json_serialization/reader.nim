@@ -1,14 +1,15 @@
 {.experimental: "notnil".}
 
 import
-  std/[tables, strutils, typetraits, macros, strformat],
+  std/[tables, macros, strformat],
+  stew/enums, stew/shims/[enumutils, typetraits],
   faststreams/inputs, serialization/[formats, object_serialization, errors],
   "."/[format, types, lexer]
 
 from json import JsonNode, JsonNodeKind
 
 export
-  inputs, format, types, errors
+  enumutils, inputs, format, types, errors
 
 type
   JsonReader*[Flavor = DefaultFlavor] = object
@@ -27,7 +28,8 @@ type
     etValue = "value"
     etBool = "bool literal"
     etInt = "integer"
-    etEnum = "enum value (int or string)"
+    etEnumInt = "enum value (int)"
+    etEnumString = "enum value (string)"
     etNumber = "number"
     etString = "string"
     etComma = "comma"
@@ -151,9 +153,6 @@ proc init*(T: type JsonReader,
   result.requireAllFields = requireAllFields
   result.lexer = JsonLexer.init(stream, mode)
   result.lexer.next()
-
-proc setParsed[T: enum](e: var T, s: string) =
-  e = parseEnum[T](s)
 
 proc requireToken*(r: var JsonReader, tk: TokKind) =
   if r.lexer.tok != tk:
@@ -540,18 +539,23 @@ proc readValue*[T](r: var JsonReader, value: var T)
         value[] = readValue(r, type(value[]))
 
   elif value is enum:
-    case tok
-    of tkString:
+    const typeName = typetraits.name(T)
+    case typeof(value).enumStyle
+    of EnumStyle.Numeric:
+      if tok != tkInt:
+        r.raiseUnexpectedToken etEnumInt
+      if not value.checkedEnumAssign(r.lexer.absIntVal):
+        r.raiseUnexpectedValue("Out of range for '" & typeName & "'")
+    of EnumStyle.AssociatedStrings:
+      if tok != tkString:
+        r.raiseUnexpectedToken etEnumString
       try:
-        value.setParsed(r.lexer.strVal)
+        func normalizer(s: string): string =  # Strict comparison with values
+          s
+        value = genEnumCaseStmt(
+          T, r.lexer.strVal, default = nil, ord(T.low), ord(T.high), normalizer)
       except ValueError as err:
-        const typeName = typetraits.name(T)
-        r.raiseUnexpectedValue("Expected valid '" & typeName & "' value")
-    of tkInt:
-      # TODO: validate that the value is in range
-      value = type(value)(r.lexer.absIntVal)
-    else:
-      r.raiseUnexpectedToken etEnum
+        r.raiseUnexpectedValue("Invalid value for '" & typeName & "'")
     r.lexer.next()
 
   elif value is SomeInteger:
@@ -673,3 +677,16 @@ iterator readObjectFields*(r: var JsonReader): string =
   for key in readObjectFields(r, string):
     yield key
 
+template deserializeWithNormalizerInJson*(
+    T: type[enum], normalizer: static[proc(s :string): string]) =
+  proc readValue*(r: var JsonReader, value: var T) {.
+      raises: [Defect, IOError, SerializationError].} =
+    static: doAssert enumStyle(T) == EnumStyle.AssociatedStrings
+    var s: string
+    r.readValue(s)
+    try:
+      value = genEnumCaseStmt(
+        T, s, default = nil, ord(T.low), ord(T.high), normalizer)
+    except ValueError as err:
+      const typeName = typetraits.name(T)
+      r.raiseUnexpectedValue("Invalid value for '" & typeName & "'")

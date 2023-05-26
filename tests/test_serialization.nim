@@ -189,12 +189,177 @@ var invalid = Invalid(distance: Mile(100))
 when false: reject invalid.toJson
 else: discard invalid
 
+when (NimMajor, NimMinor) < (1, 4):  # Copy from `std/strutils`
+  #
+  #
+  #            Nim's Runtime Library
+  #        (c) Copyright 2012 Andreas Rumpf
+  #
+  #    See the file "copying.txt", included in this
+  #    distribution, for details about the copyright.
+  #
+  func nimIdentNormalize*(s: string): string =
+    ## Normalizes the string `s` as a Nim identifier.
+    ##
+    ## That means to convert to lower case and remove any '_' on all characters
+    ## except first one.
+    runnableExamples:
+      doAssert nimIdentNormalize("Foo_bar") == "Foobar"
+    result = newString(s.len)
+    if s.len > 0:
+      result[0] = s[0]
+    var j = 1
+    for i in 1..len(s) - 1:
+      if s[i] in {'A'..'Z'}:
+        result[j] = chr(ord(s[i]) + (ord('a') - ord('A')))
+        inc j
+      elif s[i] != '_':
+        result[j] = s[i]
+        inc j
+    if j != s.len: setLen(result, j)
+
+type EnumTestN = enum
+  n1 = "aaa",
+  n2 = "bbb",
+  n3 = "ccc"
+EnumTestN.deserializeWithNormalizerInJson(nimIdentNormalize)
+
 suite "toJson tests":
   test "encode primitives":
     check:
       1.toJson == "1"
       "".toJson == "\"\""
       "abc".toJson == "\"abc\""
+
+  test "enums":
+    type
+      EnumTestX = enum
+        x0,
+        x1,
+        x2
+
+      EnumTestY = enum
+        y1 = 1,
+        y3 = 3,
+        y4,
+        y6 = 6
+
+      EnumTestZ = enum
+        z1 = "aaa",
+        z2 = "bbb",
+        z3 = "ccc"
+
+    Json.roundtripTest x0, "0"
+    Json.roundtripTest x1, "1"
+    Json.roundtripTest x2, "2"
+    expect UnexpectedValueError:
+      discard Json.decode("3", EnumTestX)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"x0\"", EnumTestX)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"x1\"", EnumTestX)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"x2\"", EnumTestX)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"X0\"", EnumTestX)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"X1\"", EnumTestX)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"X2\"", EnumTestX)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"x_0\"", EnumTestX)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"\"", EnumTestX)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"0\"", EnumTestX)
+
+    Json.roundtripTest y1, "1"
+    Json.roundtripTest y3, "3"
+    Json.roundtripTest y4, "4"
+    Json.roundtripTest y6, "6"
+    expect UnexpectedValueError:
+      discard Json.decode("0", EnumTestY)
+    expect UnexpectedValueError:
+      discard Json.decode("2", EnumTestY)
+    expect UnexpectedValueError:
+      discard Json.decode("5", EnumTestY)
+    expect UnexpectedValueError:
+      discard Json.decode("7", EnumTestY)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"y1\"", EnumTestY)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"y3\"", EnumTestY)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"y4\"", EnumTestY)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"y6\"", EnumTestY)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"Y1\"", EnumTestY)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"Y3\"", EnumTestY)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"Y4\"", EnumTestY)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"Y6\"", EnumTestY)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"y_1\"", EnumTestY)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"\"", EnumTestY)
+    expect UnexpectedTokenError:
+      discard Json.decode("\"1\"", EnumTestY)
+
+    Json.roundtripTest z1, "\"aaa\""
+    Json.roundtripTest z2, "\"bbb\""
+    Json.roundtripTest z3, "\"ccc\""
+    expect UnexpectedTokenError:
+      discard Json.decode("0", EnumTestZ)
+    expect UnexpectedValueError:
+      discard Json.decode("\"AAA\"", EnumTestZ)
+    expect UnexpectedValueError:
+      discard Json.decode("\"BBB\"", EnumTestZ)
+    expect UnexpectedValueError:
+      discard Json.decode("\"CCC\"", EnumTestZ)
+    expect UnexpectedValueError:
+      discard Json.decode("\"z1\"", EnumTestZ)
+    expect UnexpectedValueError:
+      discard Json.decode("\"a_a_a\"", EnumTestZ)
+    expect UnexpectedValueError:
+      discard Json.decode("\"\"", EnumTestZ)
+    expect UnexpectedValueError:
+      discard Json.decode("\"\ud83d\udc3c\"", EnumTestZ)
+
+    Json.roundtripTest n1, "\"aaa\""
+    Json.roundtripTest n2, "\"bbb\""
+    Json.roundtripTest n3, "\"ccc\""
+    check:
+      Json.decode("\"aAA\"", EnumTestN) == n1
+      Json.decode("\"bBB\"", EnumTestN) == n2
+      Json.decode("\"cCC\"", EnumTestN) == n3
+      Json.decode("\"a_a_a\"", EnumTestN) == n1
+      Json.decode("\"b_b_b\"", EnumTestN) == n2
+      Json.decode("\"c_c_c\"", EnumTestN) == n3
+    expect UnexpectedTokenError:
+      discard Json.decode("0", EnumTestN)
+    expect UnexpectedValueError:
+      discard Json.decode("\"AAA\"", EnumTestN)
+    expect UnexpectedValueError:
+      discard Json.decode("\"BBB\"", EnumTestN)
+    expect UnexpectedValueError:
+      discard Json.decode("\"CCC\"", EnumTestN)
+    expect UnexpectedValueError:
+      discard Json.decode("\"Aaa\"", EnumTestN)
+    expect UnexpectedValueError:
+      discard Json.decode("\"Bbb\"", EnumTestN)
+    expect UnexpectedValueError:
+      discard Json.decode("\"Ccc\"", EnumTestN)
+    expect UnexpectedValueError:
+      discard Json.decode("\"n1\"", EnumTestN)
+    expect UnexpectedValueError:
+      discard Json.decode("\"_aaa\"", EnumTestN)
+    expect UnexpectedValueError:
+      discard Json.decode("\"\"", EnumTestN)
+    expect UnexpectedValueError:
+      discard Json.decode("\"\ud83d\udc3c\"", EnumTestN)
 
   test "simple objects":
     var s = Simple(x: 10, y: "test", distance: Meter(20))
