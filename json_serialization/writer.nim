@@ -215,7 +215,7 @@ proc writeValue*(w: var JsonWriter, value: auto) =
     append if value: "true" else: "false"
 
   elif value is enum:
-    w.stream.writeText ord(value)
+    w.writeValue $value
 
   elif value is range:
     when low(typeof(value)) < 0:
@@ -258,4 +258,3 @@ proc toJson*(v: auto, pretty = false, typeAnnotations = false): string =
 template serializesAsTextInJson*(T: type[enum]) =
   template writeValue*(w: var JsonWriter, val: T) =
     w.writeValue $val
-

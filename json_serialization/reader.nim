@@ -1,14 +1,15 @@
 {.experimental: "notnil".}
 
 import
-  std/[tables, strutils, typetraits, macros, strformat],
+  std/[tables, macros, strformat],
+  stew/[enums, objects], stew/shims/[enumutils, typetraits],
   faststreams/inputs, serialization/[formats, object_serialization, errors],
   "."/[format, types, lexer]
 
 from json import JsonNode, JsonNodeKind
 
 export
-  inputs, format, types, errors
+  enumutils, inputs, format, types, errors
 
 type
   JsonReader*[Flavor = DefaultFlavor] = object
@@ -27,7 +28,8 @@ type
     etValue = "value"
     etBool = "bool literal"
     etInt = "integer"
-    etEnum = "enum value (int or string)"
+    etEnumAny = "enum value (int / string)"
+    etEnumString = "enum value (string)"
     etNumber = "number"
     etString = "string"
     etComma = "comma"
@@ -151,9 +153,6 @@ proc init*(T: type JsonReader,
   result.requireAllFields = requireAllFields
   result.lexer = JsonLexer.init(stream, mode)
   result.lexer.next()
-
-proc setParsed[T: enum](e: var T, s: string) =
-  e = parseEnum[T](s)
 
 proc requireToken*(r: var JsonReader, tk: TokKind) =
   if r.lexer.tok != tk:
@@ -449,6 +448,49 @@ func isBitwiseSubsetOf[N](lhs, rhs: array[N, uint]): bool =
 template isCharArray[N](v: array[N, char]): bool = true
 template isCharArray(v: auto): bool = false
 
+func parseStringEnum[T](
+    r: var JsonReader, value: var T,
+    stringNormalizer: static[proc(s: string): string]) =
+  try:
+    value = genEnumCaseStmt(
+      T, r.lexer.strVal,
+      default = nil, ord(T.low), ord(T.high), stringNormalizer)
+  except ValueError as err:
+    const typeName = typetraits.name(T)
+    r.raiseUnexpectedValue("Invalid value for '" & typeName & "'")
+
+func strictNormalize(s: string): string =  # Match enum value exactly
+  s
+
+proc parseEnum[T](
+    r: var JsonReader, value: var T, allowNumericRepr: static[bool] = false,
+    stringNormalizer: static[proc(s: string): string] = strictNormalize) =
+  const style = T.enumStyle
+  let tok = r.lexer.tok
+  case tok
+  of tkString:
+    r.parseStringEnum(value, stringNormalizer)
+  of tkInt:
+    when allowNumericRepr:
+      case style
+      of EnumStyle.Numeric:
+        if not value.checkedEnumAssign(r.lexer.absIntVal):
+          const typeName = typetraits.name(T)
+          r.raiseUnexpectedValue("Out of range for '" & typeName & "'")
+      of EnumStyle.AssociatedStrings:
+        r.raiseUnexpectedToken etEnumString
+    else:
+      r.raiseUnexpectedToken etEnumString
+  else:
+    case style
+    of EnumStyle.Numeric:
+      when allowNumericRepr:
+        r.raiseUnexpectedToken etEnumAny
+      else:
+        r.raiseUnexpectedToken etEnumString
+    of EnumStyle.AssociatedStrings:
+      r.raiseUnexpectedToken etEnumString
+
 proc readValue*[T](r: var JsonReader, value: var T)
                   {.gcsafe, raises: [SerializationError, IOError, Defect].} =
   ## Master filed/object parser. This function relies on customised sub-mixins for particular
@@ -540,18 +582,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
         value[] = readValue(r, type(value[]))
 
   elif value is enum:
-    case tok
-    of tkString:
-      try:
-        value.setParsed(r.lexer.strVal)
-      except ValueError as err:
-        const typeName = typetraits.name(T)
-        r.raiseUnexpectedValue("Expected valid '" & typeName & "' value")
-    of tkInt:
-      # TODO: validate that the value is in range
-      value = type(value)(r.lexer.absIntVal)
-    else:
-      r.raiseUnexpectedToken etEnum
+    r.parseEnum(value)
     r.lexer.next()
 
   elif value is SomeInteger:
@@ -673,3 +704,10 @@ iterator readObjectFields*(r: var JsonReader): string =
   for key in readObjectFields(r, string):
     yield key
 
+template configureJsonDeserialization*(
+    T: type[enum], allowNumericRepr: static[bool] = false,
+    stringNormalizer: static[proc(s: string): string] = strictNormalize) =
+  proc readValue*(r: var JsonReader, value: var T) {.
+      raises: [Defect, IOError, SerializationError].} =
+    static: doAssert not allowNumericRepr or enumStyle(T) == EnumStyle.Numeric
+    r.parseEnum(value, allowNumericRepr, stringNormalizer)
