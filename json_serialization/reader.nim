@@ -58,6 +58,8 @@ type
 
 Json.setReader JsonReader
 
+{.push gcsafe, raises: [].}
+
 func valueStr(err: ref IntOverflowError): string =
   if err.isNegative:
     result.add '-'
@@ -68,31 +70,31 @@ template tryFmt(expr: untyped): string =
   except CatchableError as err: err.msg
 
 method formatMsg*(err: ref JsonReaderError, filename: string):
-    string {.gcsafe, raises: [Defect].} =
+    string {.gcsafe, raises: [].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Error while reading json file: {err.msg}"
 
 method formatMsg*(err: ref UnexpectedField, filename: string):
-    string {.gcsafe, raises: [Defect].} =
+    string {.gcsafe, raises: [].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Unexpected field '{err.encounteredField}' while deserializing {err.deserializedType}"
 
 method formatMsg*(err: ref UnexpectedTokenError, filename: string):
-    string {.gcsafe, raises: [Defect].} =
+    string {.gcsafe, raises: [].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Unexpected token '{err.encountedToken}' in place of '{err.expectedToken}'"
 
 method formatMsg*(err: ref GenericJsonReaderError, filename: string):
-    string {.gcsafe, raises: [Defect].} =
+    string {.gcsafe, raises: [].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Exception encountered while deserializing '{err.deserializedField}': [{err.innerException.name}] {err.innerException.msg}"
 
 method formatMsg*(err: ref IntOverflowError, filename: string):
-    string {.gcsafe, raises: [Defect].} =
+    string {.gcsafe, raises: [].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) The value '{err.valueStr}' is outside of the allowed range"
 
 method formatMsg*(err: ref UnexpectedValueError, filename: string):
-    string {.gcsafe, raises: [Defect].} =
+    string {.gcsafe, raises: [].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) {err.msg}"
 
 method formatMsg*(err: ref IncompleteObjectError, filename: string):
-    string {.gcsafe, raises: [Defect].} =
+    string {.gcsafe, raises: [].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Not all required fields were specified when reading '{err.objectType}'"
 
 proc assignLineNumber*(ex: ref JsonReaderError, r: JsonReader) =
@@ -100,34 +102,34 @@ proc assignLineNumber*(ex: ref JsonReaderError, r: JsonReader) =
   ex.col = r.lexer.tokenStartCol
 
 proc raiseUnexpectedToken*(r: JsonReader, expected: ExpectedTokenCategory)
-                          {.noreturn.} =
+                          {.noreturn, raises: [JsonReaderError].} =
   var ex = new UnexpectedTokenError
   ex.assignLineNumber(r)
   ex.encountedToken = r.lexer.lazyTok
   ex.expectedToken = expected
   raise ex
 
-proc raiseUnexpectedValue*(r: JsonReader, msg: string) {.noreturn.} =
+proc raiseUnexpectedValue*(r: JsonReader, msg: string) {.noreturn, raises: [JsonReaderError].} =
   var ex = new UnexpectedValueError
   ex.assignLineNumber(r)
   ex.msg = msg
   raise ex
 
-proc raiseIntOverflow*(r: JsonReader, absIntVal: uint64, isNegative: bool) {.noreturn.} =
+proc raiseIntOverflow*(r: JsonReader, absIntVal: uint64, isNegative: bool) {.noreturn, raises: [JsonReaderError].} =
   var ex = new IntOverflowError
   ex.assignLineNumber(r)
   ex.absIntVal = absIntVal
   ex.isNegative = isNegative
   raise ex
 
-proc raiseUnexpectedField*(r: JsonReader, fieldName: string, deserializedType: cstring) {.noreturn.} =
+proc raiseUnexpectedField*(r: JsonReader, fieldName: string, deserializedType: cstring) {.noreturn, raises: [JsonReaderError].} =
   var ex = new UnexpectedField
   ex.assignLineNumber(r)
   ex.encounteredField = fieldName
   ex.deserializedType = deserializedType
   raise ex
 
-proc raiseIncompleteObject*(r: JsonReader, objectType: cstring) {.noreturn.} =
+proc raiseIncompleteObject*(r: JsonReader, objectType: cstring) {.noreturn, raises: [JsonReaderError].} =
   var ex = new IncompleteObjectError
   ex.assignLineNumber(r)
   ex.objectType = objectType
@@ -137,7 +139,7 @@ proc handleReadException*(r: JsonReader,
                           Record: type,
                           fieldName: string,
                           field: auto,
-                          err: ref CatchableError) =
+                          err: ref CatchableError) {.raises: [JsonReaderError].} =
   var ex = new GenericJsonReaderError
   ex.assignLineNumber(r)
   ex.deserializedField = fieldName
@@ -148,13 +150,13 @@ proc init*(T: type JsonReader,
            stream: InputStream,
            mode = defaultJsonMode,
            allowUnknownFields = false,
-           requireAllFields = false): T =
+           requireAllFields = false): T {.raises: [IOError].} =
   result.allowUnknownFields = allowUnknownFields
   result.requireAllFields = requireAllFields
   result.lexer = JsonLexer.init(stream, mode)
   result.lexer.next()
 
-proc requireToken*(r: var JsonReader, tk: TokKind) =
+proc requireToken*(r: var JsonReader, tk: TokKind) {.raises: [IOError, JsonReaderError].} =
   if r.lexer.tok != tk:
     r.raiseUnexpectedToken case tk
       of tkString: etString
@@ -167,7 +169,7 @@ proc requireToken*(r: var JsonReader, tk: TokKind) =
       of tkColon: etColon
       else: (doAssert false; etBool)
 
-proc skipToken*(r: var JsonReader, tk: TokKind) =
+proc skipToken*(r: var JsonReader, tk: TokKind) {.raises: [IOError, JsonReaderError].} =
   r.requireToken tk
   r.lexer.next()
 
@@ -179,10 +181,10 @@ func maxAbsValue(T: type[SomeInteger]): uint64 {.compileTime.} =
   else: uint64(high(T))
 
 proc parseJsonNode(r: var JsonReader): JsonNode
-                  {.gcsafe, raises: [IOError, JsonReaderError, Defect].}
+                  {.gcsafe, raises: [IOError, JsonReaderError].}
 
 proc readJsonNodeField(r: var JsonReader, field: var JsonNode)
-                  {.gcsafe, raises: [IOError, JsonReaderError, Defect].} =
+                  {.gcsafe, raises: [IOError, JsonReaderError].} =
   if field.isNil.not:
     r.raiseUnexpectedValue("Unexpected duplicated field name")
 
@@ -265,7 +267,7 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
   of tkQuoted, tkExBlob, tkNumeric, tkExInt, tkExNegInt:
     raiseAssert "generic type " & $r.lexer.lazyTok & " is not applicable"
 
-proc skipSingleJsValue*(r: var JsonReader) =
+proc skipSingleJsValue*(r: var JsonReader) {.raises: [IOError, JsonReaderError].}  =
   case r.lexer.tok
   of tkCurlyLe:
     r.lexer.next()
@@ -300,7 +302,7 @@ proc skipSingleJsValue*(r: var JsonReader) =
      tkTrue, tkFalse, tkNull:
     r.lexer.next()
 
-proc captureSingleJsValue(r: var JsonReader, output: var string) =
+proc captureSingleJsValue(r: var JsonReader, output: var string) {.raises: [IOError, SerializationError].} =
   r.lexer.renderTok output
   case r.lexer.tok
   of tkCurlyLe:
@@ -351,7 +353,7 @@ proc allocPtr[T](p: var ptr T) =
 proc allocPtr[T](p: var ref T) =
   p = new(T)
 
-iterator readArray*(r: var JsonReader, ElemType: typedesc): ElemType =
+iterator readArray*(r: var JsonReader, ElemType: typedesc): ElemType {.raises: [IOError, SerializationError].} =
   mixin readValue
 
   r.skipToken tkBracketLe
@@ -365,7 +367,7 @@ iterator readArray*(r: var JsonReader, ElemType: typedesc): ElemType =
   r.skipToken tkBracketRi
 
 iterator readObjectFields*(r: var JsonReader,
-                           KeyType: type): KeyType =
+                           KeyType: type): KeyType {.raises: [IOError, SerializationError].} =
   mixin readValue
 
   r.skipToken tkCurlyLe
@@ -382,7 +384,7 @@ iterator readObjectFields*(r: var JsonReader,
 
 iterator readObject*(r: var JsonReader,
                      KeyType: type,
-                     ValueType: type): (KeyType, ValueType) =
+                     ValueType: type): (KeyType, ValueType) {.raises: [IOError, SerializationError].} =
   mixin readValue
 
   for fieldName in readObjectFields(r, KeyType):
@@ -450,12 +452,12 @@ template isCharArray(v: auto): bool = false
 
 func parseStringEnum[T](
     r: var JsonReader, value: var T,
-    stringNormalizer: static[proc(s: string): string]) =
+    stringNormalizer: static[proc(s: string): string]) {.raises: [JsonReaderError].} =
   try:
     value = genEnumCaseStmt(
       T, r.lexer.strVal,
       default = nil, ord(T.low), ord(T.high), stringNormalizer)
-  except ValueError as err:
+  except ValueError:
     const typeName = typetraits.name(T)
     r.raiseUnexpectedValue("Invalid value for '" & typeName & "'")
 
@@ -464,7 +466,7 @@ func strictNormalize(s: string): string =  # Match enum value exactly
 
 proc parseEnum[T](
     r: var JsonReader, value: var T, allowNumericRepr: static[bool] = false,
-    stringNormalizer: static[proc(s: string): string] = strictNormalize) =
+    stringNormalizer: static[proc(s: string): string] = strictNormalize) {.raises: [IOError, JsonReaderError].} =
   const style = T.enumStyle
   let tok = r.lexer.tok
   case tok
@@ -492,7 +494,7 @@ proc parseEnum[T](
       r.raiseUnexpectedToken etEnumString
 
 proc readValue*[T](r: var JsonReader, value: var T)
-                  {.gcsafe, raises: [SerializationError, IOError, Defect].} =
+                  {.gcsafe, raises: [SerializationError, IOError].} =
   ## Master filed/object parser. This function relies on customised sub-mixins for particular
   ## object types.
   ##
@@ -689,7 +691,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
           break
 
       if r.requireAllFields and
-         not expectedFields.isBitwiseSubsetOf(encounteredFields):
+        not expectedFields.isBitwiseSubsetOf(encounteredFields):
         const typeName = typetraits.name(T)
         r.raiseIncompleteObject(typeName)
 
@@ -708,6 +710,8 @@ template configureJsonDeserialization*(
     T: type[enum], allowNumericRepr: static[bool] = false,
     stringNormalizer: static[proc(s: string): string] = strictNormalize) =
   proc readValue*(r: var JsonReader, value: var T) {.
-      raises: [Defect, IOError, SerializationError].} =
+      raises: [IOError, SerializationError].} =
     static: doAssert not allowNumericRepr or enumStyle(T) == EnumStyle.Numeric
     r.parseEnum(value, allowNumericRepr, stringNormalizer)
+
+{.pop.}

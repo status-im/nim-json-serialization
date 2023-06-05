@@ -1,5 +1,5 @@
 import
-  strutils, unittest, json,
+  strutils, unittest2, json,
   serialization/object_serialization,
   serialization/testing/generic_suite,
   ../json_serialization, ./utils,
@@ -120,44 +120,53 @@ template registerVisit(reader: var JsonReader; body: untyped): untyped =
 
 # Customised parser referring to other parser
 proc readValue(reader: var JsonReader, value: var FancyInt) =
-  reader.registerVisit:
-    value = reader.readValue(int).FancyInt
+  try:
+    reader.registerVisit:
+      value = reader.readValue(int).FancyInt
+  except ValueError:
+    reader.raiseUnexpectedValue("string encoded integer expected")
 
 # Customised numeric parser for integer and stringified integer
 proc readValue(reader: var JsonReader, value: var FancyUInt) =
-  reader.registerVisit:
-    var accu = 0u
-    case reader.lexer.lazyTok
-    of tkNumeric:
-      reader.lexer.customIntValueIt:
-        accu = accu * 10u + it.uint
-    of tkQuoted:
-      var s =  ""
-      reader.lexer.customTextValueIt:
-        s &= it
-      accu = s.parseUInt
-    else:
-      discard
-    value = accu.FancyUInt
-  reader.lexer.next
+  try:
+    reader.registerVisit:
+      var accu = 0u
+      case reader.lexer.lazyTok
+      of tkNumeric:
+        reader.lexer.customIntValueIt:
+          accu = accu * 10u + it.uint
+      of tkQuoted:
+        var s =  ""
+        reader.lexer.customTextValueIt:
+          s &= it
+        accu = s.parseUInt
+      else:
+        discard
+      value = accu.FancyUInt
+    reader.lexer.next
+  except ValueError:
+    reader.raiseUnexpectedValue("string encoded integer expected")
 
 # Customised numeric parser for text, accepts embedded quote
 proc readValue(reader: var JsonReader, value: var FancyText) =
-  reader.registerVisit:
-    var (s, esc) = ("",false)
-    reader.lexer.customBlobValueIt:
-      let c = it.chr
-      if esc:
-        s &= c
-        esc = false
-      elif c == '\\':
-        esc = true
-      elif c != '"':
-        s &= c
-      else:
-        doNext = StopSwallowByte
-    value = s.FancyText
-  reader.lexer.next
+  try:
+    reader.registerVisit:
+      var (s, esc) = ("",false)
+      reader.lexer.customBlobValueIt:
+        let c = it.chr
+        if esc:
+          s &= c
+          esc = false
+        elif c == '\\':
+          esc = true
+        elif c != '"':
+          s &= c
+        else:
+          doNext = StopSwallowByte
+      value = s.FancyText
+    reader.lexer.next
+  except ValueError:
+    reader.raiseUnexpectedValue("string encoded integer expected")
 
 
 # TODO `borrowSerialization` still doesn't work
@@ -622,6 +631,9 @@ suite "toJson tests":
     var r = 0
     for a in arr:
       for b in arr:
+        # lent iterator error
+        let a = a
+        let b = b
         Json.roundtripTest NestedOptionTest(c: a, d: b), results[r]
         r.inc
 

@@ -23,9 +23,11 @@ template to*(a: string, b: type string): string =
   a
 
 proc readValue*(reader: var JsonReader, value: var TableType) =
-  type KeyType = type(value.keys)
-  type ValueType = type(value.values)
-  value = init TableType
-  for key, val in readObject(reader, string, ValueType):
-    value[to(key, KeyType)] = val
-
+  try:
+    type KeyType = type(value.keys)
+    type ValueType = type(value.values)
+    value = init TableType
+    for key, val in readObject(reader, string, ValueType):
+      value[to(key, KeyType)] = val
+  except ValueError as ex:
+    reader.raiseUnexpectedValue("TableType: " & ex.msg)

@@ -6,12 +6,12 @@ import
 export
   inputs, types
 
-{.push raises: [Defect].}
+{.push raises: [].}
 
 type
   CustomIntHandler* = ##\
     ## Custom decimal integer parser, result values need to be captured
-    proc(dgt: int) {.gcsafe, raises: [Defect].}
+    proc(dgt: int) {.gcsafe, raises: [].}
 
   CustomByteAction* = enum
     Continue ##\
@@ -28,7 +28,7 @@ type
   CustomBlobHandler* = ##\
     ## Custom text or binary parser, result values need to be captured. The\
     ## second argument `what` controlls the next action.
-    proc(b: byte; what: var CustomByteAction) {.gcsafe, raises: [Defect].}
+    proc(b: byte; what: var CustomByteAction) {.gcsafe, raises: [].}
 
   TokKind* = enum
     tkError,
@@ -100,11 +100,11 @@ const
                                    # The largest JSON number value is 1E308
 
 # needed in renderTok()
-proc scanNumber(lexer: var JsonLexer) {.gcsafe, raises: [Defect,IOError].}
-proc scanString(lexer: var JsonLexer) {.gcsafe, raises: [Defect,IOError].}
+proc scanNumber(lexer: var JsonLexer) {.gcsafe, raises: [IOError].}
+proc scanString(lexer: var JsonLexer) {.gcsafe, raises: [IOError].}
 
 proc renderTok*(lexer: var JsonLexer, output: var string)
-    {.gcsafe, raises: [Defect,IOError].} =
+    {.gcsafe, raises: [IOError].} =
   # The lazy part
   case lexer.tokKind
   of tkNumeric:
@@ -199,7 +199,7 @@ template checkForNonPortableInt(val: uint64; overflow: bool) =
     error errNonPortableInt
 
 proc scanHexRune(lexer: var JsonLexer): int
-    {.gcsafe, raises: [Defect,IOError].} =
+    {.gcsafe, raises: [IOError].} =
   for i in 0..3:
     let hexValue = hexCharValue requireNextChar()
     if hexValue == -1: error errHexCharExpected
@@ -262,7 +262,7 @@ proc handleLF(lexer: var JsonLexer) =
   lexer.lineStartPos = lexer.stream.pos
 
 proc skipWhitespace(lexer: var JsonLexer)
-    {.gcsafe, raises: [Defect,IOError].} =
+    {.gcsafe, raises: [IOError].} =
   template handleCR =
     # Beware: this is a template, because the return
     # statement has to exit `skipWhitespace`.
@@ -330,7 +330,7 @@ template eatDigitAndPeek: char =
   lexer.stream.peek()
 
 proc scanSign(lexer: var JsonLexer): int
-    {.gcsafe, raises: [Defect,IOError].} =
+    {.gcsafe, raises: [IOError].} =
   # Returns +1 or -1
   # If a sign character is present, it must be followed
   # by more characters representing the number. If this
@@ -346,7 +346,7 @@ proc scanSign(lexer: var JsonLexer): int
   return 1
 
 proc scanInt(lexer: var JsonLexer): (uint64,bool)
-    {.gcsafe, raises: [Defect,IOError].} =
+    {.gcsafe, raises: [IOError].} =
   ## Scan unsigned integer into uint64 if possible.
   ## If all goes ok, the tuple `(parsed-value,false)` is returned.
   ## On overflow, the tuple `(uint64.high,true)` is returned.
@@ -373,7 +373,7 @@ proc scanInt(lexer: var JsonLexer): (uint64,bool)
 
 
 proc scanNumber(lexer: var JsonLexer)
-    {.gcsafe, raises: [Defect,IOError].} =
+    {.gcsafe, raises: [IOError].} =
   var sign = lexer.scanSign()
   if sign == 0: return
   var c = lexer.stream.peek()
@@ -430,7 +430,7 @@ proc scanIdentifier(lexer: var JsonLexer,
   lexer.tokKind = expectedTok
 
 proc accept*(lexer: var JsonLexer)
-    {.gcsafe, raises: [Defect,IOError].} =
+    {.gcsafe, raises: [IOError].} =
   ## Finalise token by parsing the value. Note that this might change
   ## the token type
   case lexer.tokKind
@@ -442,7 +442,7 @@ proc accept*(lexer: var JsonLexer)
     discard
 
 proc next*(lexer: var JsonLexer)
-    {.gcsafe, raises: [Defect,IOError].} =
+    {.gcsafe, raises: [IOError].} =
   lexer.skipWhitespace()
 
   if not lexer.stream.readable:
@@ -487,7 +487,7 @@ proc next*(lexer: var JsonLexer)
     lexer.tokKind = tkError
 
 proc tok*(lexer: var JsonLexer): TokKind
-    {.gcsafe, raises: [Defect,IOError].} =
+    {.gcsafe, raises: [IOError].} =
   ## Getter, implies full token parsing
   lexer.accept
   lexer.tokKind
@@ -498,12 +498,12 @@ proc lazyTok*(lexer: JsonLexer): TokKind =
 
 
 proc customIntHandler*(lexer: var JsonLexer; handler: CustomIntHandler)
-    {.gcsafe, raises: [Defect,IOError].} =
+    {.gcsafe, raises: [IOError].} =
   ## Apply the `handler` argument function for parsing a `tkNumeric` type
   ## value. This function sets the token state to `tkExInt`, `tkExNegInt`,
   ## or `tkError`.
   proc customScan(lexer: var JsonLexer)
-    {.gcsafe, raises: [Defect,IOError].} =
+    {.gcsafe, raises: [IOError].} =
     var c = lexer.stream.peek()
     handler(ord(c) - ord('0'))
     c = eatDigitAndPeek()   # implicit auto-return
@@ -523,11 +523,11 @@ proc customIntHandler*(lexer: var JsonLexer; handler: CustomIntHandler)
   error errCustomIntExpexted
 
 proc customBlobHandler*(lexer: var JsonLexer; handler: CustomBlobHandler)
-    {.gcsafe, raises: [Defect,IOError].} =
+    {.gcsafe, raises: [IOError].} =
   ## Apply the `handler` argument function for parsing a `tkQuoted` type
   ## value. This function sets the token state to `tkExBlob`, or `tkError`.
   proc customScan(lexer: var JsonLexer)
-      {.gcsafe, raises: [Defect,IOError].} =
+      {.gcsafe, raises: [IOError].} =
     var what = Continue
     while lexer.stream.readable:
       var c = lexer.stream.peek
