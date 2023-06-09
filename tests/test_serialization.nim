@@ -198,35 +198,6 @@ var invalid = Invalid(distance: Mile(100))
 when false: reject invalid.toJson
 else: discard invalid
 
-when (NimMajor, NimMinor) < (1, 4):  # Copy from `std/strutils`
-  #
-  #
-  #            Nim's Runtime Library
-  #        (c) Copyright 2012 Andreas Rumpf
-  #
-  #    See the file "copying.txt", included in this
-  #    distribution, for details about the copyright.
-  #
-  func nimIdentNormalize*(s: string): string =
-    ## Normalizes the string `s` as a Nim identifier.
-    ##
-    ## That means to convert to lower case and remove any '_' on all characters
-    ## except first one.
-    runnableExamples:
-      doAssert nimIdentNormalize("Foo_bar") == "Foobar"
-    result = newString(s.len)
-    if s.len > 0:
-      result[0] = s[0]
-    var j = 1
-    for i in 1..len(s) - 1:
-      if s[i] in {'A'..'Z'}:
-        result[j] = chr(ord(s[i]) + (ord('a') - ord('A')))
-        inc j
-      elif s[i] != '_':
-        result[j] = s[i]
-        inc j
-    if j != s.len: setLen(result, j)
-
 type EnumTestX = enum
   x0,
   x1,
