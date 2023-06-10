@@ -1,8 +1,8 @@
 {.experimental: "notnil".}
 
 import
-  std/[tables, macros, strformat],
-  stew/[enums, objects], stew/shims/[enumutils, typetraits],
+  std/[enumutils, tables, macros, strformat, typetraits],
+  stew/[enums, objects],
   faststreams/inputs, serialization/[formats, object_serialization, errors],
   "."/[format, types, lexer]
 
