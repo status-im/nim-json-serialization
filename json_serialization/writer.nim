@@ -151,13 +151,11 @@ template writeObjectField*[FieldType, RecordType](w: var JsonWriter,
                                                   field: FieldType): bool =
   mixin writeFieldIMPL, writeValue
 
-  type
-    R = type record
-
   w.writeFieldName(fieldName)
   when RecordType is tuple:
     w.writeValue(field)
   else:
+    type R = type record
     w.writeFieldIMPL(FieldTag[R, fieldName], field, record)
   true
 
