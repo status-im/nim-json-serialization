@@ -194,7 +194,7 @@ template readValueImpl(r: var JsonReader, value: var MyCaseObject) =
           r.readValue(value.banana)
         of Apple:
           r.raiseUnexpectedValue(
-            "The 'banana' field is only allowed for 'kind' = 'Apple'")
+            "The 'banana' field is only allowed for 'kind' = 'Banana'")
       else:
         r.raiseUnexpectedValue(
           "The 'banana' field must be specified after the 'kind' field")
