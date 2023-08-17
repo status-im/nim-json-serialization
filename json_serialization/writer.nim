@@ -32,7 +32,7 @@ proc init*(W: type JsonWriter, stream: OutputStream,
 
 proc beginRecord*(w: var JsonWriter, T: type)
 proc beginRecord*(w: var JsonWriter)
-proc writeValue*(w: var JsonWriter, value: auto)
+proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].}
 
 template append(x: untyped) =
   write w.stream, x
@@ -65,7 +65,8 @@ proc writeFieldName*(w: var JsonWriter, name: string) =
 
   w.state = RecordExpected
 
-proc writeField*(w: var JsonWriter, name: string, value: auto) =
+proc writeField*(
+    w: var JsonWriter, name: string, value: auto) {.raises: [IOError].} =
   mixin writeValue
 
   w.writeFieldName(name)
@@ -161,7 +162,7 @@ template writeObjectField*[FieldType, RecordType](w: var JsonWriter,
     w.writeFieldIMPL(FieldTag[R, fieldName], field, record)
   true
 
-proc writeValue*(w: var JsonWriter, value: auto) =
+proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
   mixin enumInstanceSerializedFields, writeValue
 
   when value is JsonNode:

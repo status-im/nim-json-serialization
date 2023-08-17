@@ -15,7 +15,8 @@ template writeObjectField*[T](w: var JsonWriter,
   else:
     false
 
-proc writeValue*[T](writer: var JsonWriter, value: Result[T, void]) =
+proc writeValue*[T](
+    writer: var JsonWriter, value: Result[T, void]) {.raises: [IOError].} =
   mixin writeValue
 
   if value.isOk:

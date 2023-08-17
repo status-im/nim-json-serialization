@@ -4,7 +4,8 @@ export tables
 type
   TableType = OrderedTable | Table
 
-proc writeValue*(writer: var JsonWriter, value: TableType) =
+proc writeValue*(
+    writer: var JsonWriter, value: TableType) {.raises: [IOError].} =
   writer.beginRecord()
   for key, val in value:
     writer.writeField $key, val

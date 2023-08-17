@@ -5,7 +5,8 @@ import
 export
   net, common
 
-proc writeValue*(writer: var JsonWriter, value: IpAddress) =
+proc writeValue*(
+    writer: var JsonWriter, value: IpAddress) {.raises: [IOError].} =
   writeValue(writer, $value)
 
 proc readValue*(reader: var JsonReader, value: var IpAddress) =
@@ -21,15 +22,16 @@ template writeValue*(writer: var JsonWriter, value: ValidIpAddress) =
 template readValue*(reader: var JsonReader, value: var ValidIpAddress) =
   readValue reader, IpAddress(value)
 
-proc writeValue*(writer: var JsonWriter, value: Port) =
+proc writeValue*(
+    writer: var JsonWriter, value: Port) {.raises: [IOError].} =
   writeValue(writer, uint16 value)
 
 proc readValue*(reader: var JsonReader, value: var Port) =
   value = Port reader.readValue(uint16)
 
-proc writeValue*(writer: var JsonWriter, value: AddressFamily) =
+proc writeValue*(
+    writer: var JsonWriter, value: AddressFamily) {.raises: [IOError].} =
   writeValue(writer, $value)
 
 proc readValue*(reader: var JsonReader, value: var AddressFamily) =
   value = parseEnum[AddressFamily](reader.readValue(string))
-
