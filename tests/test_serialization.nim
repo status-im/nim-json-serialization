@@ -98,6 +98,135 @@ type
     b*: Option[Meter]
     c*: Option[Meter]
 
+proc readValue*(r: var JsonReader[DefaultFlavor], value: var CaseObject)
+    {.gcsafe, raises: [SerializationError, IOError].}
+
+template readValueImpl(r: var JsonReader, value: var CaseObject) =
+  var
+    kindSpecified = false
+    valueSpecified = false
+    otherSpecified = false
+
+  for fieldName in readObjectFields(r):
+    case fieldName
+    of "kind":
+      value = CaseObject(kind: r.readValue(ObjectKind))
+      kindSpecified = true
+      case value.kind
+      of A:
+        discard
+      of B:
+        otherSpecified = true
+
+    of "a":
+      if kindSpecified:
+        case value.kind
+        of A:
+          r.readValue(value.a)
+        of B:
+          r.raiseUnexpectedValue(
+            "The 'a' field is only allowed for 'kind' = 'A'")
+      else:
+        r.raiseUnexpectedValue(
+          "The 'a' field must be specified after the 'kind' field")
+      valueSpecified = true
+
+    of "other":
+      if kindSpecified:
+        case value.kind
+        of A:
+          r.readValue(value.other)
+        of B:
+          r.raiseUnexpectedValue(
+            "The 'other' field is only allowed for 'kind' = 'A'")
+      else:
+        r.raiseUnexpectedValue(
+          "The 'other' field must be specified after the 'kind' field")
+      otherSpecified = true
+
+    of "b":
+      if kindSpecified:
+        case value.kind
+        of B:
+          r.readValue(value.b)
+        of A:
+          r.raiseUnexpectedValue(
+            "The 'b' field is only allowed for 'kind' = 'B'")
+      else:
+        r.raiseUnexpectedValue(
+          "The 'b' field must be specified after the 'kind' field")
+      valueSpecified = true
+
+    else:
+      r.raiseUnexpectedField(fieldName, "CaseObject")
+
+  if not (kindSpecified and valueSpecified and otherSpecified):
+    r.raiseUnexpectedValue(
+      "The CaseObject value should have sub-fields named " &
+      "'kind', and ('a' and 'other') or 'b' depending on 'kind'")
+
+{.push warning[ProveField]:off.}  # https://github.com/nim-lang/Nim/issues/22060
+proc readValue*(r: var JsonReader[DefaultFlavor], value: var CaseObject)
+    {.raises: [SerializationError, IOError].} =
+  readValueImpl(r, value)
+{.pop.}
+
+template readValueImpl(r: var JsonReader, value: var MyCaseObject) =
+  var
+    nameSpecified = false
+    kindSpecified = false
+    valueSpecified = false
+
+  for fieldName in readObjectFields(r):
+    case fieldName
+    of "name":
+      r.readValue(value.name)
+      nameSpecified = true
+
+    of "kind":
+      value = MyCaseObject(kind: r.readValue(MyKind), name: value.name)
+      kindSpecified = true
+
+    of "banana":
+      if kindSpecified:
+        case value.kind
+        of Banana:
+          r.readValue(value.banana)
+        of Apple:
+          r.raiseUnexpectedValue(
+            "The 'banana' field is only allowed for 'kind' = 'Banana'")
+      else:
+        r.raiseUnexpectedValue(
+          "The 'banana' field must be specified after the 'kind' field")
+      valueSpecified = true
+
+    of "apple":
+      if kindSpecified:
+        case value.kind
+        of Apple:
+          r.readValue(value.apple)
+        of Banana:
+          r.raiseUnexpectedValue(
+            "The 'apple' field is only allowed for 'kind' = 'Apple'")
+      else:
+        r.raiseUnexpectedValue(
+          "The 'apple' field must be specified after the 'kind' field")
+      valueSpecified = true
+
+    else:
+      r.raiseUnexpectedField(fieldName, "MyCaseObject")
+
+  if not (nameSpecified and kindSpecified and valueSpecified):
+    r.raiseUnexpectedValue(
+      "The MyCaseObject value should have sub-fields named " &
+      "'name', 'kind', and 'banana' or 'apple' depending on 'kind'")
+
+{.push warning[ProveField]:off.}  # https://github.com/nim-lang/Nim/issues/22060
+proc readValue*(r: var JsonReader[DefaultFlavor], value: var MyCaseObject)
+    {.raises: [SerializationError, IOError].} =
+  readValueImpl(r, value)
+{.pop.}
+
 var
   customVisit: TokenRegistry
 
