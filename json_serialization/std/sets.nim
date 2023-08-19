@@ -4,7 +4,7 @@ export sets
 type
   SetType = OrderedSet | HashSet | set
 
-proc writeValue*(writer: var JsonWriter, value: SetType) =
+proc writeValue*(writer: var JsonWriter, value: SetType) {.raises: [IOError].} =
   writer.writeIterable value
 
 proc readValue*(reader: var JsonReader, value: var SetType) =
@@ -12,4 +12,3 @@ proc readValue*(reader: var JsonReader, value: var SetType) =
   value = init SetType
   for elem in readArray(reader, ElemType):
     value.incl elem
-

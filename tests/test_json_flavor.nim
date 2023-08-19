@@ -5,7 +5,8 @@ import
 
 Json.createFlavor StringyJson
 
-proc writeValue*(w: var JsonWriter[StringyJson], val: SomeInteger) =
+proc writeValue*(
+    w: var JsonWriter[StringyJson], val: SomeInteger) {.raises: [IOError].} =
   writeValue(w, $val)
 
 proc readValue*(r: var JsonReader[StringyJson], v: var SomeSignedInt) =
@@ -38,4 +39,3 @@ except SerializationError as err:
   quit 1
 
 echo "Decoded: ", decoded
-
