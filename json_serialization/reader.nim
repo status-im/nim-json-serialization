@@ -589,10 +589,13 @@ proc readValue*[T](r: var JsonReader, value: var T)
 
   elif value is SomeInteger:
     type TargetType = type(value)
-    const maxValidValue = maxAbsValue(TargetType)
-
+    let maxValidValue = maxAbsValue(TargetType)
     let isNegative = tok == tkNegativeInt
-    if r.lexer.absIntVal > maxValidValue - uint64(not isNegative):
+
+    if not isNegative:
+      maxValidValue -= 1
+
+    if r.lexer.absIntVal > maxValidValue:
       r.raiseIntOverflow r.lexer.absIntVal, isNegative
 
     case tok
