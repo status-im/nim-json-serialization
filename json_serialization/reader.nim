@@ -589,13 +589,11 @@ proc readValue*[T](r: var JsonReader, value: var T)
 
   elif value is SomeInteger:
     type TargetType = type(value)
-    let maxValidValue = maxAbsValue(TargetType)
+    const maxValidValue = maxAbsValue(TargetType)
     let isNegative = tok == tkNegativeInt
+    let maxIntValue = if isNegative: maxValidValue else: maxValidValue - 1
 
-    if not isNegative:
-      maxValidValue -= 1
-
-    if r.lexer.absIntVal > maxValidValue:
+    if r.lexer.absIntVal > maxIntValue:
       r.raiseIntOverflow r.lexer.absIntVal, isNegative
 
     case tok
@@ -603,7 +601,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
       value = TargetType(r.lexer.absIntVal)
     of tkNegativeInt:
       when value is SomeSignedInt:
-        if r.lexer.absIntVal == maxValidValue:
+        if r.lexer.absIntVal == maxIntValue:
           # We must handle this as a special case because it would be illegal
           # to convert a value like 128 to int8 before negating it. The max
           # int8 value is 127 (while the minimum is -128).
