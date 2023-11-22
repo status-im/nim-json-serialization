@@ -178,6 +178,7 @@ func maxAbsValue(T: type[SomeInteger]): uint64 {.compileTime.} =
   elif T is int16: 32768'u64
   elif T is int32: 2147483648'u64
   elif T is int64: 9223372036854775808'u64
+  elif T is int: 9223372036854775808'u64
   else: uint64(high(T))
 
 proc parseJsonNode(r: var JsonReader): JsonNode
@@ -589,11 +590,15 @@ proc readValue*[T](r: var JsonReader, value: var T)
 
   elif value is SomeInteger:
     type TargetType = type(value)
-    const maxValidValue = maxAbsValue(TargetType)
+    const maxValidAbsValue = maxAbsValue(TargetType)
     let isNegative = tok == tkNegativeInt
-    let maxIntValue = if isNegative: maxValidValue else: maxValidValue - 1
+    let isSigned = value is SomeSignedInt
+    var maxValidValue = maxValidAbsValue
 
-    if r.lexer.absIntVal > maxIntValue:
+    if isSigned and not isNegative:
+      maxValidValue = maxValidAbsValue - 1
+
+    if r.lexer.absIntVal > maxValidValue:
       r.raiseIntOverflow r.lexer.absIntVal, isNegative
 
     case tok
@@ -601,7 +606,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
       value = TargetType(r.lexer.absIntVal)
     of tkNegativeInt:
       when value is SomeSignedInt:
-        if r.lexer.absIntVal == maxIntValue:
+        if r.lexer.absIntVal == maxValidValue:
           # We must handle this as a special case because it would be illegal
           # to convert a value like 128 to int8 before negating it. The max
           # int8 value is 127 (while the minimum is -128).
