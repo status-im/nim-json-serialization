@@ -656,6 +656,28 @@ suite "toJson tests":
     expect JsonReaderError:
       discard Json.decode(jsonValue, uint64, mode = Portable)
 
+  test "max signed value":
+    let intVal = int64.high
+    let validJsonValue = Json.encode(intVal)
+    let invalidJsonValue = "9223372036854775808"
+    check:
+      validJsonValue == "9223372036854775807"
+      Json.decode(validJsonValue, int64) == intVal
+
+    expect IntOverflowError:
+      discard Json.decode(invalidJsonValue, int64)
+
+  test "min signed value":
+    let intVal = int64.low
+    let validJsonValue = Json.encode(intVal)
+    let invalidJsonValue = "-9223372036854775809"
+    check:
+      validJsonValue == "-9223372036854775808"
+      Json.decode(validJsonValue, int64) == intVal
+
+    expect IntOverflowError:
+      discard Json.decode(invalidJsonValue, int64)
+
   test "Unusual field names":
     let r = HasUnusualFieldNames(`type`: "uint8", renamedField: "field")
     check:
