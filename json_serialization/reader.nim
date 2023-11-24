@@ -187,7 +187,7 @@ proc readJsonNodeField(r: var JsonReader, field: var JsonNode)
   field = r.parseJsonNode()
 
 proc parseJsonNode(r: var JsonReader): JsonNode =
-  const maxIntValue = BiggestInt.high.uint64 + 1
+  const maxIntValue: uint64 = BiggestInt.high.uint64 + 1
 
   case r.lexer.tok
   of tkCurlyLe:
