@@ -647,14 +647,36 @@ suite "toJson tests":
       """
 
   test "max unsigned value":
-    var uintVal = not uint64(0)
+    var uintVal = not BiggestUint(0)
     let jsonValue = Json.encode(uintVal)
     check:
       jsonValue == "18446744073709551615"
-      Json.decode(jsonValue, uint64) == uintVal
+      Json.decode(jsonValue, BiggestUint) == uintVal
 
     expect JsonReaderError:
-      discard Json.decode(jsonValue, uint64, mode = Portable)
+      discard Json.decode(jsonValue, BiggestUint, mode = Portable)
+
+  test "max signed value":
+    let intVal = BiggestInt.high
+    let validJsonValue = Json.encode(intVal)
+    let invalidJsonValue = "9223372036854775808"
+    check:
+      validJsonValue == "9223372036854775807"
+      Json.decode(validJsonValue, BiggestInt) == intVal
+
+    expect IntOverflowError:
+      discard Json.decode(invalidJsonValue, BiggestInt)
+
+  test "min signed value":
+    let intVal = BiggestInt.low
+    let validJsonValue = Json.encode(intVal)
+    let invalidJsonValue = "-9223372036854775809"
+    check:
+      validJsonValue == "-9223372036854775808"
+      Json.decode(validJsonValue, BiggestInt) == intVal
+
+    expect IntOverflowError:
+      discard Json.decode(invalidJsonValue, BiggestInt)
 
   test "Unusual field names":
     let r = HasUnusualFieldNames(`type`: "uint8", renamedField: "field")

@@ -54,7 +54,7 @@ type
 
   IntOverflowError* = object of JsonReaderError
     isNegative: bool
-    absIntVal: uint64
+    absIntVal: BiggestUint
 
 Json.setReader JsonReader
 
@@ -115,7 +115,7 @@ proc raiseUnexpectedValue*(r: JsonReader, msg: string) {.noreturn, raises: [Json
   ex.msg = msg
   raise ex
 
-proc raiseIntOverflow*(r: JsonReader, absIntVal: uint64, isNegative: bool) {.noreturn, raises: [JsonReaderError].} =
+proc raiseIntOverflow*(r: JsonReader, absIntVal: BiggestUint, isNegative: bool) {.noreturn, raises: [JsonReaderError].} =
   var ex = new IntOverflowError
   ex.assignLineNumber(r)
   ex.absIntVal = absIntVal
@@ -173,13 +173,6 @@ proc skipToken*(r: var JsonReader, tk: TokKind) {.raises: [IOError, JsonReaderEr
   r.requireToken tk
   r.lexer.next()
 
-func maxAbsValue(T: type[SomeInteger]): uint64 {.compileTime.} =
-  when T is int8 : 128'u64
-  elif T is int16: 32768'u64
-  elif T is int32: 2147483648'u64
-  elif T is int64: 9223372036854775808'u64
-  else: uint64(high(T))
-
 proc parseJsonNode(r: var JsonReader): JsonNode
                   {.gcsafe, raises: [IOError, JsonReaderError].}
 
@@ -194,7 +187,7 @@ proc readJsonNodeField(r: var JsonReader, field: var JsonNode)
   field = r.parseJsonNode()
 
 proc parseJsonNode(r: var JsonReader): JsonNode =
-  const maxIntValue = maxAbsValue(BiggestInt)
+  const maxIntValue: BiggestUint = BiggestInt.high.BiggestUint + 1
 
   case r.lexer.tok
   of tkCurlyLe:
@@ -245,7 +238,7 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
     else:
       # `0 - x` is a magical trick that turns the unsigned
       # value into its negative signed counterpart:
-      result = JsonNode(kind: JInt, num: cast[int64](uint64(0) - r.lexer.absIntVal))
+      result = JsonNode(kind: JInt, num: cast[BiggestInt](BiggestUint(0) - r.lexer.absIntVal))
       r.lexer.next()
 
   of tkFloat:
@@ -587,28 +580,43 @@ proc readValue*[T](r: var JsonReader, value: var T)
     r.parseEnum(value)
     r.lexer.next()
 
-  elif value is SomeInteger:
+  elif value is SomeSignedInt:
     type TargetType = type(value)
-    const maxValidValue = maxAbsValue(TargetType)
+    let
+      isNegative = tok == tkNegativeInt
+      maxValidAbsValue: BiggestUint =
+        if isNegative:
+          TargetType.high.BiggestUint + 1
+        else:
+          TargetType.high.BiggestUint
 
-    let isNegative = tok == tkNegativeInt
-    if r.lexer.absIntVal > maxValidValue + uint64(isNegative):
-      r.raiseIntOverflow r.lexer.absIntVal, isNegative
+    if r.lexer.absIntVal > maxValidAbsValue:
+      r.raiseIntOverflow(r.lexer.absIntVal, isNegative)
 
     case tok
     of tkInt:
       value = TargetType(r.lexer.absIntVal)
     of tkNegativeInt:
-      when value is SomeSignedInt:
-        if r.lexer.absIntVal == maxValidValue:
-          # We must handle this as a special case because it would be illegal
-          # to convert a value like 128 to int8 before negating it. The max
-          # int8 value is 127 (while the minimum is -128).
-          value = low(TargetType)
-        else:
-          value = -TargetType(r.lexer.absIntVal)
+      if r.lexer.absIntVal == maxValidAbsValue:
+        # We must handle this as a special case because it would be illegal
+        # to convert a value like 128 to int8 before negating it. The max
+        # int8 value is 127 (while the minimum is -128).
+        value = low(TargetType)
       else:
-        r.raiseIntOverflow r.lexer.absIntVal, true
+        value = -TargetType(r.lexer.absIntVal)
+    else:
+      r.raiseUnexpectedToken etInt
+    r.lexer.next()
+
+  elif value is SomeUnsignedInt:
+    type TargetType = type(value)
+
+    if r.lexer.absIntVal > TargetType.high.BiggestUint:
+      r.raiseIntOverflow(r.lexer.absIntVal, isNegative = false)
+
+    case tok
+    of tkInt:
+      value = TargetType(r.lexer.absIntVal)
     else:
       r.raiseUnexpectedToken etInt
     r.lexer.next()
