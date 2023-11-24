@@ -584,7 +584,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
     type TargetType = type(value)
     let
       isNegative = tok == tkNegativeInt
-      maxValidAbsValue =
+      maxValidAbsValue: uint64 =
         if isNegative:
           TargetType.high.uint64 + 1
         else:
