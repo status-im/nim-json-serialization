@@ -54,7 +54,7 @@ type
 
   IntOverflowError* = object of JsonReaderError
     isNegative: bool
-    absIntVal: uint64
+    absIntVal: BiggestUint
 
 Json.setReader JsonReader
 
@@ -115,7 +115,7 @@ proc raiseUnexpectedValue*(r: JsonReader, msg: string) {.noreturn, raises: [Json
   ex.msg = msg
   raise ex
 
-proc raiseIntOverflow*(r: JsonReader, absIntVal: uint64, isNegative: bool) {.noreturn, raises: [JsonReaderError].} =
+proc raiseIntOverflow*(r: JsonReader, absIntVal: BiggestUint, isNegative: bool) {.noreturn, raises: [JsonReaderError].} =
   var ex = new IntOverflowError
   ex.assignLineNumber(r)
   ex.absIntVal = absIntVal
@@ -187,7 +187,7 @@ proc readJsonNodeField(r: var JsonReader, field: var JsonNode)
   field = r.parseJsonNode()
 
 proc parseJsonNode(r: var JsonReader): JsonNode =
-  const maxIntValue: uint64 = BiggestInt.high.uint64 + 1
+  const maxIntValue: BiggestUint = BiggestInt.high.BiggestUint + 1
 
   case r.lexer.tok
   of tkCurlyLe:
@@ -238,7 +238,7 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
     else:
       # `0 - x` is a magical trick that turns the unsigned
       # value into its negative signed counterpart:
-      result = JsonNode(kind: JInt, num: cast[int64](uint64(0) - r.lexer.absIntVal))
+      result = JsonNode(kind: JInt, num: cast[BiggestInt](BiggestUint(0) - r.lexer.absIntVal))
       r.lexer.next()
 
   of tkFloat:
@@ -584,11 +584,11 @@ proc readValue*[T](r: var JsonReader, value: var T)
     type TargetType = type(value)
     let
       isNegative = tok == tkNegativeInt
-      maxValidAbsValue: uint64 =
+      maxValidAbsValue: BiggestUint =
         if isNegative:
-          TargetType.high.uint64 + 1
+          TargetType.high.BiggestUint + 1
         else:
-          TargetType.high.uint64
+          TargetType.high.BiggestUint
 
     if r.lexer.absIntVal > maxValidAbsValue:
       r.raiseIntOverflow(r.lexer.absIntVal, isNegative)
@@ -611,7 +611,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
   elif value is SomeUnsignedInt:
     type TargetType = type(value)
 
-    if r.lexer.absIntVal > TargetType.high.uint64:
+    if r.lexer.absIntVal > TargetType.high.BiggestUint:
       r.raiseIntOverflow(r.lexer.absIntVal, isNegative = false)
 
     case tok
