@@ -1,4 +1,11 @@
-{.used.}
+# json-serialization
+# Copyright (c) 2019-2023 Status Research & Development GmbH
+# Licensed under either of
+#  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
+#  * MIT license ([LICENSE-MIT](LICENSE-MIT))
+# at your option.
+# This file may not be copied, modified, or distributed except according to
+# those terms.
 
 import
   strutils, unittest2, json,
@@ -746,6 +753,7 @@ suite "toJson tests":
     expect SerializationError:
      let h4 = Json.decode("""{"o":{"distance":3,"x":1,"y":"2"}}""",
                           HoldsOption, requireAllFields = true)
+     discard h4
 
   test "Nested option types":
     let
@@ -824,6 +832,7 @@ suite "toJson tests":
     expect SerializationError:
      let h4 = Json.decode("""{"o":{"distance":3,"x":1,"y":"2"}}""",
                           HoldsResultOpt, requireAllFields = true)
+     discard h4
 
   test "Custom field serialization":
     let obj = WithCustomFieldRule(str: "test", intVal: 10)
