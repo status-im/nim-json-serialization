@@ -97,68 +97,100 @@ method formatMsg*(err: ref IncompleteObjectError, filename: string):
     string {.gcsafe, raises: [].} =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Not all required fields were specified when reading '{err.objectType}'"
 
-proc assignLineNumber*(ex: ref JsonReaderError, r: JsonReader) =
-  ex.line = r.lexer.line
-  ex.col = r.lexer.tokenStartCol
+func assignLineNumber*(ex: ref JsonReaderError, lexer: JsonLexer) =
+  ex.line = lexer.line
+  ex.col = lexer.tokenStartCol
 
-proc raiseUnexpectedToken*(r: JsonReader, expected: ExpectedTokenCategory)
+func raiseUnexpectedToken*(lexer: JsonLexer, expected: ExpectedTokenCategory)
                           {.noreturn, raises: [JsonReaderError].} =
   var ex = new UnexpectedTokenError
-  ex.assignLineNumber(r)
-  ex.encountedToken = r.lexer.lazyTok
+  ex.assignLineNumber(lexer)
+  ex.encountedToken = lexer.lazyTok
   ex.expectedToken = expected
   raise ex
 
-proc raiseUnexpectedValue*(r: JsonReader, msg: string) {.noreturn, raises: [JsonReaderError].} =
+template raiseUnexpectedToken*(reader: JsonReader, expected: ExpectedTokenCategory) =
+  raiseUnexpectedToken(reader.lexer, expected)
+
+func raiseUnexpectedValue*(
+    lexer: JsonLexer, msg: string) {.noreturn, raises: [JsonReaderError].} =
   var ex = new UnexpectedValueError
-  ex.assignLineNumber(r)
+  ex.assignLineNumber(lexer)
   ex.msg = msg
   raise ex
 
-proc raiseIntOverflow*(r: JsonReader, absIntVal: BiggestUint, isNegative: bool) {.noreturn, raises: [JsonReaderError].} =
+template raiseUnexpectedValue*(r: JsonReader, msg: string) =
+  raiseUnexpectedValue(r.lexer, msg)
+
+func raiseIntOverflow*(
+    lexer: JsonLexer, absIntVal: BiggestUint, isNegative: bool)
+    {.noreturn, raises: [JsonReaderError].} =
   var ex = new IntOverflowError
-  ex.assignLineNumber(r)
+  ex.assignLineNumber(lexer)
   ex.absIntVal = absIntVal
   ex.isNegative = isNegative
   raise ex
 
-proc raiseUnexpectedField*(r: JsonReader, fieldName: string, deserializedType: cstring) {.noreturn, raises: [JsonReaderError].} =
+template raiseIntOverflow*(r: JsonReader, absIntVal: BiggestUint, isNegative: bool) =
+  raiseIntOverflow(r.lexer, absIntVal, isNegative)
+
+func raiseUnexpectedField*(
+    lexer: JsonLexer, fieldName: string, deserializedType: cstring)
+    {.noreturn, raises: [JsonReaderError].} =
   var ex = new UnexpectedField
-  ex.assignLineNumber(r)
+  ex.assignLineNumber(lexer)
   ex.encounteredField = fieldName
   ex.deserializedType = deserializedType
   raise ex
 
-proc raiseIncompleteObject*(r: JsonReader, objectType: cstring) {.noreturn, raises: [JsonReaderError].} =
+template raiseUnexpectedField*(r: JsonReader, fieldName: string, deserializedType: cstring) =
+  raiseUnexpectedField(r.lexer, fieldName, deserializedType)
+
+func raiseIncompleteObject*(
+    lexer: JsonLexer, objectType: cstring)
+    {.noreturn, raises: [JsonReaderError].} =
   var ex = new IncompleteObjectError
-  ex.assignLineNumber(r)
+  ex.assignLineNumber(lexer)
   ex.objectType = objectType
   raise ex
 
-proc handleReadException*(r: JsonReader,
+template raiseIncompleteObject*(r: JsonReader, objectType: cstring) =
+  raiseIncompleteObject(r.lexer, objectType)
+
+func handleReadException*(lexer: JsonLexer,
                           Record: type,
                           fieldName: string,
                           field: auto,
                           err: ref CatchableError) {.raises: [JsonReaderError].} =
   var ex = new GenericJsonReaderError
-  ex.assignLineNumber(r)
+  ex.assignLineNumber(lexer)
   ex.deserializedField = fieldName
   ex.innerException = err
   raise ex
+
+template handleReadException*(r: JsonReader,
+                              Record: type,
+                              fieldName: string,
+                              field: auto,
+                              err: ref CatchableError) =
+  handleReadException(r.lexer, Record, fieldName, field, err)
 
 proc init*(T: type JsonReader,
            stream: InputStream,
            mode = defaultJsonMode,
            allowUnknownFields = false,
            requireAllFields = false): T {.raises: [IOError].} =
-  result.allowUnknownFields = allowUnknownFields
-  result.requireAllFields = requireAllFields
+  mixin flavorAllowsUnknownFields, flavorRequiresAllFields
+  type Flavor = T.Flavor
+
+  result.allowUnknownFields = allowUnknownFields or flavorAllowsUnknownFields(Flavor)
+  result.requireAllFields = requireAllFields or flavorRequiresAllFields(Flavor)
   result.lexer = JsonLexer.init(stream, mode)
   result.lexer.next()
 
-proc requireToken*(r: var JsonReader, tk: TokKind) {.raises: [IOError, JsonReaderError].} =
-  if r.lexer.tok != tk:
-    r.raiseUnexpectedToken case tk
+proc requireToken*(lexer: var JsonLexer, tk: TokKind) {.raises: [IOError, JsonReaderError].} =
+  if lexer.tok != tk:
+    lexer.raiseUnexpectedToken case tk
       of tkString: etString
       of tkInt, tkNegativeInt: etInt
       of tkComma: etComma
@@ -169,9 +201,9 @@ proc requireToken*(r: var JsonReader, tk: TokKind) {.raises: [IOError, JsonReade
       of tkColon: etColon
       else: (doAssert false; etBool)
 
-proc skipToken*(r: var JsonReader, tk: TokKind) {.raises: [IOError, JsonReaderError].} =
-  r.requireToken tk
-  r.lexer.next()
+proc skipToken*(lexer: var JsonLexer, tk: TokKind) {.raises: [IOError, JsonReaderError].} =
+  lexer.requireToken tk
+  lexer.next()
 
 proc parseJsonNode(r: var JsonReader): JsonNode
                   {.gcsafe, raises: [IOError, JsonReaderError].}
@@ -182,7 +214,7 @@ proc readJsonNodeField(r: var JsonReader, field: var JsonNode)
     r.raiseUnexpectedValue("Unexpected duplicated field name")
 
   r.lexer.next()
-  r.skipToken tkColon
+  r.lexer.skipToken tkColon
 
   field = r.parseJsonNode()
 
@@ -203,7 +235,7 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
           r.lexer.next()
         else:
           break
-    r.skipToken tkCurlyRi
+    r.lexer.skipToken tkCurlyRi
 
   of tkBracketLe:
     result = JsonNode(kind: JArray)
@@ -214,7 +246,7 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
         if r.lexer.tok == tkBracketRi:
           break
         else:
-          r.skipToken tkComma
+          r.lexer.skipToken tkComma
     # Skip over the last tkBracketRi
     r.lexer.next()
 
@@ -260,40 +292,40 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
   of tkQuoted, tkExBlob, tkNumeric, tkExInt, tkExNegInt:
     raiseAssert "generic type " & $r.lexer.lazyTok & " is not applicable"
 
-proc skipSingleJsValue*(r: var JsonReader) {.raises: [IOError, JsonReaderError].}  =
-  case r.lexer.tok
+proc skipSingleJsValue*(lexer: var JsonLexer) {.raises: [IOError, JsonReaderError].}  =
+  case lexer.tok
   of tkCurlyLe:
-    r.lexer.next()
-    if r.lexer.tok != tkCurlyRi:
+    lexer.next()
+    if lexer.tok != tkCurlyRi:
       while true:
-        r.skipToken tkString
-        r.skipToken tkColon
-        r.skipSingleJsValue()
-        if r.lexer.tok == tkCurlyRi:
+        lexer.skipToken tkString
+        lexer.skipToken tkColon
+        lexer.skipSingleJsValue()
+        if lexer.tok == tkCurlyRi:
           break
-        r.skipToken tkComma
+        lexer.skipToken tkComma
     # Skip over the last tkCurlyRi
-    r.lexer.next()
+    lexer.next()
 
   of tkBracketLe:
-    r.lexer.next()
-    if r.lexer.tok != tkBracketRi:
+    lexer.next()
+    if lexer.tok != tkBracketRi:
       while true:
-        r.skipSingleJsValue()
-        if r.lexer.tok == tkBracketRi:
+        lexer.skipSingleJsValue()
+        if lexer.tok == tkBracketRi:
           break
         else:
-          r.skipToken tkComma
+          lexer.skipToken tkComma
     # Skip over the last tkBracketRi
-    r.lexer.next()
+    lexer.next()
 
   of tkColon, tkComma, tkEof, tkError, tkBracketRi, tkCurlyRi:
-    r.raiseUnexpectedToken etValue
+    lexer.raiseUnexpectedToken etValue
 
   of tkString, tkQuoted, tkExBlob,
      tkInt, tkNegativeInt, tkFloat, tkNumeric, tkExInt, tkExNegInt,
      tkTrue, tkFalse, tkNull:
-    r.lexer.next()
+    lexer.next()
 
 proc captureSingleJsValue(r: var JsonReader, output: var string) {.raises: [IOError, SerializationError].} =
   r.lexer.renderTok output
@@ -303,15 +335,15 @@ proc captureSingleJsValue(r: var JsonReader, output: var string) {.raises: [IOEr
     if r.lexer.tok != tkCurlyRi:
       while true:
         r.lexer.renderTok output
-        r.skipToken tkString
+        r.lexer.skipToken tkString
         r.lexer.renderTok output
-        r.skipToken tkColon
+        r.lexer.skipToken tkColon
         r.captureSingleJsValue(output)
         r.lexer.renderTok output
         if r.lexer.tok == tkCurlyRi:
           break
         else:
-          r.skipToken tkComma
+          r.lexer.skipToken tkComma
     else:
       output.add '}'
     # Skip over the last tkCurlyRi
@@ -326,7 +358,7 @@ proc captureSingleJsValue(r: var JsonReader, output: var string) {.raises: [IOEr
         if r.lexer.tok == tkBracketRi:
           break
         else:
-          r.skipToken tkComma
+          r.lexer.skipToken tkComma
     else:
       output.add ']'
     # Skip over the last tkBracketRi
@@ -340,16 +372,16 @@ proc captureSingleJsValue(r: var JsonReader, output: var string) {.raises: [IOEr
      tkTrue, tkFalse, tkNull:
     r.lexer.next()
 
-proc allocPtr[T](p: var ptr T) =
+func allocPtr[T](p: var ptr T) =
   p = create(T)
 
-proc allocPtr[T](p: var ref T) =
+func allocPtr[T](p: var ref T) =
   p = new(T)
 
 iterator readArray*(r: var JsonReader, ElemType: typedesc): ElemType {.raises: [IOError, SerializationError].} =
   mixin readValue
 
-  r.skipToken tkBracketLe
+  r.lexer.skipToken tkBracketLe
   if r.lexer.lazyTok != tkBracketRi:
     while true:
       var res: ElemType
@@ -357,13 +389,13 @@ iterator readArray*(r: var JsonReader, ElemType: typedesc): ElemType {.raises: [
       yield res
       if r.lexer.tok != tkComma: break
       r.lexer.next()
-  r.skipToken tkBracketRi
+  r.lexer.skipToken tkBracketRi
 
 iterator readObjectFields*(r: var JsonReader,
                            KeyType: type): KeyType {.raises: [IOError, SerializationError].} =
   mixin readValue
 
-  r.skipToken tkCurlyLe
+  r.lexer.skipToken tkCurlyLe
   if r.lexer.lazyTok != tkCurlyRi:
     while true:
       var key: KeyType
@@ -373,7 +405,7 @@ iterator readObjectFields*(r: var JsonReader,
       yield key
       if r.lexer.lazyTok != tkComma: break
       r.lexer.next()
-  r.skipToken tkCurlyRi
+  r.lexer.skipToken tkCurlyRi
 
 iterator readObject*(r: var JsonReader,
                      KeyType: type,
@@ -385,8 +417,8 @@ iterator readObject*(r: var JsonReader,
     readValue(r, value)
     yield (fieldName, value)
 
-proc isNotNilCheck[T](x: ref T not nil) {.compileTime.} = discard
-proc isNotNilCheck[T](x: ptr T not nil) {.compileTime.} = discard
+func isNotNilCheck[T](x: ref T not nil) {.compileTime.} = discard
+func isNotNilCheck[T](x: ptr T not nil) {.compileTime.} = discard
 
 func isFieldExpected*(T: type): bool {.compileTime.} =
   T isnot Option
@@ -422,7 +454,7 @@ func expectedFieldsBitmask*(TT: type): auto {.compileTime.} =
       res[i div bitsPerWord].setBitInWord(i mod bitsPerWord)
     inc i
 
-  return res
+  res
 
 template setBitInArray[N](data: var array[N, uint], bitIdx: int) =
   when data.len > 1:
@@ -486,6 +518,66 @@ proc parseEnum[T](
     of EnumStyle.AssociatedStrings:
       r.raiseUnexpectedToken etEnumString
 
+proc readRecordValue*[T](r: var JsonReader, value: var T)
+                        {.raises: [SerializationError, IOError].} =
+  type
+    ReaderType {.used.} = type r
+    T = type value
+
+  r.lexer.skipToken tkCurlyLe
+
+  when T.totalSerializedFields > 0:
+    let
+      fieldsTable = T.fieldReadersTable(ReaderType)
+
+    const
+      expectedFields = T.expectedFieldsBitmask
+
+    var
+      encounteredFields: typeof(expectedFields)
+      mostLikelyNextField = 0
+
+    while true:
+      # Have the assignment parsed of the AVP
+      if r.lexer.lazyTok == tkQuoted:
+        r.lexer.accept
+      if r.lexer.lazyTok != tkString:
+        break
+
+      when T is tuple:
+        let fieldIdx = mostLikelyNextField
+        mostLikelyNextField += 1
+      else:
+        let fieldIdx = findFieldIdx(fieldsTable[],
+                                    r.lexer.strVal,
+                                    mostLikelyNextField)
+      if fieldIdx != -1:
+        let reader = fieldsTable[][fieldIdx].reader
+        r.lexer.next()
+        r.lexer.skipToken tkColon
+        reader(value, r)
+        encounteredFields.setBitInArray(fieldIdx)
+      elif r.allowUnknownFields:
+        r.lexer.next()
+        r.lexer.skipToken tkColon
+        r.lexer.skipSingleJsValue()
+      else:
+        const typeName = typetraits.name(T)
+        r.raiseUnexpectedField(r.lexer.strVal, cstring typeName)
+
+      if r.lexer.lazyTok == tkComma:
+        r.lexer.next()
+      else:
+        break
+
+    if r.requireAllFields and
+      not expectedFields.isBitwiseSubsetOf(encounteredFields):
+      const typeName = typetraits.name(T)
+      r.raiseIncompleteObject(typeName)
+
+  r.lexer.accept
+  r.lexer.skipToken tkCurlyRi
+
 proc readValue*[T](r: var JsonReader, value: var T)
                   {.gcsafe, raises: [SerializationError, IOError].} =
   ## Master filed/object parser. This function relies on customised sub-mixins for particular
@@ -523,7 +615,6 @@ proc readValue*[T](r: var JsonReader, value: var T)
   ##       reader.lexer.next
   ##
   mixin readValue
-  type ReaderType {.used.} = type r
 
   when value is (object or tuple):
     let tok {.used.} = r.lexer.lazyTok
@@ -537,19 +628,19 @@ proc readValue*[T](r: var JsonReader, value: var T)
     value = r.parseJsonNode()
 
   elif value is string:
-    r.requireToken tkString
+    r.lexer.requireToken tkString
     value = r.lexer.strVal
     r.lexer.next()
 
   elif value is seq[char]:
-    r.requireToken tkString
+    r.lexer.requireToken tkString
     value.setLen(r.lexer.strVal.len)
     for i in 0..<r.lexer.strVal.len:
       value[i] = r.lexer.strVal[i]
     r.lexer.next()
 
   elif isCharArray(value):
-    r.requireToken tkString
+    r.lexer.requireToken tkString
     if r.lexer.strVal.len != value.len:
       # Raise tkString because we expected a `"` earlier
       r.raiseUnexpectedToken(etString)
@@ -630,7 +721,7 @@ proc readValue*[T](r: var JsonReader, value: var T)
     r.lexer.next()
 
   elif value is seq:
-    r.skipToken tkBracketLe
+    r.lexer.skipToken tkBracketLe
     if r.lexer.tok != tkBracketRi:
       while true:
         let lastPos = value.len
@@ -638,74 +729,30 @@ proc readValue*[T](r: var JsonReader, value: var T)
         readValue(r, value[lastPos])
         if r.lexer.tok != tkComma: break
         r.lexer.next()
-    r.skipToken tkBracketRi
+    r.lexer.skipToken tkBracketRi
 
   elif value is array:
-    r.skipToken tkBracketLe
+    r.lexer.skipToken tkBracketLe
     for i in low(value) ..< high(value):
       # TODO: dont's ask. this makes the code compile
       if false: value[i] = value[i]
       readValue(r, value[i])
-      r.skipToken tkComma
+      r.lexer.skipToken tkComma
     readValue(r, value[high(value)])
-    r.skipToken tkBracketRi
+    r.lexer.skipToken tkBracketRi
 
   elif value is (object or tuple):
-    type T = type(value)
-    r.skipToken tkCurlyLe
+    mixin flavorUsesAutomaticObjectSerialization
 
-    when T.totalSerializedFields > 0:
-      let
-        fieldsTable = T.fieldReadersTable(ReaderType)
+    type Flavor = JsonReader.Flavor
+    const isAutomatic =
+      flavorUsesAutomaticObjectSerialization(Flavor)
 
-      const
-        expectedFields = T.expectedFieldsBitmask
+    when not isAutomatic:
+      const typeName = typetraits.name(T)
+      {.error: "Please override readValue for the " & typeName & " type (or import the module where the override is provided)".}
 
-      var
-        encounteredFields: typeof(expectedFields)
-        mostLikelyNextField = 0
-
-      while true:
-        # Have the assignment parsed of the AVP
-        if r.lexer.lazyTok == tkQuoted:
-          r.lexer.accept
-        if r.lexer.lazyTok != tkString:
-          break
-
-        when T is tuple:
-          let fieldIdx = mostLikelyNextField
-          mostLikelyNextField += 1
-        else:
-          let fieldIdx = findFieldIdx(fieldsTable[],
-                                      r.lexer.strVal,
-                                      mostLikelyNextField)
-        if fieldIdx != -1:
-          let reader = fieldsTable[][fieldIdx].reader
-          r.lexer.next()
-          r.skipToken tkColon
-          reader(value, r)
-          encounteredFields.setBitInArray(fieldIdx)
-        elif r.allowUnknownFields:
-          r.lexer.next()
-          r.skipToken tkColon
-          r.skipSingleJsValue()
-        else:
-          const typeName = typetraits.name(T)
-          r.raiseUnexpectedField(r.lexer.strVal, cstring typeName)
-
-        if r.lexer.lazyTok == tkComma:
-          r.lexer.next()
-        else:
-          break
-
-      if r.requireAllFields and
-        not expectedFields.isBitwiseSubsetOf(encounteredFields):
-        const typeName = typetraits.name(T)
-        r.raiseIncompleteObject(typeName)
-
-    r.lexer.accept
-    r.skipToken tkCurlyRi
-
+    readRecordValue(r, value)
   else:
     const typeName = typetraits.name(T)
     {.error: "Failed to convert to JSON an unsupported type: " & typeName.}

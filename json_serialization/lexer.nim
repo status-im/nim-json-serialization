@@ -1,12 +1,14 @@
+{.push raises: [].}
+
 import
-  std/[unicode, json],
+  std/[json, unicode],
   faststreams/inputs,
   types
 
+from std/strutils import isDigit
+
 export
   inputs, types
-
-{.push raises: [].}
 
 type
   CustomIntHandler* = ##\
@@ -113,6 +115,7 @@ proc renderTok*(lexer: var JsonLexer, output: var string)
     lexer.scanString
   else:
     discard
+
   # The real stuff
   case lexer.tokKind
   of tkError, tkEof, tkNumeric, tkExInt, tkExNegInt, tkQuoted, tkExBlob:
@@ -153,23 +156,20 @@ template peek(s: InputStream): char =
 template read(s: InputStream): char =
   char inputs.read(s)
 
-proc hexCharValue(c: char): int =
+func hexCharValue(c: char): int =
   case c
   of '0'..'9': ord(c) - ord('0')
   of 'a'..'f': ord(c) - ord('a') + 10
   of 'A'..'F': ord(c) - ord('A') + 10
   else: -1
 
-proc isDigit(c: char): bool =
-  return (c >= '0' and c <= '9')
-
-proc col*(lexer: JsonLexer): int =
+func col*(lexer: JsonLexer): int =
   lexer.stream.pos - lexer.lineStartPos
 
-proc tokenStartCol*(lexer: JsonLexer): int =
+func tokenStartCol*(lexer: JsonLexer): int =
   1 + lexer.tokenStart - lexer.lineStartPos
 
-proc init*(T: type JsonLexer, stream: InputStream, mode = defaultJsonMode): T =
+func init*(T: type JsonLexer, stream: InputStream, mode = defaultJsonMode): T =
   T(stream: stream,
     mode: mode,
     line: 1,
@@ -205,7 +205,7 @@ proc scanHexRune(lexer: var JsonLexer): int
     if hexValue == -1: error errHexCharExpected
     result = (result shl 4) or hexValue
 
-proc scanString(lexer: var JsonLexer) =
+proc scanString(lexer: var JsonLexer) {.raises: [IOError].} =
   lexer.tokKind = tkString
   lexer.strVal.setLen 0
   lexer.tokenStart = lexer.stream.pos
@@ -256,7 +256,7 @@ proc scanString(lexer: var JsonLexer) =
     else:
       lexer.strVal.add c
 
-proc handleLF(lexer: var JsonLexer) =
+func handleLF(lexer: var JsonLexer) =
   advance lexer.stream
   lexer.line += 1
   lexer.lineStartPos = lexer.stream.pos
@@ -343,7 +343,7 @@ proc scanSign(lexer: var JsonLexer): int
   elif c == '+':
     requireMoreNumberChars: result = 0
     advance lexer.stream
-  return 1
+  1
 
 proc scanInt(lexer: var JsonLexer): (uint64,bool)
     {.gcsafe, raises: [IOError].} =
@@ -370,7 +370,6 @@ proc scanInt(lexer: var JsonLexer): (uint64,bool)
         result[0] = result[0] * 10 + lsDgt
     # Fetch next digit
     c = eatDigitAndPeek() # implicit auto-return
-
 
 proc scanNumber(lexer: var JsonLexer)
     {.gcsafe, raises: [IOError].} =
@@ -422,9 +421,10 @@ proc scanNumber(lexer: var JsonLexer)
       lexer.floatVal = lexer.floatVal / powersOfTen[exponent]
 
 proc scanIdentifier(lexer: var JsonLexer,
-                    expectedIdent: string, expectedTok: TokKind) =
+                    expectedIdent: string, expectedTok: TokKind)
+                    {.raises: [IOError].} =
   for c in expectedIdent:
-    if c != lexer.stream.read():
+    if c != requireNextChar():
       lexer.tokKind = tkError
       return
   lexer.tokKind = expectedTok
@@ -492,10 +492,9 @@ proc tok*(lexer: var JsonLexer): TokKind
   lexer.accept
   lexer.tokKind
 
-proc lazyTok*(lexer: JsonLexer): TokKind =
+func lazyTok*(lexer: JsonLexer): TokKind =
   ## Preliminary token state unless accepted, already
   lexer.tokKind
-
 
 proc customIntHandler*(lexer: var JsonLexer; handler: CustomIntHandler)
     {.gcsafe, raises: [IOError].} =

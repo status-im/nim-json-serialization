@@ -17,11 +17,12 @@ template writeObjectField*[T](w: var JsonWriter,
 
 proc writeValue*[T](
     writer: var JsonWriter, value: Result[T, void]) {.raises: [IOError].} =
-  mixin writeValue
+  mixin writeValue, flavorOmitsOptionalFields
+  type Flavor = JsonWriter.Flavor
 
   if value.isOk:
     writer.writeValue value.get
-  else:
+  elif not flavorOmitsOptionalFields(Flavor):
     writer.writeValue JsonString("null")
 
 proc readValue*[T](reader: var JsonReader, value: var Result[T, void]) =
