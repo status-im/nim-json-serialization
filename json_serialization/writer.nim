@@ -9,7 +9,8 @@
 
 import
   std/[json, typetraits],
-  faststreams/[outputs, textio], serialization,
+  faststreams/[outputs, textio],
+  serialization,
   "."/[format, types]
 
 export
@@ -168,8 +169,8 @@ template writeObjectField*[FieldType, RecordType](w: var JsonWriter,
   when RecordType is tuple:
     w.writeValue(field)
   else:
-    type R = type record
-    w.writeFieldIMPL(FieldTag[R, fieldName], field, record)
+    type RR = type record
+    w.writeFieldIMPL(FieldTag[RR, fieldName], field, record)
   true
 
 proc writeRecordValue*(w: var JsonWriter, value: auto)

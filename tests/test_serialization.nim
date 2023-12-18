@@ -79,8 +79,7 @@ type
     data: FancyText
 
   TokenRegistry = tuple
-    entry, exit: TokKind
-    dup: bool
+    entry: JsonValueKind
 
   HoldsResultOpt* = object
     o*: Opt[Simple]
@@ -249,12 +248,8 @@ Json.useCustomSerialization(WithCustomFieldRule.intVal):
     writer.writeValue $value
 
 template registerVisit(reader: var JsonReader; body: untyped): untyped =
-  if customVisit.entry == tkError:
-    customVisit.entry = reader.lexer.lazyTok
-    body
-    customVisit.exit = reader.lexer.lazyTok
-  else:
-    customVisit.dup = true
+  customVisit.entry = reader.tokKind
+  body
 
 # Customised parser referring to other parser
 proc readValue(reader: var JsonReader, value: var FancyInt) =
@@ -269,19 +264,18 @@ proc readValue(reader: var JsonReader, value: var FancyUInt) =
   try:
     reader.registerVisit:
       var accu = 0u
-      case reader.lexer.lazyTok
-      of tkNumeric:
-        reader.lexer.customIntValueIt:
+      case reader.tokKind
+      of JsonValueKind.Number:
+        reader.customIntValueIt:
           accu = accu * 10u + it.uint
-      of tkQuoted:
+      of JsonValueKind.String:
         var s =  ""
-        reader.lexer.customTextValueIt:
+        reader.customStringValueIt:
           s &= it
         accu = s.parseUInt
       else:
         discard
       value = accu.FancyUInt
-    reader.lexer.next
   except ValueError:
     reader.raiseUnexpectedValue("string encoded integer expected")
 
@@ -289,23 +283,12 @@ proc readValue(reader: var JsonReader, value: var FancyUInt) =
 proc readValue(reader: var JsonReader, value: var FancyText) =
   try:
     reader.registerVisit:
-      var (s, esc) = ("",false)
-      reader.lexer.customBlobValueIt:
-        let c = it.chr
-        if esc:
-          s &= c
-          esc = false
-        elif c == '\\':
-          esc = true
-        elif c != '"':
-          s &= c
-        else:
-          doNext = StopSwallowByte
+      var s = ""
+      reader.customStringValueIt:
+        s.add it
       value = s.FancyText
-    reader.lexer.next
   except ValueError:
     reader.raiseUnexpectedValue("string encoded integer expected")
-
 
 # TODO `borrowSerialization` still doesn't work
 # properly when it's placed in another module:
@@ -323,6 +306,7 @@ func `==`(lhs, rhs: ref Simple): bool =
   lhs[] == rhs[]
 
 executeReaderWriterTests Json
+
 
 func newSimple(x: int, y: string, d: Meter): ref Simple =
   (ref Simple)(x: x, y: y, distance: d)
@@ -701,7 +685,7 @@ suite "toJson tests":
       Json.decode(jsonValue, BiggestUint) == uintVal
 
     expect JsonReaderError:
-      discard Json.decode(jsonValue, BiggestUint, mode = Portable)
+      discard Json.decode(jsonValue, BiggestUint, flags = {JsonReaderFlag.portableInt})
 
   test "max signed value":
     let intVal = BiggestInt.high
@@ -955,6 +939,7 @@ suite "toJson tests":
       # clarity regarding the memory allocation approach
       Json.decode("null", cstring)
 
+
 suite "Custom parser tests":
   test "Fall back to int parser":
     customVisit = TokenRegistry.default
@@ -970,7 +955,7 @@ suite "Custom parser tests":
 
     check dData.name == "FancyInt"
     check dData.data.int == -12345
-    check customVisit == (tkNumeric, tkCurlyRi, false)
+    check customVisit.entry == JsonValueKind.Number
 
   test "Uint parser on negative integer":
     customVisit = TokenRegistry.default
@@ -986,7 +971,7 @@ suite "Custom parser tests":
 
     check dData.name == "FancyUInt"
     check dData.data.uint == 12345u # abs value
-    check customVisit == (tkNumeric, tkExNegInt, false)
+    check customVisit.entry == JsonValueKind.Number
 
   test "Uint parser on string integer":
     customVisit = TokenRegistry.default
@@ -1002,8 +987,8 @@ suite "Custom parser tests":
 
     check dData.name == "FancyUInt"
     check dData.data.uint == 12345u
-    check customVisit == (tkQuoted, tkExBlob, false)
-
+    check customVisit.entry == JsonValueKind.String
+    
   test "Parser on text blob with embedded quote (backlash escape support)":
     customVisit = TokenRegistry.default
 
@@ -1017,5 +1002,5 @@ suite "Custom parser tests":
       dData = Json.decode(jData, HasFancyText)
 
     check dData.name == "FancyText"
-    check dData.data.string == "abc\"\\def"
-    check customVisit == (tkQuoted, tkExBlob, false)
+    check dData.data.string == "a\bc\"\\def"
+    check customVisit.entry == JsonValueKind.String

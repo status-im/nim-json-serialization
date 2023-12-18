@@ -8,7 +8,10 @@
 # those terms.
 
 import
-  serialization/formats
+  serialization/[formats, object_serialization]
+
+export
+  formats
 
 serializationFormat Json,
                     mimeType = "application/json"

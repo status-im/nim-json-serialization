@@ -37,10 +37,9 @@ proc writeValue*[T](
 proc readValue*[T](reader: var JsonReader, value: var Result[T, void]) =
   mixin readValue
 
-  let tok = reader.lexer.lazyTok
-  if tok == tkNull:
+  if reader.tokKind == JsonValueKind.Null:
     reset value
-    reader.lexer.next()
+    reader.parseNull()
   else:
     value.ok reader.readValue(T)
 

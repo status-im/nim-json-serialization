@@ -11,4 +11,9 @@
 
 import
   test_lexer,
-  test_serialization
+  test_serialization,
+  test_json_flavor,
+  test_spec,
+  test_parser,
+  test_line_col,
+  test_reader

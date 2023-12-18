@@ -8,11 +8,15 @@
 # those terms.
 
 import
-  strutils,
+  std/[strutils, options],
+  unittest2,
+  results,
   serialization,
+  ../json_serialization/stew/results,
+  ../json_serialization/std/options,
   ../json_serialization
 
-Json.createFlavor StringyJson
+createJsonFlavor StringyJson
 
 proc writeValue*(
     w: var JsonWriter[StringyJson], val: SomeInteger) {.raises: [IOError].} =
@@ -22,13 +26,13 @@ proc readValue*(r: var JsonReader[StringyJson], v: var SomeSignedInt) =
   try:
     v = type(v) parseBiggestInt readValue(r, string)
   except ValueError as err:
-    r.raiseUnexpectedValue("A signed integer encoded as string")
+    r.raiseUnexpectedValue("A signed integer encoded as string " & err.msg)
 
 proc readValue*(r: var JsonReader[StringyJson], v: var SomeUnsignedInt) =
   try:
     v = type(v) parseBiggestUInt readValue(r, string)
   except ValueError as err:
-    r.raiseUnexpectedValue("An unsigned integer encoded as string")
+    r.raiseUnexpectedValue("An unsigned integer encoded as string " & err.msg)
 
 type
   Container = object
@@ -37,14 +41,34 @@ type
     y: uint64
     list: seq[int64]
 
-let c = Container(name: "c", x: -10, y: 20, list: @[1'i64, 2, 25])
-let encoded = StringyJson.encode(c)
-echo "Encoded: ", encoded
+  OptionalFields = object
+    one: Opt[string]
+    two: Option[int]
 
-let decoded = try:
-  StringyJson.decode(encoded, Container)
-except SerializationError as err:
-  echo err.formatMsg("<encoded>")
-  quit 1
+Container.useDefaultSerializationIn StringyJson
 
-echo "Decoded: ", decoded
+createJsonFlavor OptJson
+OptionalFields.useDefaultSerializationIn OptJson
+
+suite "Test JsonFlavor":
+  test "basic test":
+    let c = Container(name: "c", x: -10, y: 20, list: @[1'i64, 2, 25])
+    let encoded = StringyJson.encode(c)
+    check encoded == """{"name":"c","x":"-10","y":"20","list":["1","2","25"]}"""
+
+    let decoded = StringyJson.decode(encoded, Container)
+    check decoded == Container(name: "c", x: -10, y: 20, list: @[1, 2, 25])
+
+  test "optional fields":
+    let a = OptionalFields(one: Opt.some("hello"))
+    let b = OptionalFields(two: some(567))
+    let c = OptionalFields(one: Opt.some("burn"), two: some(333))
+
+    let aa = OptJson.encode(a)
+    check aa == """{"one":"hello"}"""
+
+    let bb = OptJson.encode(b)
+    check bb == """{"two":567}"""
+
+    let cc = OptJson.encode(c)
+    check cc == """{"one":"burn","two":333}"""

@@ -7,7 +7,11 @@
 # This file may not be copied, modified, or distributed except according to
 # those terms.
 
-import stew/shims/tables, ../../json_serialization/[reader, writer, lexer]
+import
+  std/strutils,
+  stew/shims/tables,
+  ../../json_serialization/[reader, writer, lexer]
+
 export tables
 
 type

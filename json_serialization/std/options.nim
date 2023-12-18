@@ -33,9 +33,8 @@ proc writeValue*(writer: var JsonWriter, value: Option) {.raises: [IOError].} =
 proc readValue*[T](reader: var JsonReader, value: var Option[T]) =
   mixin readValue
 
-  let tok = reader.lexer.lazyTok
-  if tok == tkNull:
+  if reader.tokKind == JsonValueKind.Null:
     reset value
-    reader.lexer.next()
+    reader.parseNull()
   else:
     value = some reader.readValue(T)
