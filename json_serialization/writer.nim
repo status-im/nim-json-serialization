@@ -22,7 +22,7 @@ type
 Json.setWriter JsonWriter,
                PreferredOutput = string
 
-proc init*(W: type JsonWriter, stream: OutputStream,
+func init*(W: type JsonWriter, stream: OutputStream,
            pretty = false, typeAnnotations = false): W =
   W(stream: stream,
     hasPrettyOutput: pretty,
@@ -152,13 +152,11 @@ template writeObjectField*[FieldType, RecordType](w: var JsonWriter,
                                                   field: FieldType): bool =
   mixin writeFieldIMPL, writeValue
 
-  type
-    R = type record
-
   w.writeFieldName(fieldName)
   when RecordType is tuple:
     w.writeValue(field)
   else:
+    type R = type record
     w.writeFieldIMPL(FieldTag[R, fieldName], field, record)
   true
 
@@ -236,6 +234,16 @@ proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
     w.writeArray(value)
 
   elif value is (object or tuple):
+    mixin useAutomaticObjectSerialization
+
+    type Flavor = JsonWriter.Flavor
+    const isAutomatic =
+      useAutomaticObjectSerialization(Flavor)
+
+    when not isAutomatic:
+      const typeName = typetraits.name(type value)
+      {.error: "Please override writeValue for the " & typeName & " type (or import the module where the override is provided)".}
+
     type RecordType = type value
     w.beginRecord RecordType
     value.enumInstanceSerializedFields(fieldName, field):
@@ -251,10 +259,11 @@ proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
 proc toJson*(v: auto, pretty = false, typeAnnotations = false): string =
   mixin writeValue
 
-  var s = memoryOutput()
-  var w = JsonWriter[DefaultFlavor].init(s, pretty, typeAnnotations)
+  var
+    s = memoryOutput()
+    w = JsonWriter[DefaultFlavor].init(s, pretty, typeAnnotations)
   w.writeValue v
-  return s.getOutput(string)
+  s.getOutput(string)
 
 template serializesAsTextInJson*(T: type[enum]) =
   template writeValue*(w: var JsonWriter, val: T) =
