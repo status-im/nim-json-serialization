@@ -20,4 +20,3 @@ const
 
 template `==`*(lhs, rhs: JsonString): bool =
   string(lhs) == string(rhs)
-

@@ -1,3 +1,5 @@
+{.used.}
+
 import
   strutils, unittest2, json,
   serialization/object_serialization,
@@ -305,21 +307,18 @@ Meter.borrowSerialization int
 template reject(code) {.used.} =
   static: doAssert(not compiles(code))
 
-proc `==`(lhs, rhs: Meter): bool =
+func `==`(lhs, rhs: Meter): bool =
   int(lhs) == int(rhs)
 
-proc `==`(lhs, rhs: ref Simple): bool =
+func `==`(lhs, rhs: ref Simple): bool =
   if lhs.isNil: return rhs.isNil
   if rhs.isNil: return false
-  return lhs[] == rhs[]
+  lhs[] == rhs[]
 
 executeReaderWriterTests Json
 
-proc newSimple(x: int, y: string, d: Meter): ref Simple =
-  new result
-  result.x = x
-  result.y = y
-  result.distance = d
+func newSimple(x: int, y: string, d: Meter): ref Simple =
+  (ref Simple)(x: x, y: y, distance: d)
 
 var invalid = Invalid(distance: Mile(100))
 # The compiler cannot handle this check at the moment
@@ -359,6 +358,25 @@ type EnumTestO = enum
 EnumTestO.configureJsonDeserialization(
   allowNumericRepr = true,
   stringNormalizer = nimIdentNormalize)
+
+createJsonFlavor MyJson
+
+type
+  HasMyJsonDefaultBehavior = object
+    x*: int
+    y*: string
+
+  HasMyJsonOverride = object
+    x*: int
+    y*: string
+
+HasMyJsonDefaultBehavior.useDefaultSerializationIn MyJson
+
+proc readValue*(r: var JsonReader[MyJson], value: var HasMyJsonOverride) =
+  r.readRecordValue(value)
+
+proc writeValue*(w: var JsonWriter[MyJson], value: HasMyJsonOverride) =
+  w.writeRecordValue(value)
 
 suite "toJson tests":
   test "encode primitives":
@@ -530,6 +548,28 @@ suite "toJson tests":
       decoded.x == 0
       decoded.y == "test"
       decoded.distance.int == 20
+
+  test "Custom flavor with explicit serialization":
+    var s = Simple(x: 10, y: "test", distance: Meter(20))
+
+    reject:
+      discard MyJson.encode(s)
+
+    let hasDefaultBehavior = HasMyJsonDefaultBehavior(x: 10, y: "test")
+    let hasOverride = HasMyJsonOverride(x: 10, y: "test")
+
+    let json1 = MyJson.encode(hasDefaultBehavior)
+    let json2 = MyJson.encode(hasOverride)
+
+    reject:
+      let decodedAsMyJson = MyJson.decode(json2, Simple)
+
+    check:
+      json1 == """{"x":10,"y":"test"}"""
+      json2 == """{"x":10,"y":"test"}"""
+
+      MyJson.decode(json1, HasMyJsonDefaultBehavior) == hasDefaultBehavior
+      MyJson.decode(json2, HasMyJsonOverride) == hasOverride
 
   test "handle additional fields":
     let json = test_dedent"""
