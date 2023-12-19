@@ -327,6 +327,9 @@ proc skipSingleJsValue*(lexer: var JsonLexer) {.raises: [IOError, JsonReaderErro
      tkTrue, tkFalse, tkNull:
     lexer.next()
 
+template skipSingleJsValue*(r: var JsonReader) =
+  skipSingleJsValue(r.lexer)
+
 proc captureSingleJsValue(r: var JsonReader, output: var string) {.raises: [IOError, SerializationError].} =
   r.lexer.renderTok output
   case r.lexer.tok
