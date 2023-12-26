@@ -1,6 +1,7 @@
 nimcache
 *.exe
 nimble.develop
-nimble.paths
+nimble-win.paths
+nimble-linux.paths
 build/
 vendor/

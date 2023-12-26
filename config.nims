@@ -8,6 +8,14 @@
 # those terms.
 
 # begin Nimble config (version 1)
-when fileExists("nimble.paths"):
-  include "nimble.paths"
+when defined(windows):
+  when fileExists("nimble-win.paths"):
+    include "nimble-win.paths"
+  elif fileExists("nimble.paths"):
+    include "nimble.paths"
+elif defined(linux):
+  when fileExists("nimble-win.paths"):
+    include "nimble-linux.paths"
+  elif fileExists("nimble.paths"):
+    include "nimble.paths"
 # end Nimble config
