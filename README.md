@@ -234,6 +234,24 @@ skipSingleJsValue(r: var JsonReader)
 readRecordValue[T](r: var JsonReader, value: var T)
 ```
 
+## Helper procs of JsonWriter
+
+```Nim
+beginRecord(w: var JsonWriter, T: type)
+beginRecord(w: var JsonWriter)
+endRecord(w: var JsonWriter)
+
+writeFieldName(w: var JsonWriter, name: string)
+writeField(w: var JsonWriter, name: string, value: auto)
+
+iterator stepwiseArrayCreation[C](w: var JsonWriter, collection: C): auto
+writeIterable(w: var JsonWriter, collection: auto)
+writeArray[T](w: var JsonWriter, elements: openArray[T])
+
+writeNumber[F,T](w: var JsonWriter[F], value: JsonNumber[T])
+writeJsonValueRef[F,T](w: var JsonWriter[F], value: JsonValueRef[T])
+```
+
 ## License
 
 Licensed and distributed under either of
