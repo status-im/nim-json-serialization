@@ -162,15 +162,12 @@ template writeObjectField*[FieldType, RecordType](w: var JsonWriter,
                                                   field: FieldType): bool =
   mixin writeFieldIMPL, writeValue
 
-  type
-    R {.used.} = type record
-
   w.writeFieldName(fieldName)
   when RecordType is tuple:
     w.writeValue(field)
   else:
-    type RR = type record
-    w.writeFieldIMPL(FieldTag[RR, fieldName], field, record)
+    type R = type record
+    w.writeFieldIMPL(FieldTag[R, fieldName], field, record)
   true
 
 proc writeRecordValue*(w: var JsonWriter, value: auto)
@@ -179,10 +176,66 @@ proc writeRecordValue*(w: var JsonWriter, value: auto)
 
   type RecordType = type value
   w.beginRecord RecordType
-  value.enumInstanceSerializedFields(fieldName, field):
-    if writeObjectField(w, value, fieldName, field):
-      w.state = AfterField
+  value.enumInstanceSerializedFields(fieldName, fieldType):
+    when fieldType isnot JsonVoid:
+      if writeObjectField(w, value, fieldName, fieldType):
+        w.state = AfterField
   w.endRecord()
+
+proc writeNumber*[F,T](w: var JsonWriter[F], value: JsonNumber[T]) =
+  if value.sign == JsonSign.Neg:
+    append '-'
+
+  when T is uint64:
+    w.stream.writeText value.integer
+  else:
+    append value.integer
+
+  if value.fraction.len > 0:
+    append '.'
+    append value.fraction
+
+  template writeExp(body: untyped) =
+    when T is uint64:
+      if value.exponent > 0:
+        body
+    else:
+      if value.exponent.len > 0:
+        body
+
+  writeExp:
+    append 'e'
+    if value.sign == JsonSign.Neg:
+      append '-'
+    when T is uint64:
+      w.stream.writeText value.exponent
+    else:
+      append value.exponent
+
+proc writeJsonValueRef*[F,T](w: var JsonWriter[F], value: JsonValueRef[T]) =
+  if value.isNil:
+    append "null"
+    return
+
+  case value.kind
+  of JsonValueKind.String:
+    w.writeValue(value.strVal)
+  of JsonValueKind.Number:
+    w.writeNumber(value.numVal)
+  of JsonValueKind.Object:
+    w.beginRecord typeof(value)
+    for k, v in value.objVal:
+      w.writeField(k, v)
+    w.endRecord()
+  of JsonValueKind.Array:
+    w.writeArray(value.arrayVal)
+  of JsonValueKind.Bool:
+    if value.boolVal:
+      append "true"
+    else:
+      append "false"
+  of JsonValueKind.Null:
+    append "null"
 
 proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
   mixin writeValue
@@ -193,6 +246,15 @@ proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
 
   elif value is JsonString:
     append string(value)
+
+  elif value is JsonVoid:
+    discard
+
+  elif value is JsonNumber:
+    w.writeNumber(value)
+
+  elif value is JsonValueRef:
+    w.writeJsonValueRef(value)
 
   elif value is ref:
     if value == nil:

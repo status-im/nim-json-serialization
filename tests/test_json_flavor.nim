@@ -45,10 +45,33 @@ type
     one: Opt[string]
     two: Option[int]
 
+  SpecialTypes = object
+    one: JsonVoid
+    two: JsonNumber[uint64]
+    three: JsonNumber[string]
+    four: JsonValueRef[uint64]
+
 Container.useDefaultSerializationIn StringyJson
 
 createJsonFlavor OptJson
 OptionalFields.useDefaultSerializationIn OptJson
+
+const
+  jsonText = """
+{
+  "one": "this text will gone",
+  "two": -789.0009E-19,
+  "three": 999.776000E+33,
+  "four" : {
+    "apple": [1, true, "three"],
+    "banana": {
+      "chip": 123,
+      "z": null,
+      "v": false
+    }
+  }
+}
+"""
 
 suite "Test JsonFlavor":
   test "basic test":
@@ -72,3 +95,12 @@ suite "Test JsonFlavor":
 
     let cc = OptJson.encode(c)
     check cc == """{"one":"burn","two":333}"""
+
+  test "Write special types":
+    let vv = Json.decode(jsonText, SpecialTypes)
+    let xx = Json.encode(vv)
+    var ww = Json.decode(xx, SpecialTypes)
+    ww.three.expSign = JsonSign.Pos # the rest of it should identical to vv
+    check:
+      ww == vv
+      xx == """{"two":-789.0009e-19,"three":999.776000e33,"four":{"apple":[1,true,"three"],"banana":{"chip":123,"z":null,"v":false}}}"""
