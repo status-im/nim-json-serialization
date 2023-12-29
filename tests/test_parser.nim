@@ -243,6 +243,14 @@ suite "Public parser":
         if name notin allowedToFail:
           testParseAsString(fileName)
 
+  test "JsonValueRef comparison":
+    var x = JsonValueRef[uint64](kind: JsonValueKind.Null)
+    var n = JsonValueRef[uint64](nil)
+    check x != n
+    check n != x
+    check x == x
+    check n == n
+
 const
   jsonText = """
 

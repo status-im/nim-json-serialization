@@ -136,7 +136,7 @@ func `==`*(lhs, rhs: JsonValueRef): bool =
   if lhs.isNil and rhs.isNil:
     return true
 
-  if lhs.isNil and rhs.isNil:
+  if not lhs.isNil and rhs.isNil:
     return false
 
   if lhs.isNil and not rhs.isNil:
