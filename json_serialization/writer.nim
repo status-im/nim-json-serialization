@@ -180,6 +180,8 @@ proc writeRecordValue*(w: var JsonWriter, value: auto)
     when fieldType isnot JsonVoid:
       if writeObjectField(w, value, fieldName, fieldType):
         w.state = AfterField
+    else:
+      discard fieldName
   w.endRecord()
 
 proc writeNumber*[F,T](w: var JsonWriter[F], value: JsonNumber[T]) =
