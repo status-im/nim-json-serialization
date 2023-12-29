@@ -70,6 +70,7 @@ type
     line*: int
     lineStartPos: int
     tokenStart: int
+    depthLimit: int
 
 # ------------------------------------------------------------------------------
 # Private helpers
@@ -109,6 +110,16 @@ template checkForUnexpectedEof(lex: JsonLexer) =
 template requireNextChar(lex: JsonLexer): char =
   lex.checkForUnexpectedEof()
   lex.read()
+
+template enterNestedStructure(lex: JsonLexer, action: untyped) {.dirty.} =
+  inc lex.depthLimit
+  if lex.conf.nestedDepthLimit > 0 and
+     lex.depthLimit > lex.conf.nestedDepthLimit:
+    lex.err = errNestedDepthLimit
+    action
+
+template exitNestedStructure(lex: JsonLexer) =
+  dec lex.depthLimit
 
 proc handleLF(lex: var JsonLexer) =
   lex.advance
@@ -564,7 +575,7 @@ proc scanString*[T](lex: var JsonLexer, val: var T, limit: int)
     else:
       appendVal c
 
-proc scanValue*[T](lex: var JsonLexer, val: var T, depthLimit: int = 0)
+proc scanValue*[T](lex: var JsonLexer, val: var T)
                    {.gcsafe, raises: [IOError].}
 
 template parseObjectImpl*(lex: JsonLexer,
@@ -574,6 +585,8 @@ template parseObjectImpl*(lex: JsonLexer,
                          actionKey: untyped,
                          actionValue: untyped,
                          actionError: untyped) =
+
+  lex.enterNestedStructure(actionError)
   actionInitial
   lex.advance
 
@@ -635,7 +648,9 @@ template parseObjectImpl*(lex: JsonLexer,
     else:
       error(lex, errStringExpected, actionError)
 
-proc scanObject*[T](lex: var JsonLexer, val: var T, depthLimit: int)
+  lex.exitNestedStructure()
+
+proc scanObject*[T](lex: var JsonLexer, val: var T)
                     {.gcsafe, raises: [IOError].} =
   when T isnot (string or JsonVoid or JsonObjectType):
     {.fatal: "`scanObject` only accepts `string` or `JsonVoid` or `JsonObjectType`".}
@@ -667,12 +682,12 @@ proc scanObject*[T](lex: var JsonLexer, val: var T, depthLimit: int)
     # value action
     when T is string:
       val.add ':'
-      lex.scanValue(val, depthLimit)
+      lex.scanValue(val)
     elif T is JsonVoid:
-      lex.scanValue(val, depthLimit)
+      lex.scanValue(val)
     else:
       var newVal: valueType(T)
-      lex.scanValue(newVal, depthLimit)
+      lex.scanValue(newVal)
       if newVal.isNil.not:
         val[key] = newVal
   do:
@@ -687,6 +702,7 @@ template parseArrayImpl*(lex: JsonLexer,
                         actionValue: untyped,
                         actionError: untyped) =
 
+  lex.enterNestedStructure(actionError)
   actionInitial
   lex.advance
 
@@ -741,7 +757,9 @@ template parseArrayImpl*(lex: JsonLexer,
       if not lex.ok: actionError
       inc numElem
 
-proc scanArray*[T](lex: var JsonLexer, val: var T, depthLimit: int)
+  lex.exitNestedStructure()
+
+proc scanArray*[T](lex: var JsonLexer, val: var T)
                     {.gcsafe, raises: [IOError].} =
   when T isnot (string or JsonVoid or seq[JsonValueRef]):
     {.fatal: "`scanArray` only accepts `string` or `JsonVoid` or `seq[JsonValueRef]`".}
@@ -761,22 +779,18 @@ proc scanArray*[T](lex: var JsonLexer, val: var T, depthLimit: int)
   do:
     # value action
     when T is (string or JsonVoid):
-      lex.scanValue(val, depthLimit)
+      lex.scanValue(val)
     else:
       val.setLen(numElem + 1)
-      lex.scanValue(val[numElem], depthLimit)
+      lex.scanValue(val[numElem])
   do:
     # error action
     return
 
-proc scanValue*[T](lex: var JsonLexer, val: var T, depthLimit: int)
+proc scanValue*[T](lex: var JsonLexer, val: var T)
                     {.gcsafe, raises: [IOError].} =
   when T isnot (string or JsonVoid or JsonValueRef):
     {.fatal: "`scanValue` only accepts `string` or `JsonVoid` or `JsonValueRef`".}
-
-  if lex.conf.nestedDepthLimit > 0 and
-       depthLimit > lex.conf.nestedDepthLimit:
-    error errNestedDepthLimit
 
   var c = lex.nonws()
   if not lex.ok: return
@@ -803,16 +817,16 @@ proc scanValue*[T](lex: var JsonLexer, val: var T, depthLimit: int)
   of '{':
     when T is JsonValueRef:
       val = T(kind: JsonValueKind.Object)
-      lex.scanObject(val.objVal, depthLimit+1)
+      lex.scanObject(val.objVal)
     else:
-      lex.scanObject(val, depthLimit+1)
+      lex.scanObject(val)
     if not lex.ok: return
   of '[':
     when T is JsonValueRef:
       val = T(kind: JsonValueKind.Array)
-      lex.scanArray(val.arrayVal, depthLimit+1)
+      lex.scanArray(val.arrayVal)
     else:
-      lex.scanArray(val, depthLimit+1)
+      lex.scanArray(val)
     if not lex.ok: return
   of 't', 'f':
     when T is JsonVoid:

@@ -115,7 +115,7 @@ template testScanValue(input: string, output: untyped,
     value == output
     lex.err == error
 
-suite "numbers test suite":
+suite "lexer test suite":
   test "scanInt string":
     testScanInt("1234567890", "1234567890")
     testScanInt("01234567890", "0", error = errLeadingZero)
@@ -587,8 +587,8 @@ suite "numbers test suite":
     testScanValue("[[[1]]]", "[[[1]]]")
 
     conf.nestedDepthLimit = 3
-    testScanValue("[[[[1]]]]", "[[[[", error = errNestedDepthLimit, conf = conf)
-    testScanValue("[ { \"a\": [ { \"b\": 3}] } ]", "[{\"a\":[{\"b\":",
+    testScanValue("[[[[1]]]]", "[[[", error = errNestedDepthLimit, conf = conf)
+    testScanValue("[ { \"a\": [ { \"b\": 3}] } ]", "[{\"a\":[",
       error = errNestedDepthLimit, conf = conf)
 
     testScanValue("{ \"a\": 1234.567 // comments\n }",
@@ -781,9 +781,7 @@ suite "numbers test suite":
         arrayVal: @[
           JsonValueRef[uint64](kind: JsonValueKind.Array,
           arrayVal: @[
-            JsonValueRef[uint64](kind: JsonValueKind.Array, arrayVal: @[
-              JsonValueRef[uint64](nil)
-            ])
+            JsonValueRef[uint64](kind: JsonValueKind.Array)
           ])
         ])
       ]), error = errNestedDepthLimit, conf = conf)
