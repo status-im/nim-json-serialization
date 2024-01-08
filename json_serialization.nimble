@@ -10,7 +10,7 @@
 mode = ScriptMode.Verbose
 
 packageName   = "json_serialization"
-version       = "0.2.2"
+version       = "0.2.4"
 author        = "Status Research & Development GmbH"
 description   = "Flexible JSON serialization not relying on run-time type information"
 license       = "Apache License 2.0"
