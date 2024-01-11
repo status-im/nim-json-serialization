@@ -16,4 +16,5 @@ import
   test_spec,
   test_parser,
   test_line_col,
-  test_reader
+  test_reader,
+  test_writer

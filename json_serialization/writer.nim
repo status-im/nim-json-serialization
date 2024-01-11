@@ -22,12 +22,19 @@ type
     RecordStarted
     AfterField
 
+  JsonNesting* {.pure.} = enum
+    TopLevel
+    WriteObject
+    WriteArray
+
   JsonWriter*[Flavor = DefaultFlavor] = object
     stream*: OutputStream
     hasTypeAnnotations: bool
     hasPrettyOutput*: bool # read-only
     nestingLevel*: int     # read-only
     state: JsonWriterState
+    nesting: JsonNesting
+    prevNesting: seq[JsonNesting]
 
 Json.setWriter JsonWriter,
                PreferredOutput = string
@@ -38,7 +45,11 @@ func init*(W: type JsonWriter, stream: OutputStream,
     hasPrettyOutput: pretty,
     hasTypeAnnotations: typeAnnotations,
     nestingLevel: if pretty: 0 else: -1,
-    state: RecordExpected)
+    state: RecordExpected,
+    nesting: JsonNesting.TopLevel)
+
+func nesting*(w: JsonWriter): JsonNesting =
+  w.nesting
 
 proc beginRecord*(w: var JsonWriter, T: type)
 proc beginRecord*(w: var JsonWriter)
@@ -90,6 +101,8 @@ template fieldWritten*(w: var JsonWriter) =
 proc beginRecord*(w: var JsonWriter) =
   doAssert w.state == RecordExpected
 
+  w.prevNesting.add w.nesting
+  w.nesting = JsonNesting.WriteObject
   append '{'
   if w.hasPrettyOutput:
     w.nestingLevel += 2
@@ -109,12 +122,15 @@ proc endRecord*(w: var JsonWriter) =
     indent()
 
   append '}'
+  w.nesting = w.prevNesting.pop()
 
 template endRecordField*(w: var JsonWriter) =
   endRecord(w)
   w.state = AfterField
 
 iterator stepwiseArrayCreation*[C](w: var JsonWriter, collection: C): auto =
+  w.prevNesting.add w.nesting
+  w.nesting = JsonNesting.WriteArray
   append '['
 
   if w.hasPrettyOutput:
@@ -140,6 +156,7 @@ iterator stepwiseArrayCreation*[C](w: var JsonWriter, collection: C): auto =
     indent()
 
   append ']'
+  w.nesting = w.prevNesting.pop()
 
 proc writeIterable*(w: var JsonWriter, collection: auto) =
   mixin writeValue

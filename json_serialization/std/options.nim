@@ -27,7 +27,8 @@ proc writeValue*(writer: var JsonWriter, value: Option) {.raises: [IOError].} =
 
   if value.isSome:
     writer.writeValue value.get
-  elif not flavorOmitsOptionalFields(Flavor):
+  elif not flavorOmitsOptionalFields(Flavor) or 
+      writer.nesting != JsonNesting.WriteObject:
     writer.writeValue JsonString("null")
 
 proc readValue*[T](reader: var JsonReader, value: var Option[T]) =
