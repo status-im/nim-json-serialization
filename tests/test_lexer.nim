@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2019-2023 Status Research & Development GmbH
+# Copyright (c) 2019-2024 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -882,3 +882,14 @@ suite "lexer test suite":
     testScanValue("{123:true}", JsonValueRef[uint64](kind: JsonValueKind.Object), error = errStringExpected)
 
     testScanValue("{\"123:true}", "{\"123:true}", error = errUnexpectedEof)
+
+    testScanValue("{\"123\":\"tru", "{\"123\":\"tru\"", error = errUnexpectedEof)
+    testScanValue("{\"123\":\"tr", "{\"123\":\"tr\"", error = errUnexpectedEof)
+    testScanValue("{\"123\":\"t", "{\"123\":\"t\"", error = errUnexpectedEof)
+    testScanValue("{\"123\":\"nul", "{\"123\":\"nul\"", error = errUnexpectedEof)
+    testScanValue("{\"123\":\"nu", "{\"123\":\"nu\"", error = errUnexpectedEof)
+    testScanValue("{\"123\":\"n", "{\"123\":\"n\"", error = errUnexpectedEof)
+    testScanValue("{\"123\":\"fals", "{\"123\":\"fals\"", error = errUnexpectedEof)
+    testScanValue("{\"123\":\"fal", "{\"123\":\"fal\"", error = errUnexpectedEof)
+    testScanValue("{\"123\":\"fa", "{\"123\":\"fa\"", error = errUnexpectedEof)
+    testScanValue("{\"123\":\"f", "{\"123\":\"f\"", error = errUnexpectedEof)
