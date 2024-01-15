@@ -24,6 +24,7 @@ template flavorUsesAutomaticObjectSerialization*(T: type DefaultFlavor): bool = 
 template flavorOmitsOptionalFields*(T: type DefaultFlavor): bool = false
 template flavorRequiresAllFields*(T: type DefaultFlavor): bool = false
 template flavorAllowsUnknownFields*(T: type DefaultFlavor): bool = false
+template flavorSkipNullFields*(T: type DefaultFlavor): bool = false
 
 # We create overloads of these traits to force the mixin treatment of the symbols
 type DummyFlavor* = object
@@ -31,13 +32,15 @@ template flavorUsesAutomaticObjectSerialization*(T: type DummyFlavor): bool = tr
 template flavorOmitsOptionalFields*(T: type DummyFlavor): bool = false
 template flavorRequiresAllFields*(T: type DummyFlavor): bool = false
 template flavorAllowsUnknownFields*(T: type DummyFlavor): bool = false
+template flavorSkipNullFields*(T: type DummyFlavor): bool = false
 
 template createJsonFlavor*(FlavorName: untyped,
                            mimeTypeValue = "application/json",
                            automaticObjectSerialization = false,
                            requireAllFields = true,
                            omitOptionalFields = true,
-                           allowUnknownFields = true) {.dirty.} =
+                           allowUnknownFields = true,
+                           skipNullFields = false) {.dirty.} =
   type FlavorName* = object
 
   template Reader*(T: type FlavorName): type = Reader(Json, FlavorName)
@@ -49,3 +52,4 @@ template createJsonFlavor*(FlavorName: untyped,
   template flavorOmitsOptionalFields*(T: type FlavorName): bool = omitOptionalFields
   template flavorRequiresAllFields*(T: type FlavorName): bool = requireAllFields
   template flavorAllowsUnknownFields*(T: type FlavorName): bool = allowUnknownFields
+  template flavorSkipNullFields*(T: type FlavorName): bool = skipNullFields

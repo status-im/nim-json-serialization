@@ -580,7 +580,11 @@ proc scanString*[T](lex: var JsonLexer, val: var T, limit: int)
 proc scanValue*[T](lex: var JsonLexer, val: var T)
                    {.gcsafe, raises: [IOError].}
 
+proc tokKind*(lex: var JsonLexer): JsonValueKind
+               {.gcsafe, raises: [IOError].}
+
 template parseObjectImpl*(lex: JsonLexer,
+                         skipNullFields: static[bool],
                          actionInitial: untyped,
                          actionClosing: untyped,
                          actionComma: untyped,
@@ -645,7 +649,13 @@ template parseObjectImpl*(lex: JsonLexer,
         error(lex, errColonExpected, actionError)
 
       lex.advance
-      actionValue
+      when skipNullFields:
+        if lex.tokKind() == JsonValueKind.Null:
+          lex.scanNull()
+        else:
+          actionValue
+      else:
+        actionValue
       if not lex.ok: actionError
     else:
       error(lex, errStringExpected, actionError)
@@ -657,7 +667,7 @@ proc scanObject*[T](lex: var JsonLexer, val: var T)
   when T isnot (string or JsonVoid or JsonObjectType):
     {.fatal: "`scanObject` only accepts `string` or `JsonVoid` or `JsonObjectType`".}
 
-  parseObjectImpl(lex):
+  parseObjectImpl(lex, false):
     # initial action
     when T is string:
       val.add '{'

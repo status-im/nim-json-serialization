@@ -51,6 +51,9 @@ type
     three: JsonNumber[string]
     four: JsonValueRef[uint64]
 
+  ListOnly = object
+    list: JsonString
+
 Container.useDefaultSerializationIn StringyJson
 
 createJsonFlavor OptJson
@@ -71,7 +74,20 @@ const
     }
   }
 }
+
 """
+  jsonTextWithNullFields = """
+{
+  "list": null
+}
+"""
+
+createJsonFlavor NullyFields,
+  skipNullFields = true,
+  requireAllFields = false
+
+Container.useDefaultSerializationIn NullyFields
+ListOnly.useDefaultSerializationIn NullyFields
 
 suite "Test JsonFlavor":
   test "basic test":
@@ -104,3 +120,15 @@ suite "Test JsonFlavor":
     check:
       ww == vv
       xx == """{"two":-789.0009e-19,"three":999.776000e33,"four":{"apple":[1,true,"three"],"banana":{"chip":123,"z":null,"v":false}}}"""
+
+  test "object with null fields":
+    expect JsonReaderError:
+      let x = Json.decode(jsonTextWithNullFields, Container)
+      discard x
+
+    let x = NullyFields.decode(jsonTextWithNullFields, Container)
+    check x.list.len == 0
+
+    # field should not processed at all
+    let y = NullyFields.decode(jsonTextWithNullFields, ListOnly)
+    check y.list.string.len == 0

@@ -87,6 +87,7 @@ You can use `useDefaultSerializationIn` to add serializers of a flavor to a spec
   requireAllFields = true
   omitOptionalFields = true
   allowUnknownFields = true
+  skipNullFields = false
 ```
 
 ```Nim

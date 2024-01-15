@@ -211,7 +211,7 @@ proc parseNumber*(r: var JsonReader, val: var JsonNumber)
     r.raiseParserError(errNumberExpected)
   r.lex.scanNumber(val)
   r.checkError
-  
+
 proc toInt*(r: var JsonReader, val: JsonNumber, T: type SomeSignedInt, portable: bool): T
       {.gcsafe, raises: [JsonReaderError].}=
   if val.sign == JsonSign.Neg:
@@ -291,6 +291,12 @@ proc parseFloat*(r: var JsonReader, T: type SomeFloat): T
 
 proc parseAsString*(r: var JsonReader, val: var string)
        {.gcsafe, raises: [IOError, JsonReaderError].} =
+  mixin flavorSkipNullFields
+  type
+    Reader = typeof r
+    Flavor = Reader.Flavor
+  const skipNullFields = flavorSkipNullFields(Flavor)
+
   case r.tokKind
   of JsonValueKind.String:
     escapeJson(r.parseString(), val)
@@ -298,7 +304,7 @@ proc parseAsString*(r: var JsonReader, val: var string)
     r.lex.scanNumber(val)
     r.checkError
   of JsonValueKind.Object:
-    parseObjectImpl(r.lex):
+    parseObjectImpl(r.lex, skipNullFields):
       # initial action
       val.add '{'
     do: # closing action
@@ -355,7 +361,7 @@ proc parseValue*(r: var JsonReader, val: var JsonValueRef)
                   {.gcsafe, raises: [IOError, JsonReaderError].} =
   r.lex.scanValue(val)
   r.checkError
-  
+
 template parseArray*(r: var JsonReader; body: untyped) =
   if r.tokKind != JsonValueKind.Array:
     r.raiseParserError(errBracketLeExpected)
@@ -375,9 +381,15 @@ template parseArray*(r: var JsonReader; idx: untyped; body: untyped) =
   do: r.raiseParserError() # error action
 
 template parseObject*(r: var JsonReader, key: untyped, body: untyped) =
+  mixin flavorSkipNullFields
+  type
+    Reader = typeof r
+    Flavor = Reader.Flavor
+  const skipNullFields = flavorSkipNullFields(typeof Flavor)
+
   if r.tokKind != JsonValueKind.Object:
     r.raiseParserError(errCurlyLeExpected)
-  parseObjectImpl(r.lex): discard # initial action
+  parseObjectImpl(r.lex, skipNullFields): discard # initial action
   do: discard # closing action
   do: discard # comma action
   do: # key action
@@ -388,9 +400,15 @@ template parseObject*(r: var JsonReader, key: untyped, body: untyped) =
     r.raiseParserError()
 
 template parseObjectCustomKey*(r: var JsonReader, keyAction: untyped, body: untyped) =
+  mixin flavorSkipNullFields
+  type
+    Reader = typeof r
+    Flavor = Reader.Flavor
+  const skipNullFields = flavorSkipNullFields(Flavor)
+
   if r.tokKind != JsonValueKind.Object:
     r.raiseParserError(errCurlyLeExpected)
-  parseObjectImpl(r.lex): discard # initial action
+  parseObjectImpl(r.lex, skipNullFields): discard # initial action
   do: discard # closing action
   do: discard # comma action
   do: # key action
@@ -414,6 +432,12 @@ proc readJsonNodeField(r: var JsonReader, field: var JsonNode)
   field = r.parseJsonNode()
 
 proc parseJsonNode(r: var JsonReader): JsonNode =
+  mixin flavorSkipNullFields
+  type
+    Reader = typeof r
+    Flavor = Reader.Flavor
+  const skipNullFields = flavorSkipNullFields(Flavor)
+
   case r.tokKind
   of JsonValueKind.String:
     result = JsonNode(kind: JString, str: r.parseString())
@@ -428,7 +452,7 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
         r.toInt(val, typeof(result.num), JsonReaderFlag.portableInt in r.lex.flags))
   of JsonValueKind.Object:
     result = JsonNode(kind: JObject)
-    parseObjectImpl(r.lex): discard # initial action
+    parseObjectImpl(r.lex, skipNullFields): discard # initial action
     do: discard # closing action
     do: discard # comma action
     do: # key action
