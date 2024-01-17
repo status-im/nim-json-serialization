@@ -98,6 +98,9 @@ type
 
 createJsonFlavor OptJson
 OptionalFields.useDefaultSerializationIn OptJson
+
+`omitOptionalFields` is used by the Writer to ignore fields with null value.
+`skipNullFields` is used by the Reader to ignore fields with null value.
 ```
 
 ## Decoder example
@@ -241,6 +244,9 @@ readRecordValue[T](r: var JsonReader, value: var T)
 beginRecord(w: var JsonWriter, T: type)
 beginRecord(w: var JsonWriter)
 endRecord(w: var JsonWriter)
+
+writeObject(w: var JsonWriter, T: type)
+writeObject(w: var JsonWriter)
 
 writeFieldName(w: var JsonWriter, name: string)
 writeField(w: var JsonWriter, name: string, value: auto)

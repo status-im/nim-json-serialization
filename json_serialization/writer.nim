@@ -44,6 +44,10 @@ proc beginRecord*(w: var JsonWriter, T: type)
 proc beginRecord*(w: var JsonWriter)
 proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].}
 
+# If it's an optional field, test for it's value before write something.
+# If it's non optional field, the field is always written.
+template shouldWriteObjectField*[FieldType](field: FieldType): bool = true
+
 template append(x: untyped) =
   write w.stream, x
 
@@ -78,11 +82,21 @@ proc writeFieldName*(w: var JsonWriter, name: string) =
 proc writeField*(
     w: var JsonWriter, name: string, value: auto) {.raises: [IOError].} =
   mixin writeValue
+  mixin flavorOmitsOptionalFields, shouldWriteObjectField
 
-  w.writeFieldName(name)
-  w.writeValue(value)
+  type
+    Writer = typeof w
+    Flavor = Writer.Flavor
 
-  w.state = AfterField
+  when flavorOmitsOptionalFields(Flavor):
+    if shouldWriteObjectField(value):
+      w.writeFieldName(name)
+      w.writeValue(value)
+      w.state = AfterField
+  else:
+    w.writeFieldName(name)
+    w.writeValue(value)
+    w.state = AfterField
 
 template fieldWritten*(w: var JsonWriter) =
   w.state = AfterField
@@ -149,16 +163,22 @@ proc writeIterable*(w: var JsonWriter, collection: auto) =
 proc writeArray*[T](w: var JsonWriter, elements: openArray[T]) =
   writeIterable(w, elements)
 
+template writeObject*(w: var JsonWriter, T: type, body: untyped) =
+  w.beginRecord(T)
+  body
+  w.endRecord()
+
+template writeObject*(w: var JsonWriter, body: untyped) =
+  w.beginRecord()
+  body
+  w.endRecord()
+
 # this construct catches `array[N, char]` which otherwise won't decompose into
 # openArray[char] - we treat any array-like thing-of-characters as a string in
 # the output
 template isStringLike(v: string|cstring|openArray[char]|seq[char]): bool = true
 template isStringLike[N](v: array[N, char]): bool = true
 template isStringLike(v: auto): bool = false
-
-# If it's an optional field, test for it's value before write something.
-# If it's non optional field, the field is always written.
-template shouldWriteObjectField*[FieldType](field: FieldType): bool = true
 
 template writeObjectField*[FieldType, RecordType](w: var JsonWriter,
                                                   record: RecordType,

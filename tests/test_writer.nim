@@ -19,6 +19,11 @@ type
     b: Option[string]
     c: int
 
+  OWOF = object
+    a: Opt[int]
+    b: Option[string]
+    c: int
+
 createJsonFlavor YourJson,
   omitOptionalFields = false
 
@@ -27,6 +32,13 @@ createJsonFlavor MyJson,
 
 ObjectWithOptionalFields.useDefaultSerializationIn YourJson
 ObjectWithOptionalFields.useDefaultSerializationIn MyJson
+
+proc writeValue*(w: var JsonWriter, val: OWOF)
+                  {.gcsafe, raises: [IOError].} =
+  w.writeObject(OWOF):
+    w.writeField("a", val.a)
+    w.writeField("b", val.b)
+    w.writeField("c", val.c)
 
 suite "Test writer":
   test "stdlib option top level some YourJson":
@@ -133,3 +145,26 @@ suite "Test writer":
 
     let yy = MyJson.encode(y)
     check yy.string == """{"c":999}"""
+
+  test "writeField with object with optional fields":
+    let x = OWOF(
+      a: Opt.some(123),
+      b: some("nano"),
+      c: 456,
+    )
+
+    let y = OWOF(
+      a: Opt.none(int),
+      b: none(string),
+      c: 999,
+    )
+
+    let xx = MyJson.encode(x)
+    check xx.string == """{"a":123,"b":"nano","c":456}"""
+    let yy = MyJson.encode(y)
+    check yy.string == """{"c":999}"""
+
+    let uu = YourJson.encode(x)
+    check uu.string == """{"a":123,"b":"nano","c":456}"""
+    let vv = YourJson.encode(y)
+    check vv.string == """{"a":null,"b":null,"c":999}"""
