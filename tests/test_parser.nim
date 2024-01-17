@@ -293,14 +293,14 @@ suite "Public parser":
 
   test "parseValue of null fields":
     var r = toReaderNullFields("""{"something":null, "bool":true, "string":null}""")
-    let n = r.parseValue(string)
+    let n = r.parseValue(uint64)
     check:
       n["something"].kind == JsonValueKind.Null
       n["bool"].kind == JsonValueKind.Bool
       n["string"].kind == JsonValueKind.Null
 
     var y = toReader("""{"something":null,"bool":true,"string":"moon"}""")
-    let z = y.parseValue(string)
+    let z = y.parseValue(uint64)
     check:
       z["something"].kind == JsonValueKind.Null
       z["bool"].kind == JsonValueKind.Bool
