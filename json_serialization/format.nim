@@ -21,7 +21,7 @@ template supports*(_: type Json, T: type): bool =
   true
 
 template flavorUsesAutomaticObjectSerialization*(T: type DefaultFlavor): bool = true
-template flavorOmitsOptionalFields*(T: type DefaultFlavor): bool = false
+template flavorOmitsOptionalFields*(T: type DefaultFlavor): bool = true
 template flavorRequiresAllFields*(T: type DefaultFlavor): bool = false
 template flavorAllowsUnknownFields*(T: type DefaultFlavor): bool = false
 template flavorSkipNullFields*(T: type DefaultFlavor): bool = false

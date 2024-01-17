@@ -22,19 +22,12 @@ type
     RecordStarted
     AfterField
 
-  JsonNesting* {.pure.} = enum
-    TopLevel
-    WriteObject
-    WriteArray
-
   JsonWriter*[Flavor = DefaultFlavor] = object
     stream*: OutputStream
     hasTypeAnnotations: bool
     hasPrettyOutput*: bool # read-only
     nestingLevel*: int     # read-only
     state: JsonWriterState
-    nesting: JsonNesting
-    prevNesting: seq[JsonNesting]
 
 Json.setWriter JsonWriter,
                PreferredOutput = string
@@ -45,11 +38,7 @@ func init*(W: type JsonWriter, stream: OutputStream,
     hasPrettyOutput: pretty,
     hasTypeAnnotations: typeAnnotations,
     nestingLevel: if pretty: 0 else: -1,
-    state: RecordExpected,
-    nesting: JsonNesting.TopLevel)
-
-func nesting*(w: JsonWriter): JsonNesting =
-  w.nesting
+    state: RecordExpected)
 
 proc beginRecord*(w: var JsonWriter, T: type)
 proc beginRecord*(w: var JsonWriter)
@@ -101,8 +90,6 @@ template fieldWritten*(w: var JsonWriter) =
 proc beginRecord*(w: var JsonWriter) =
   doAssert w.state == RecordExpected
 
-  w.prevNesting.add w.nesting
-  w.nesting = JsonNesting.WriteObject
   append '{'
   if w.hasPrettyOutput:
     w.nestingLevel += 2
@@ -122,15 +109,12 @@ proc endRecord*(w: var JsonWriter) =
     indent()
 
   append '}'
-  w.nesting = w.prevNesting.pop()
 
 template endRecordField*(w: var JsonWriter) =
   endRecord(w)
   w.state = AfterField
 
 iterator stepwiseArrayCreation*[C](w: var JsonWriter, collection: C): auto =
-  w.prevNesting.add w.nesting
-  w.nesting = JsonNesting.WriteArray
   append '['
 
   if w.hasPrettyOutput:
@@ -156,7 +140,6 @@ iterator stepwiseArrayCreation*[C](w: var JsonWriter, collection: C): auto =
     indent()
 
   append ']'
-  w.nesting = w.prevNesting.pop()
 
 proc writeIterable*(w: var JsonWriter, collection: auto) =
   mixin writeValue
@@ -173,10 +156,14 @@ template isStringLike(v: string|cstring|openArray[char]|seq[char]): bool = true
 template isStringLike[N](v: array[N, char]): bool = true
 template isStringLike(v: auto): bool = false
 
+# If it's an optional field, test for it's value before write something.
+# If it's non optional field, the field is always written.
+template shouldWriteObjectField*[FieldType](field: FieldType): bool = true
+
 template writeObjectField*[FieldType, RecordType](w: var JsonWriter,
                                                   record: RecordType,
                                                   fieldName: static string,
-                                                  field: FieldType): bool =
+                                                  field: FieldType) =
   mixin writeFieldIMPL, writeValue
 
   w.writeFieldName(fieldName)
@@ -185,17 +172,26 @@ template writeObjectField*[FieldType, RecordType](w: var JsonWriter,
   else:
     type R = type record
     w.writeFieldIMPL(FieldTag[R, fieldName], field, record)
-  true
 
 proc writeRecordValue*(w: var JsonWriter, value: auto)
                       {.gcsafe, raises: [IOError].} =
   mixin enumInstanceSerializedFields, writeObjectField
+  mixin flavorOmitsOptionalFields, shouldWriteObjectField
+
+  type
+    Writer = typeof w
+    Flavor = Writer.Flavor
 
   type RecordType = type value
   w.beginRecord RecordType
-  value.enumInstanceSerializedFields(fieldName, fieldType):
-    when fieldType isnot JsonVoid:
-      if writeObjectField(w, value, fieldName, fieldType):
+  value.enumInstanceSerializedFields(fieldName, fieldValue):
+    when fieldValue isnot JsonVoid:
+      when flavorOmitsOptionalFields(Flavor):
+        if shouldWriteObjectField(fieldValue):
+          writeObjectField(w, value, fieldName, fieldValue)
+          w.state = AfterField
+      else:
+        writeObjectField(w, value, fieldName, fieldValue)
         w.state = AfterField
     else:
       discard fieldName

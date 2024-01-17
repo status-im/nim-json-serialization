@@ -13,26 +13,16 @@ import
 export
   results
 
-template writeObjectField*[T](w: var JsonWriter,
-                              record: auto,
-                              fieldName: static string,
-                              field: Result[T, void]): bool =
-  mixin writeObjectField
-
-  if field.isOk:
-    writeObjectField(w, record, fieldName, field.get)
-  else:
-    false
+template shouldWriteObjectField*[T](field: Result[T, void]): bool =
+  field.isOk
 
 proc writeValue*[T](
     writer: var JsonWriter, value: Result[T, void]) {.raises: [IOError].} =
-  mixin writeValue, flavorOmitsOptionalFields
-  type Flavor = JsonWriter.Flavor
+  mixin writeValue
 
   if value.isOk:
     writer.writeValue value.get
-  elif not flavorOmitsOptionalFields(Flavor) or
-      writer.nesting != JsonNesting.WriteObject:
+  else:
     writer.writeValue JsonString("null")
 
 proc readValue*[T](reader: var JsonReader, value: var Result[T, void]) =

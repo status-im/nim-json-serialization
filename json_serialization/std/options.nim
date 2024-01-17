@@ -10,25 +10,15 @@
 import std/options, ../../json_serialization/[reader, writer, lexer]
 export options
 
-template writeObjectField*(w: var JsonWriter,
-                           record: auto,
-                           fieldName: static string,
-                           field: Option): bool =
-  mixin writeObjectField
-
-  if field.isSome:
-    writeObjectField(w, record, fieldName, field.get)
-  else:
-    false
+template shouldWriteObjectField*(field: Option): bool =
+  field.isSome
 
 proc writeValue*(writer: var JsonWriter, value: Option) {.raises: [IOError].} =
-  mixin writeValue, flavorOmitsOptionalFields
-  type Flavor = JsonWriter.Flavor
+  mixin writeValue
 
   if value.isSome:
     writer.writeValue value.get
-  elif not flavorOmitsOptionalFields(Flavor) or 
-      writer.nesting != JsonNesting.WriteObject:
+  else:
     writer.writeValue JsonString("null")
 
 proc readValue*[T](reader: var JsonReader, value: var Option[T]) =

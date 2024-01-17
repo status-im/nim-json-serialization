@@ -988,7 +988,7 @@ suite "Custom parser tests":
     check dData.name == "FancyUInt"
     check dData.data.uint == 12345u
     check customVisit.entry == JsonValueKind.String
-    
+
   test "Parser on text blob with embedded quote (backlash escape support)":
     customVisit = TokenRegistry.default
 

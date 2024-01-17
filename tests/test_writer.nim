@@ -13,11 +13,20 @@ import
   ../json_serialization/std/options,
   ../json_serialization
 
+type
+  ObjectWithOptionalFields = object
+    a: Opt[int]
+    b: Option[string]
+    c: int
+
 createJsonFlavor YourJson,
   omitOptionalFields = false
 
 createJsonFlavor MyJson,
   omitOptionalFields = true
+
+ObjectWithOptionalFields.useDefaultSerializationIn YourJson
+ObjectWithOptionalFields.useDefaultSerializationIn MyJson
 
 suite "Test writer":
   test "stdlib option top level some YourJson":
@@ -99,3 +108,28 @@ suite "Test writer":
     var val = [Opt.some(123), Opt.none(int), Opt.some(777)]
     let json = MyJson.encode(val)
     check json == "[123,null,777]"
+
+  test "object with optional fields":
+    let x = ObjectWithOptionalFields(
+      a: Opt.some(123),
+      b: some("nano"),
+      c: 456,
+    )
+
+    let y = ObjectWithOptionalFields(
+      a: Opt.none(int),
+      b: none(string),
+      c: 999,
+    )
+
+    let u = YourJson.encode(x)
+    check u.string == """{"a":123,"b":"nano","c":456}"""
+
+    let v = YourJson.encode(y)
+    check v.string == """{"a":null,"b":null,"c":999}"""
+
+    let xx = MyJson.encode(x)
+    check xx.string == """{"a":123,"b":"nano","c":456}"""
+
+    let yy = MyJson.encode(y)
+    check yy.string == """{"c":999}"""
