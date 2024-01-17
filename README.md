@@ -232,6 +232,8 @@ parseValue(r: var JsonReader, val: var JsonValueRef)
 parseArray(r: var JsonReader; body: untyped)
 parseArray(r: var JsonReader; idx: untyped; body: untyped)
 parseObject(r: var JsonReader, key: untyped, body: untyped)
+parseObjectWithoutSkip(r: var JsonReader, key: untyped, body: untyped)
+parseObjectSkipNullFields(r: var JsonReader, key: untyped, body: untyped)
 parseObjectCustomKey(r: var JsonReader, keyAction: untyped, body: untyped)
 parseJsonNode(r: var JsonReader): JsonNode
 skipSingleJsValue(r: var JsonReader)
