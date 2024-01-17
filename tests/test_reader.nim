@@ -14,9 +14,16 @@ import
   serialization,
   ../json_serialization/reader
 
+createJsonFlavor NullFields,
+  skipNullFields = true
+
 func toReader(input: string): JsonReader[DefaultFlavor] =
   var stream = unsafeMemoryInput(input)
   JsonReader[DefaultFlavor].init(stream)
+
+func toReaderNullFields(input: string): JsonReader[NullFields] =
+  var stream = unsafeMemoryInput(input)
+  JsonReader[NullFields].init(stream)
 
 const
   jsonText = """
@@ -171,3 +178,34 @@ suite "JsonReader basic test":
       val.`bool`.boolVal == true
       val.`null`.kind == JsonValueKind.Null
       val.`array`.string == """[true,567.89,"string in array",null,[123]]"""
+
+  proc execReadObjectFields(r: var JsonReader): int =
+    for key in r.readObjectFields():
+      let val = r.parseAsString()
+      discard val
+      inc result
+
+  test "readObjectFields of null fields":
+    var r = toReaderNullFields("""{"something":null, "bool":true, "string":null}""")
+    check execReadObjectFields(r) == 1
+
+    var y = toReader("""{"something":null,"bool":true,"string":"moon"}""")
+    check execReadObjectFields(y) == 3
+
+    var z = toReaderNullFields("""{"something":null,"bool":true,"string":"moon"}""")
+    check execReadObjectFields(z) == 2
+
+  proc execReadObject(r: var JsonReader): int =
+    for k, v in r.readObject(string, int):
+      inc result
+
+  test "readObjectFields of null fields":
+    var r = toReaderNullFields("""{"something":null, "bool":123, "string":null}""")
+    check execReadObject(r) == 1
+
+    expect JsonReaderError:
+      var y = toReader("""{"something":null,"bool":78,"string":345}""")
+      check execReadObject(y) == 3
+
+    var z = toReaderNullFields("""{"something":null,"bool":999,"string":100}""")
+    check execReadObject(z) == 2

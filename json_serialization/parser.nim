@@ -291,12 +291,6 @@ proc parseFloat*(r: var JsonReader, T: type SomeFloat): T
 
 proc parseAsString*(r: var JsonReader, val: var string)
        {.gcsafe, raises: [IOError, JsonReaderError].} =
-  mixin flavorSkipNullFields
-  type
-    Reader = typeof r
-    Flavor = Reader.Flavor
-  const skipNullFields = flavorSkipNullFields(Flavor)
-
   case r.tokKind
   of JsonValueKind.String:
     escapeJson(r.parseString(), val)
@@ -304,7 +298,7 @@ proc parseAsString*(r: var JsonReader, val: var string)
     r.lex.scanNumber(val)
     r.checkError
   of JsonValueKind.Object:
-    parseObjectImpl(r.lex, skipNullFields):
+    parseObjectImpl(r.lex, false):
       # initial action
       val.add '{'
     do: # closing action
@@ -399,6 +393,32 @@ template parseObject*(r: var JsonReader, key: untyped, body: untyped) =
   do: # error action
     r.raiseParserError()
 
+template parseObjectWithoutSkip*(r: var JsonReader, key: untyped, body: untyped) =
+  if r.tokKind != JsonValueKind.Object:
+    r.raiseParserError(errCurlyLeExpected)
+  parseObjectImpl(r.lex, false): discard # initial action
+  do: discard # closing action
+  do: discard # comma action
+  do: # key action
+    let key {.inject.} = r.parseString()
+  do: # value action
+    body
+  do: # error action
+    r.raiseParserError()
+
+template parseObjectSkipNullFields*(r: var JsonReader, key: untyped, body: untyped) =
+  if r.tokKind != JsonValueKind.Object:
+    r.raiseParserError(errCurlyLeExpected)
+  parseObjectImpl(r.lex, true): discard # initial action
+  do: discard # closing action
+  do: discard # comma action
+  do: # key action
+    let key {.inject.} = r.parseString()
+  do: # value action
+    body
+  do: # error action
+    r.raiseParserError()
+    
 template parseObjectCustomKey*(r: var JsonReader, keyAction: untyped, body: untyped) =
   mixin flavorSkipNullFields
   type
@@ -432,12 +452,6 @@ proc readJsonNodeField(r: var JsonReader, field: var JsonNode)
   field = r.parseJsonNode()
 
 proc parseJsonNode(r: var JsonReader): JsonNode =
-  mixin flavorSkipNullFields
-  type
-    Reader = typeof r
-    Flavor = Reader.Flavor
-  const skipNullFields = flavorSkipNullFields(Flavor)
-
   case r.tokKind
   of JsonValueKind.String:
     result = JsonNode(kind: JString, str: r.parseString())
@@ -452,7 +466,7 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
         r.toInt(val, typeof(result.num), JsonReaderFlag.portableInt in r.lex.flags))
   of JsonValueKind.Object:
     result = JsonNode(kind: JObject)
-    parseObjectImpl(r.lex, skipNullFields): discard # initial action
+    parseObjectImpl(r.lex, false): discard # initial action
     do: discard # closing action
     do: discard # comma action
     do: # key action

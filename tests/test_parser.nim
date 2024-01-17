@@ -15,9 +15,16 @@ import
   ../json_serialization/value_ops,
   ./utils
 
+createJsonFlavor NullFields,
+  skipNullFields = true
+
 func toReader(input: string): JsonReader[DefaultFlavor] =
   var stream = unsafeMemoryInput(input)
   JsonReader[DefaultFlavor].init(stream)
+
+func toReaderNullFields(input: string): JsonReader[NullFields] =
+  var stream = unsafeMemoryInput(input)
+  JsonReader[NullFields].init(stream)
 
 suite "Custom iterators":
   test "customIntValueIt":
@@ -242,6 +249,62 @@ suite "Public parser":
       elif name.startsWith("i_"):
         if name notin allowedToFail:
           testParseAsString(fileName)
+
+  test "parseAsString of null fields":
+    var r = toReaderNullFields("""{"something":null, "bool":null, "string":null}""")
+    let res = r.parseAsString()
+    check res.string == """{"something":null,"bool":null,"string":null}"""
+
+    var y = toReader("""{"something":null, "bool":null, "string":null}""")
+    let yy = y.parseAsString()
+    check yy.string == """{"something":null,"bool":null,"string":null}"""
+
+  proc execParseObject(r: var JsonReader): int =
+    r.parseObject(key):
+      discard key
+      let val = r.parseAsString()
+      discard val
+      inc result
+
+  test "parseObject of null fields":
+    var r = toReaderNullFields("""{"something":null, "bool":true, "string":null}""")
+    check execParseObject(r) == 1
+
+    var y = toReader("""{"something":null,"bool":true,"string":"moon"}""")
+    check execParseObject(y) == 3
+
+    var z = toReaderNullFields("""{"something":null,"bool":true,"string":"moon"}""")
+    check execParseObject(z) == 2
+
+  test "parseJsonNode of null fields":
+    var r = toReaderNullFields("""{"something":null, "bool":true, "string":null}""")
+    let n = r.parseJsonNode()
+    check:
+      n["something"].kind == JNull
+      n["bool"].kind == JBool
+      n["string"].kind == JNull
+
+    var y = toReader("""{"something":null,"bool":true,"string":"moon"}""")
+    let z = y.parseJsonNode()
+    check:
+      z["something"].kind == JNull
+      z["bool"].kind == JBool
+      z["string"].kind == JString
+
+  test "parseValue of null fields":
+    var r = toReaderNullFields("""{"something":null, "bool":true, "string":null}""")
+    let n = r.parseValue(uint64)
+    check:
+      n["something"].kind == JsonValueKind.Null
+      n["bool"].kind == JsonValueKind.Bool
+      n["string"].kind == JsonValueKind.Null
+
+    var y = toReader("""{"something":null,"bool":true,"string":"moon"}""")
+    let z = y.parseValue(uint64)
+    check:
+      z["something"].kind == JsonValueKind.Null
+      z["bool"].kind == JsonValueKind.Bool
+      z["string"].kind == JsonValueKind.String
 
   test "JsonValueRef comparison":
     var x = JsonValueRef[uint64](kind: JsonValueKind.Null)
