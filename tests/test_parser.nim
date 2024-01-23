@@ -365,3 +365,15 @@ suite "Parse to runtime dynamic structure":
       n["array"][4].kind == JsonValueKind.Array
       n["array"][4].len == 1
       n["object"]["def"].boolVal == false
+
+  test "nim v2 regression #23233":
+    # Nim compiler bug #23233 will prevent
+    # compilation if both JsonValueRef[uint64] and JsonValueRef[string]
+    # are instantiated at together.
+    var r1 = toReader(jsonText)
+    let n1 = r1.parseValue(uint64)
+    discard n1
+
+    var r2 = toReader(jsonText)
+    let n2 = r2.parseValue(string)
+    discard n2
