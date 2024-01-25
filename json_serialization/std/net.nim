@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2019-2023 Status Research & Development GmbH
+# Copyright (c) 2019-2024 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -8,7 +8,7 @@
 # those terms.
 
 import
-  std/strutils, stew/shims/net,
+  std/net,
   ../../json_serialization, chronos/transports/common
 
 export
@@ -24,12 +24,6 @@ proc readValue*(reader: var JsonReader, value: var IpAddress) =
     value = parseIpAddress s
   except CatchableError:
     raiseUnexpectedValue(reader, "Invalid IP address")
-
-template writeValue*(writer: var JsonWriter, value: ValidIpAddress) =
-  writeValue writer, IpAddress(value)
-
-template readValue*(reader: var JsonReader, value: var ValidIpAddress) =
-  readValue reader, IpAddress(value)
 
 proc writeValue*(
     writer: var JsonWriter, value: Port) {.raises: [IOError].} =
