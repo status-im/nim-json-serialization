@@ -8,8 +8,9 @@
 # those terms.
 
 import
-  std/net,
-  ../../json_serialization, chronos/transports/common
+  std/[net, strutils],
+  chronos/transports/common,
+  ../../json_serialization
 
 export
   net, common
