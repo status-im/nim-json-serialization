@@ -98,10 +98,10 @@ type
 
 createJsonFlavor OptJson
 OptionalFields.useDefaultSerializationIn OptJson
+```
 
 `omitOptionalFields` is used by the Writer to ignore fields with null value.
 `skipNullFields` is used by the Reader to ignore fields with null value.
-```
 
 ## Decoder example
 ```nim
