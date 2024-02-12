@@ -328,10 +328,13 @@ proc readValue*[T](r: var JsonReader, value: var T)
       flavorUsesAutomaticObjectSerialization(Flavor)
 
     when not isAutomatic:
-      const typeName = typetraits.name(T)
-      {.error: "Please override readValue for the " &
-        typeName &
-        " type (or import the module where the override is provided)".}
+      const
+        flavor =
+          "JsonReader[" & typetraits.name(typeof(r).Flavor) & "], " &
+          typetraits.name(T)
+      {.error:
+        "Missing Json serialization import or implementation for readValue(" &
+        flavor & ")".}
 
     readRecordValue(r, value)
   else:
