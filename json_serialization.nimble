@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2023 Status Research & Development GmbH
+# Copyright (c) 2023-2024 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -36,6 +36,8 @@ proc build(args, path: string) =
 
 proc run(args, path: string) =
   build args & " -r", path
+  if (NimMajor, NimMinor) > (1, 6):
+    build args & " --mm:refc -r", path
 
 task test, "Run all tests":
   for threads in ["--threads:off", "--threads:on"]:
