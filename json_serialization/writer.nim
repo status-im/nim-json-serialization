@@ -198,14 +198,13 @@ proc writeRecordValue*(w: var JsonWriter, value: auto)
   mixin enumInstanceSerializedFields, writeObjectField
   mixin flavorOmitsOptionalFields, shouldWriteObjectField
 
-  type
-    Writer = typeof w
-    Flavor = Writer.Flavor
-
   type RecordType = type value
   w.beginRecord RecordType
   value.enumInstanceSerializedFields(fieldName, fieldValue):
     when fieldValue isnot JsonVoid:
+      type
+        Writer = typeof w
+        Flavor = Writer.Flavor
       when flavorOmitsOptionalFields(Flavor):
         if shouldWriteObjectField(fieldValue):
           writeObjectField(w, value, fieldName, fieldValue)
