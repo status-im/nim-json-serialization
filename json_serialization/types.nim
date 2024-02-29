@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2019-2023 Status Research & Development GmbH
+# Copyright (c) 2019-2024 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -152,7 +152,7 @@ func `==`*(lhs, rhs: JsonValueRef): bool =
     lhs.numVal == rhs.numVal
   of JsonValueKind.Object:
     if lhs.objVal.len != rhs.objVal.len:
-      return true
+      return false
     for k, v in lhs.objVal:
       let rhsVal = rhs.objVal.getOrDefault(k, nil)
       if rhsVal.isNil:
