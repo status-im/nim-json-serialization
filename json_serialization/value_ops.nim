@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2023 Status Research & Development GmbH
+# Copyright (c) 2023-2024 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -78,5 +78,61 @@ proc delete*(obj: JsonValueRef, key: string) =
   if not obj.objVal.hasKey(key):
     raise newException(IndexDefect, "key not in object")
   obj.objVal.del(key)
+
+func compare*(lhs, rhs: JsonValueRef): bool
+
+func compareObject(lhs, rhs: JsonValueRef): bool =
+  ## assume lhs.len >= rhs.len
+  ## null field and no field are treated equals
+  for k, v in lhs.objVal:
+    let rhsVal = rhs.objVal.getOrDefault(k, nil)
+    if rhsVal.isNil:
+      if v.kind != JsonValueKind.Null:
+        return false
+      else:
+        continue
+    if not compare(rhsVal, v):
+      return false
+  true
+
+func compare*(lhs, rhs: JsonValueRef): bool =
+  ## The difference between `==` and `compare`
+  ## lies in the object comparison. Null field `compare`
+  ## to non existent field will return true.
+  ## On the other hand, `==` will return false.
+
+  if lhs.isNil and rhs.isNil:
+    return true
+
+  if not lhs.isNil and rhs.isNil:
+    return false
+
+  if lhs.isNil and not rhs.isNil:
+    return false
+
+  if lhs.kind != rhs.kind:
+    return false
+
+  case lhs.kind
+  of JsonValueKind.String:
+    lhs.strVal == rhs.strVal
+  of JsonValueKind.Number:
+    lhs.numVal == rhs.numVal
+  of JsonValueKind.Object:
+    if lhs.objVal.len >= rhs.objVal.len:
+      compareObject(lhs, rhs)
+    else:
+      compareObject(rhs, lhs)
+  of JsonValueKind.Array:
+    if lhs.arrayVal.len != rhs.arrayVal.len:
+      return false
+    for i, x in lhs.arrayVal:
+      if not compare(x, rhs.arrayVal[i]):
+        return false
+    true
+  of JsonValueKind.Bool:
+    lhs.boolVal == rhs.boolVal
+  of JsonValueKind.Null:
+    true
 
 {.pop.}
