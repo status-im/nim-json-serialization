@@ -114,6 +114,7 @@ template requireNextChar(lex: JsonLexer): char =
   lex.read()
 
 template enterNestedStructure(lex: JsonLexer, action: untyped) {.dirty.} =
+  bind errNestedDepthLimit
   inc lex.depthLimit
   if lex.conf.nestedDepthLimit > 0 and
      lex.depthLimit > lex.conf.nestedDepthLimit:
