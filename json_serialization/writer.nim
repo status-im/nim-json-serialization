@@ -353,7 +353,7 @@ proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
   elif value is (seq or array or openArray):
     w.writeArray(value)
 
-  elif value is (object or tuple):
+  elif value is (distinct or object or tuple):
     mixin flavorUsesAutomaticObjectSerialization
 
     type Flavor = JsonWriter.Flavor
@@ -364,7 +364,10 @@ proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
       const typeName = typetraits.name(type value)
       {.error: "Please override writeValue for the " & typeName & " type (or import the module where the override is provided)".}
 
-    writeRecordValue(w, value)
+    when value is distinct:
+      writeRecordValue(w, distinctBase(value, recursive = false))
+    else:
+      writeRecordValue(w, value)
   else:
     const typeName = typetraits.name(value.type)
     {.fatal: "Failed to convert to JSON an unsupported type: " & typeName.}
