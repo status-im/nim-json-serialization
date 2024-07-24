@@ -917,7 +917,7 @@ suite "toJson tests":
 
     try:
       let decoded = Json.decode(jsonContent, JsonNode)
-      check decoded["tasks"][0]["label"] == newJString("nim-beacon-chain build")
+      check decoded["tasks"][0]["label"] == newJString("nimbus-eth2 build")
     except SerializationError as err:
       checkpoint err.formatMsg("./cases/comments.json")
       check false
