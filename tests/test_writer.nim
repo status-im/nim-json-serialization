@@ -219,6 +219,9 @@ suite "Test writer":
         Apple  = "ApplE"
         JackFruit = "VVV"
 
+      ObjectWithEnumField = object
+        fruit: Fruit
+
     Json.flavorEnumRep(EnumAsString)
     let u = Json.encode(Banana)
     check u == "\"BaNaNa\""
@@ -226,7 +229,7 @@ suite "Test writer":
     let v = Json.encode(Apple)
     check v == "\"ApplE\""
 
-    let w = Json.encode(JAckFruit)
+    let w = Json.encode(JackFruit)
     check w == "\"VVV\""
 
     Json.flavorEnumRep(EnumAsStringifiedNumber)
@@ -236,3 +239,7 @@ suite "Test writer":
     Json.flavorEnumRep(EnumAsNumber)
     let z = Json.encode(Banana)
     check z == "0"
+
+    let obj = ObjectWithEnumField(fruit: Banana)
+    let zz = Json.encode(obj)
+    check zz == """{"fruit":0}"""
