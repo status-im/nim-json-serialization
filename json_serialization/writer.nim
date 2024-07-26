@@ -271,6 +271,21 @@ proc writeJsonValueRef*[F,T](w: var JsonWriter[F], value: JsonValueRef[T]) =
   of JsonValueKind.Null:
     append "null"
 
+template writeValue*(w: var JsonWriter, value: enum) =
+  # We extract this as a template because
+  # if we put it into `proc writeValue` below
+  # the Nim compiler generic cache mechanism
+  # will mess up with the compile time
+  # conditional selection
+  mixin writeValue
+  type Flavor = type(w).Flavor      
+  when Flavor.flavorEnumRep() == EnumAsString:
+    w.writeValue $value
+  elif Flavor.flavorEnumRep() == EnumAsNumber:
+    w.stream.writeText(value.int)
+  elif Flavor.flavorEnumRep() == EnumAsStringifiedNumber:
+    w.writeValue $value.int
+      
 proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
   mixin writeValue
 
@@ -332,10 +347,7 @@ proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
 
   elif value is bool:
     append if value: "true" else: "false"
-
-  elif value is enum:
-    w.writeValue $value
-
+      
   elif value is range:
     when low(typeof(value)) < 0:
       w.stream.writeText int64(value)

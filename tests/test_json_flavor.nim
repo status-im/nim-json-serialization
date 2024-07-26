@@ -132,3 +132,71 @@ suite "Test JsonFlavor":
     # field should not processed at all
     let y = NullyFields.decode(jsonTextWithNullFields, ListOnly)
     check y.list.string.len == 0
+
+  test "Enum value representation primitives":
+    when NullyFields.flavorEnumRep() == EnumAsString:
+      check true
+    elif NullyFields.flavorEnumRep() == EnumAsNumber:
+      check false
+    elif NullyFields.flavorEnumRep() == EnumAsStringifiedNumber:
+      check false
+
+    NullyFields.flavorEnumRep(EnumAsNumber)
+    when NullyFields.flavorEnumRep() == EnumAsString:
+      check false
+    elif NullyFields.flavorEnumRep() == EnumAsNumber:
+      check true
+    elif NullyFields.flavorEnumRep() == EnumAsStringifiedNumber:
+      check false
+
+    NullyFields.flavorEnumRep(EnumAsStringifiedNumber)
+    when NullyFields.flavorEnumRep() == EnumAsString:
+      check false
+    elif NullyFields.flavorEnumRep() == EnumAsNumber:
+      check false
+    elif NullyFields.flavorEnumRep() == EnumAsStringifiedNumber:
+      check true
+
+  test "Enum value representation of custom flavor":
+    type
+      ExoticFruits = enum
+        DragonFruit
+        SnakeFruit
+        StarFruit
+
+    NullyFields.flavorEnumRep(EnumAsNumber)
+    let u = NullyFields.encode(DragonFruit)
+    check u == "0"
+
+    NullyFields.flavorEnumRep(EnumAsString)
+    let v = NullyFields.encode(SnakeFruit)
+    check v == "\"SnakeFruit\""
+
+    NullyFields.flavorEnumRep(EnumAsStringifiedNumber)
+    let w = NullyFields.encode(StarFruit)
+    check w == "\"2\""
+
+  test "EnumAsString of custom flavor":
+    type
+      Fruit = enum
+        Banana = "BaNaNa"
+        Apple  = "ApplE"
+        JackFruit = "VVV"
+
+    NullyFields.flavorEnumRep(EnumAsString)
+    let u = NullyFields.encode(Banana)
+    check u == "\"BaNaNa\""
+
+    let v = NullyFields.encode(Apple)
+    check v == "\"ApplE\""
+
+    let w = NullyFields.encode(JackFruit)
+    check w == "\"VVV\""
+
+    NullyFields.flavorEnumRep(EnumAsStringifiedNumber)
+    let x = NullyFields.encode(JackFruit)
+    check x == "\"2\""
+    
+    NullyFields.flavorEnumRep(EnumAsNumber)
+    let z = NullyFields.encode(Banana)
+    check z == "0"
