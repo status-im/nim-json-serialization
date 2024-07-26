@@ -23,7 +23,7 @@ type
     a: Opt[int]
     b: Option[string]
     c: int
-
+    
 createJsonFlavor YourJson,
   omitOptionalFields = false
 
@@ -32,6 +32,20 @@ createJsonFlavor MyJson,
 
 ObjectWithOptionalFields.useDefaultSerializationIn YourJson
 ObjectWithOptionalFields.useDefaultSerializationIn MyJson
+
+type
+  FruitX = enum
+    BananaX = "BaNaNa"
+    AppleX  = "ApplE"
+    GrapeX  = "VVV"
+
+  Drawer = enum
+    One
+    Two
+
+FruitX.configureJsonSerialization(EnumAsString)
+Json.configureJsonSerialization(Drawer, EnumAsNumber)
+MyJson.configureJsonSerialization(Drawer, EnumAsString)
 
 proc writeValue*(w: var JsonWriter, val: OWOF)
                   {.gcsafe, raises: [IOError].} =
@@ -243,3 +257,19 @@ suite "Test writer":
     let obj = ObjectWithEnumField(fruit: Banana)
     let zz = Json.encode(obj)
     check zz == """{"fruit":0}"""
+
+  test "Individual enum configuration":
+    Json.flavorEnumRep(EnumAsNumber)
+    # Although the flavor config is EnumAsNumber
+    # FruitX is configured as EnumAsAstring
+    let z = Json.encode(BananaX)
+    check z == "\"BaNaNa\""
+
+    # configuration: Json.configureJsonSerialization(Drawer, EnumAsNumber)
+    let u = Json.encode(Two)
+    check u == "1"
+    
+    # configuration: MyJson.configureJsonSerialization(Drawer, EnumAsString)
+    let v = MyJson.encode(One)
+    check v == "\"One\""
+    
