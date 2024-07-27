@@ -261,6 +261,65 @@ writeNumber[F,T](w: var JsonWriter[F], value: JsonNumber[T])
 writeJsonValueRef[F,T](w: var JsonWriter[F], value: JsonValueRef[T])
 ```
 
+## Enums
+
+```Nim
+type
+  Fruit = enum
+    Apple = "Apple"
+    Banana = "Banana"
+    
+  Drawer = enum
+    One
+    Two
+    
+  Number = enum
+    Three = 3
+    Four = 4
+    
+  Mixed = enum
+    Six = 6
+    Seven = "Seven"
+```
+
+nim-json-serialization automatically detect which representation an enum should be parsed.
+The detection occurs when parse json literal and from the enum declaration itself.
+'Fruit' expect string literal. 'Drawer' or 'Number' expect numeric literal.
+'Mixed' is disallowed. If the json literal does not match the expected enum style,
+exception will be raised. But you can configure individual enum type with:
+
+```Nim
+configureJsonDeserialization(
+    T: type[enum], allowNumericRepr: static[bool] = false,
+    stringNormalizer: static[proc(s: string): string] = strictNormalize)
+    
+# example:
+Mixed.configureJsonDeserialization(allowNumericRepr = true) # only at top level
+```
+
+When encode an enum, user is also given flexibility to configure at Flavor level
+or for individual enum type.
+
+```Nim
+type
+  EnumRepresentation* = enum
+    EnumAsString
+    EnumAsNumber
+    EnumAsStringifiedNumber
+
+# examples:
+
+# Flavor level
+Json.flavorEnumRep(EnumAsString)   # default flavor, can be called from non top level
+Flavor.flavorEnumRep(EnumAsNumber) # custom flavor, can be called from non top level
+
+# individual enum type no matter what flavor
+Fruit.configureJsonSerialization(EnumAsNumber) # only at top level
+
+# individual enum type of specific flavor
+MyJson.flavorEnumRep(Drawer, EnumAsString) # only at top level
+```
+
 ## License
 
 Licensed and distributed under either of

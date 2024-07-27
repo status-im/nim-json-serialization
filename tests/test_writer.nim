@@ -23,7 +23,7 @@ type
     a: Opt[int]
     b: Option[string]
     c: int
-
+    
 createJsonFlavor YourJson,
   omitOptionalFields = false
 
@@ -32,6 +32,20 @@ createJsonFlavor MyJson,
 
 ObjectWithOptionalFields.useDefaultSerializationIn YourJson
 ObjectWithOptionalFields.useDefaultSerializationIn MyJson
+
+type
+  FruitX = enum
+    BananaX = "BaNaNa"
+    AppleX  = "ApplE"
+    GrapeX  = "VVV"
+
+  Drawer = enum
+    One
+    Two
+
+FruitX.configureJsonSerialization(EnumAsString)
+Json.configureJsonSerialization(Drawer, EnumAsNumber)
+MyJson.configureJsonSerialization(Drawer, EnumAsString)
 
 proc writeValue*(w: var JsonWriter, val: OWOF)
                   {.gcsafe, raises: [IOError].} =
@@ -168,3 +182,94 @@ suite "Test writer":
     check uu.string == """{"a":123,"b":"nano","c":456}"""
     let vv = YourJson.encode(y)
     check vv.string == """{"a":null,"b":null,"c":999}"""
+
+  test "Enum value representation primitives":
+    when DefaultFlavor.flavorEnumRep() == EnumAsString:
+      check true
+    elif DefaultFlavor.flavorEnumRep() == EnumAsNumber:
+      check false
+    elif DefaultFlavor.flavorEnumRep() == EnumAsStringifiedNumber:
+      check false
+
+    DefaultFlavor.flavorEnumRep(EnumAsNumber)
+    when DefaultFlavor.flavorEnumRep() == EnumAsString:
+      check false
+    elif DefaultFlavor.flavorEnumRep() == EnumAsNumber:
+      check true
+    elif DefaultFlavor.flavorEnumRep() == EnumAsStringifiedNumber:
+      check false
+
+    DefaultFlavor.flavorEnumRep(EnumAsStringifiedNumber)
+    when DefaultFlavor.flavorEnumRep() == EnumAsString:
+      check false
+    elif DefaultFlavor.flavorEnumRep() == EnumAsNumber:
+      check false
+    elif DefaultFlavor.flavorEnumRep() == EnumAsStringifiedNumber:
+      check true
+
+  test "Enum value representation of DefaultFlavor":
+    type
+      ExoticFruits = enum
+        DragonFruit
+        SnakeFruit
+        StarFruit
+
+    DefaultFlavor.flavorEnumRep(EnumAsNumber)
+    let u = Json.encode(DragonFruit)
+    check u == "0"
+
+    DefaultFlavor.flavorEnumRep(EnumAsString)
+    let v = Json.encode(SnakeFruit)
+    check v == "\"SnakeFruit\""
+
+    DefaultFlavor.flavorEnumRep(EnumAsStringifiedNumber)
+    let w = Json.encode(StarFruit)
+    check w == "\"2\""
+
+  test "EnumAsString of DefaultFlavor/Json":
+    type
+      Fruit = enum
+        Banana = "BaNaNa"
+        Apple  = "ApplE"
+        JackFruit = "VVV"
+
+      ObjectWithEnumField = object
+        fruit: Fruit
+
+    Json.flavorEnumRep(EnumAsString)
+    let u = Json.encode(Banana)
+    check u == "\"BaNaNa\""
+
+    let v = Json.encode(Apple)
+    check v == "\"ApplE\""
+
+    let w = Json.encode(JackFruit)
+    check w == "\"VVV\""
+
+    Json.flavorEnumRep(EnumAsStringifiedNumber)
+    let x = Json.encode(JackFruit)
+    check x == "\"2\""
+
+    Json.flavorEnumRep(EnumAsNumber)
+    let z = Json.encode(Banana)
+    check z == "0"
+
+    let obj = ObjectWithEnumField(fruit: Banana)
+    let zz = Json.encode(obj)
+    check zz == """{"fruit":0}"""
+
+  test "Individual enum configuration":
+    Json.flavorEnumRep(EnumAsNumber)
+    # Although the flavor config is EnumAsNumber
+    # FruitX is configured as EnumAsAstring
+    let z = Json.encode(BananaX)
+    check z == "\"BaNaNa\""
+
+    # configuration: Json.configureJsonSerialization(Drawer, EnumAsNumber)
+    let u = Json.encode(Two)
+    check u == "1"
+    
+    # configuration: MyJson.configureJsonSerialization(Drawer, EnumAsString)
+    let v = MyJson.encode(One)
+    check v == "\"One\""
+    

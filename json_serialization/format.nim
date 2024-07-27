@@ -20,11 +20,30 @@ template supports*(_: type Json, T: type): bool =
   # The JSON format should support every type
   true
 
+type
+  EnumRepresentation* = enum
+    EnumAsString
+    EnumAsNumber
+    EnumAsStringifiedNumber
+
 template flavorUsesAutomaticObjectSerialization*(T: type DefaultFlavor): bool = true
 template flavorOmitsOptionalFields*(T: type DefaultFlavor): bool = true
 template flavorRequiresAllFields*(T: type DefaultFlavor): bool = false
 template flavorAllowsUnknownFields*(T: type DefaultFlavor): bool = false
 template flavorSkipNullFields*(T: type DefaultFlavor): bool = false
+
+var DefaultFlavorEnumRep {.compileTime.} = EnumAsString
+template flavorEnumRep*(T: type DefaultFlavor): EnumRepresentation =
+  DefaultFlavorEnumRep
+
+template flavorEnumRep*(T: type DefaultFlavor, rep: static[EnumRepresentation]) =
+  static:
+    DefaultFlavorEnumRep = rep
+
+# If user choose to use `Json` instead of `DefaultFlavor`, it still goes to `DefaultFlavor`
+template flavorEnumRep*(T: type Json, rep: static[EnumRepresentation]) =
+  static:
+    DefaultFlavorEnumRep = rep
 
 # We create overloads of these traits to force the mixin treatment of the symbols
 type DummyFlavor* = object
@@ -53,3 +72,11 @@ template createJsonFlavor*(FlavorName: untyped,
   template flavorRequiresAllFields*(T: type FlavorName): bool = requireAllFields
   template flavorAllowsUnknownFields*(T: type FlavorName): bool = allowUnknownFields
   template flavorSkipNullFields*(T: type FlavorName): bool = skipNullFields
+
+  var `FlavorName EnumRep` {.compileTime.} = EnumAsString
+  template flavorEnumRep*(T: type FlavorName): EnumRepresentation =
+    `FlavorName EnumRep`
+
+  template flavorEnumRep*(T: type FlavorName, rep: static[EnumRepresentation]) =
+    static:
+      `FlavorName EnumRep` = rep

@@ -271,6 +271,24 @@ proc writeJsonValueRef*[F,T](w: var JsonWriter[F], value: JsonValueRef[T]) =
   of JsonValueKind.Null:
     append "null"
 
+template writeEnumImpl(w: var JsonWriter, value, enumRep) =
+  mixin writeValue
+  when enumRep == EnumAsString:
+    w.writeValue $value
+  elif enumRep == EnumAsNumber:
+    w.stream.writeText(value.int)
+  elif enumRep == EnumAsStringifiedNumber:
+    w.writeValue $value.int
+
+template writeValue*(w: var JsonWriter, value: enum) =
+  # We extract this as a template because
+  # if we put it into `proc writeValue` below
+  # the Nim compiler generic cache mechanism
+  # will mess up with the compile time
+  # conditional selection
+  type Flavor = type(w).Flavor
+  writeEnumImpl(w, value, Flavor.flavorEnumRep())
+
 proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
   mixin writeValue
 
@@ -333,9 +351,6 @@ proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
   elif value is bool:
     append if value: "true" else: "false"
 
-  elif value is enum:
-    w.writeValue $value
-
   elif value is range:
     when low(typeof(value)) < 0:
       w.stream.writeText int64(value)
@@ -384,3 +399,21 @@ proc toJson*(v: auto, pretty = false, typeAnnotations = false): string =
 template serializesAsTextInJson*(T: type[enum]) =
   template writeValue*(w: var JsonWriter, val: T) =
     w.writeValue $val
+
+template configureJsonSerialization*(
+    T: type[enum], enumRep: static[EnumRepresentation]) =
+  proc writeValue*(w: var JsonWriter,
+                   value: T) {.gcsafe, raises: [IOError].} =
+    writeEnumImpl(w, value, enumRep)
+
+template configureJsonSerialization*(Flavor: type,
+                        T: type[enum],
+                        enumRep: static[EnumRepresentation]) =
+  when Flavor is Json:
+    proc writeValue*(w: var JsonWriter[DefaultFlavor],
+                     value: T) {.gcsafe, raises: [IOError].} =
+      writeEnumImpl(w, value, enumRep)
+  else:
+    proc writeValue*(w: var JsonWriter[Flavor],
+                     value: T) {.gcsafe, raises: [IOError].} =
+      writeEnumImpl(w, value, enumRep)
