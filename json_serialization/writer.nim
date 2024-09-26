@@ -365,8 +365,12 @@ proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
     #      to avoid the allocation here:
     append $value
 
-  elif value is (seq or array or openArray):
-    w.writeArray(value)
+  elif value is (seq or array or openArray) or
+      (value is distinct and distinctBase(value) is (seq or array or openArray)):
+    when value is distinct:
+      w.writeArray(distinctBase value)
+    else:
+      w.writeArray(value)
 
   elif value is (distinct or object or tuple):
     mixin flavorUsesAutomaticObjectSerialization
