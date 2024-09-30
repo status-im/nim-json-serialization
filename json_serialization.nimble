@@ -17,7 +17,7 @@ license       = "Apache License 2.0"
 skipDirs      = @["tests", "fuzzer"]
 
 requires "nim >= 1.6.0",
-         "serialization",
+         "serialization#no-threadvar",
          "stew"
 
 let nimc = getEnv("NIMC", "nim") # Which nim compiler to use

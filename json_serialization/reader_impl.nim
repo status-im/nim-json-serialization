@@ -189,10 +189,8 @@ proc readRecordValue*[T](r: var JsonReader, value: var T)
   const someCode = T.totalSerializedFields > 0
 
   when someCode:
-    let
-      fieldsTable = T.fieldReadersTable(ReaderType)
-
     const
+      fieldsTable = T.fieldReadersTable(ReaderType)
       expectedFields = T.expectedFieldsBitmask
 
     var
@@ -207,13 +205,13 @@ proc readRecordValue*[T](r: var JsonReader, value: var T)
         mostLikelyNextField += 1
         discard key
       else:
-        let fieldIdx = findFieldIdx(fieldsTable[],
+        let fieldIdx = findFieldIdx(fieldsTable,
                                     key,
                                     mostLikelyNextField)
   do:
     when someCode:
       if fieldIdx != -1:
-        let reader = fieldsTable[][fieldIdx].reader
+        let reader = fieldsTable[fieldIdx].reader
         reader(value, r)
         encounteredFields.setBitInArray(fieldIdx)
       elif r.allowUnknownFields:
