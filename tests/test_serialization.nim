@@ -678,14 +678,14 @@ suite "toJson tests":
       """
 
   test "max unsigned value":
-    var uintVal = not BiggestUint(0)
+    var uintVal = not BiggestUInt(0)
     let jsonValue = Json.encode(uintVal)
     check:
       jsonValue == "18446744073709551615"
-      Json.decode(jsonValue, BiggestUint) == uintVal
+      Json.decode(jsonValue, BiggestUInt) == uintVal
 
     expect JsonReaderError:
-      discard Json.decode(jsonValue, BiggestUint, flags = {JsonReaderFlag.portableInt})
+      discard Json.decode(jsonValue, BiggestUInt, flags = {JsonReaderFlag.portableInt})
 
   test "max signed value":
     let intVal = BiggestInt.high
