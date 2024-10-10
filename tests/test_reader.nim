@@ -144,6 +144,7 @@ suite "JsonReader basic test":
       var r = toReader jsonText3
       var valOrig: MasterReader
       r.readValue(valOrig)
+      # workaround for https://github.com/nim-lang/Nim/issues/24274
       let val = valOrig
       check:
         val.one == JsonString("[1,true,null]")
