@@ -60,7 +60,7 @@ type
 
   IntOverflowError* = object of JsonReaderError
     isNegative: bool
-    absIntVal: BiggestUint
+    absIntVal: BiggestUInt
 
 Json.setReader JsonReader
 
@@ -129,7 +129,7 @@ template raiseUnexpectedValue*(r: JsonReader, msg: string) =
   raiseUnexpectedValue(r.lex, msg)
 
 func raiseIntOverflow*(
-    lex: JsonLexer, absIntVal: BiggestUint, isNegative: bool)
+    lex: JsonLexer, absIntVal: BiggestUInt, isNegative: bool)
     {.noreturn, raises: [JsonReaderError].} =
   var ex = new IntOverflowError
   ex.assignLineNumber(lex)
@@ -137,7 +137,7 @@ func raiseIntOverflow*(
   ex.isNegative = isNegative
   raise ex
 
-template raiseIntOverflow*(r: JsonReader, absIntVal: BiggestUint, isNegative: bool) =
+template raiseIntOverflow*(r: JsonReader, absIntVal: BiggestUInt, isNegative: bool) =
   raiseIntOverflow(r.lex, absIntVal, isNegative)
 
 func raiseUnexpectedField*(
