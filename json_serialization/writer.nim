@@ -17,7 +17,7 @@ export
   outputs, format, types, JsonString, DefaultFlavor
 
 type
-  JsonWriterState = enum
+  JsonWriterState* = enum
     RecordExpected
     RecordStarted
     AfterField
@@ -27,7 +27,7 @@ type
     hasTypeAnnotations: bool
     hasPrettyOutput*: bool # read-only
     nestingLevel*: int     # read-only
-    state: JsonWriterState
+    state*: JsonWriterState
 
 Json.setWriter JsonWriter,
                PreferredOutput = string
