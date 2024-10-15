@@ -23,7 +23,7 @@ type
     a: Opt[int]
     b: Option[string]
     c: int
-    
+
 createJsonFlavor YourJson,
   omitOptionalFields = false
 
@@ -149,16 +149,16 @@ suite "Test writer":
     )
 
     let u = YourJson.encode(x)
-    check u.string == """{"a":123,"b":"nano","c":456}"""
+    check u == """{"a":123,"b":"nano","c":456}"""
 
     let v = YourJson.encode(y)
-    check v.string == """{"a":null,"b":null,"c":999}"""
+    check v == """{"a":null,"b":null,"c":999}"""
 
     let xx = MyJson.encode(x)
-    check xx.string == """{"a":123,"b":"nano","c":456}"""
+    check xx == """{"a":123,"b":"nano","c":456}"""
 
     let yy = MyJson.encode(y)
-    check yy.string == """{"c":999}"""
+    check yy == """{"c":999}"""
 
   test "writeField with object with optional fields":
     let x = OWOF(
@@ -174,14 +174,14 @@ suite "Test writer":
     )
 
     let xx = MyJson.encode(x)
-    check xx.string == """{"a":123,"b":"nano","c":456}"""
+    check xx == """{"a":123,"b":"nano","c":456}"""
     let yy = MyJson.encode(y)
-    check yy.string == """{"c":999}"""
+    check yy == """{"c":999}"""
 
     let uu = YourJson.encode(x)
-    check uu.string == """{"a":123,"b":"nano","c":456}"""
+    check uu == """{"a":123,"b":"nano","c":456}"""
     let vv = YourJson.encode(y)
-    check vv.string == """{"a":null,"b":null,"c":999}"""
+    check vv == """{"a":null,"b":null,"c":999}"""
 
   test "Enum value representation primitives":
     when DefaultFlavor.flavorEnumRep() == EnumAsString:
@@ -268,8 +268,7 @@ suite "Test writer":
     # configuration: Json.configureJsonSerialization(Drawer, EnumAsNumber)
     let u = Json.encode(Two)
     check u == "1"
-    
+
     # configuration: MyJson.configureJsonSerialization(Drawer, EnumAsString)
     let v = MyJson.encode(One)
     check v == "\"One\""
-    
