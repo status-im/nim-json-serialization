@@ -211,3 +211,12 @@ suite "JsonReader basic test":
 
     var z = toReaderNullFields("""{"something":null,"bool":999,"string":100}""")
     check execReadObject(z) == 2
+
+  test "readValue of array":
+    var r = toReader "[false, true, false]"
+    check r.readValue(array[3, bool]) == [false, true, false]
+
+  test "readValue of array error":
+    var r = toReader "[false, true, false]"
+    expect JsonReaderError:
+      discard r.readValue(array[2, bool])
