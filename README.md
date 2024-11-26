@@ -14,10 +14,10 @@ framework. The following is available but not an exhaustive list of features:
   - Decode into Nim data types efficiently without an intermediate token.
   - Able to parse full spec of JSON including the notorious JSON number.
   - Support stdlib/JsonNode out of the box.
-  - While stdlib/JsonNode does not support the full spec of the Json number, we offer an alternative `JsonValueRef`.
-  - Skipping Json value is an efficient process, no token is generated at all and at the same time, the grammar is checked.
+  - While stdlib/JsonNode does not support the full spec of the JSON number, we offer an alternative `JsonValueRef`.
+  - Skipping JSON value is an efficient process, no token is generated at all and at the same time, the grammar is checked.
     - Skipping is also free from custom serializer interference.
-  - An entire Json value can be parsed into a valid Json document string. This string document can be parsed again without losing any information.
+  - An entire JSON value can be parsed into a valid JSON document string. This string document can be parsed again without losing any information.
   - Custom serialization is easy and safe to implement with the help of many built-in parsers.
   - Nonstandard features are put behind flags. You can choose which features to switch on or off.
   - Because the intended usage of this library will be in a security-demanding application, we make sure malicious inputs will not crash
@@ -41,8 +41,8 @@ But you can access them using the flags:
   - **relaxedEscape[=off]**: only '0x00'..'0x1F' can be prepended by escape char `\\`, turn this on and you can escape any char.
   - **portableInt[=off]**: set the limit of integer to `-2**53 + 1` and `+2**53 - 1`.
   - **trailingComma[=on]**: allow the presence of a trailing comma after the last object member or array element.
-  - **allowComments[=on]**: JSOn standard doesn't mention about comments. Turn this on to parse both C style comments of `//..EOL` and `/* .. */`.
-  - **leadingFraction[=on]**: something like `.123` is not a valid JSON number, but its widespread usage sometimes creeps into Json documents.
+  - **allowComments[=on]**: JSON standard doesn't mention about comments. Turn this on to parse both C style comments of `//..EOL` and `/* .. */`.
+  - **leadingFraction[=on]**: something like `.123` is not a valid JSON number, but its widespread usage sometimes creeps into JSON documents.
   - **integerPositiveSign[=on]**: `+123` is also not a valid JSON number, but since `-123` is a valid JSON number, why not parse it safely?
 
 ## Safety features
@@ -58,15 +58,15 @@ You can modify these default configurations to suit your needs.
 
 ## Special types
 
-  - **JsonString**: Use this type if you want to parse a Json value to a valid Json document contained in a string.
-  - **JsonVoid**: Use this type to skip a valid Json value.
-  - **JsonNumber**: Use this to parse a valid Json number including the fraction and exponent part.
+  - **JsonString**: Use this type if you want to parse a JSON value to a valid JSON document contained in a string.
+  - **JsonVoid**: Use this type to skip a valid JSON value.
+  - **JsonNumber**: Use this to parse a valid JSON number including the fraction and exponent part.
     - Please note that this type is a generic, it support `uint64` and `string` as generic param.
     - The generic param will define the integer and exponent part as `uint64` or `string`.
     - If the generic param is `uint64`, overflow can happen, or max digit limit will apply.
     - If the generic param is `string`, the max digit limit will apply.
     - The fraction part is always a string to keep the leading zero of the fractional number.
-  - **JsonValueRef**: Use this type to parse any valid Json value into something like stdlib/JsonNode.
+  - **JsonValueRef**: Use this type to parse any valid JSON value into something like stdlib/JsonNode.
     - `JsonValueRef` is using `JsonNumber` instead of `int` or `float` like stdlib/JsonNode.
 
 ## Flavor
@@ -268,22 +268,22 @@ type
   Fruit = enum
     Apple = "Apple"
     Banana = "Banana"
-    
+
   Drawer = enum
     One
     Two
-    
+
   Number = enum
     Three = 3
     Four = 4
-    
+
   Mixed = enum
     Six = 6
     Seven = "Seven"
 ```
 
 nim-json-serialization automatically detect which representation an enum should be parsed.
-The detection occurs when parse json literal and from the enum declaration itself.
+The detection occurs when parse JSON literal and from the enum declaration itself.
 'Fruit' expect string literal. 'Drawer' or 'Number' expect numeric literal.
 'Mixed' is disallowed. If the json literal does not match the expected enum style,
 exception will be raised. But you can configure individual enum type with:
@@ -292,7 +292,7 @@ exception will be raised. But you can configure individual enum type with:
 configureJsonDeserialization(
     T: type[enum], allowNumericRepr: static[bool] = false,
     stringNormalizer: static[proc(s: string): string] = strictNormalize)
-    
+
 # example:
 Mixed.configureJsonDeserialization(allowNumericRepr = true) # only at top level
 ```
