@@ -8,7 +8,7 @@
 # those terms.
 
 import
-  stew/results, ../../json_serialization/[reader, writer, lexer]
+  pkg/results, ../../json_serialization/[reader, writer, lexer]
 
 export
   results

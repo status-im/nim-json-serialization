@@ -312,11 +312,11 @@ proc readValue*[T](r: var JsonReader, value: var T)
   elif value is array:
     type IDX = typeof low(value)
     r.parseArray(idx):
-      let i = IDX(idx + low(value).int)
-      if i <= high(value):
-        # TODO: dont's ask. this makes the code compile
-        if false: value[i] = value[i]
+      if idx < value.len:
+        let i = IDX(idx + low(value).int)
         readValue(r, value[i])
+      else:
+        r.raiseUnexpectedValue("Too many items for " & $(typeof(value)))
 
   elif value is (object or tuple):
     mixin flavorUsesAutomaticObjectSerialization
