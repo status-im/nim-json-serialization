@@ -239,8 +239,10 @@ proc writeNumber*[F,T](w: var JsonWriter[F], value: JsonNumber[T]) =
 
   writeExp:
     append 'e'
-    if value.sign == JsonSign.Neg:
+    if value.expSign == JsonSign.Neg:
       append '-'
+    else:
+      append '+'
     when T is uint64:
       w.stream.writeText value.exponent
     else:
