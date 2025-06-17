@@ -50,7 +50,6 @@ type
     allowComments       # on
     leadingFraction     # on
     integerPositiveSign # on
-    legacyJsonNodeNumber
 
   JsonReaderFlags* = set[JsonReaderFlag]
 
