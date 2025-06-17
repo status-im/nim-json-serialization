@@ -13,3 +13,5 @@ jobs:
       test-command: |
         env NIMLANG=c nimble test
         env NIMLANG=cpp nimble test
+
+        env nimble examples

@@ -5,320 +5,60 @@
 ![Stability: experimental](https://img.shields.io/badge/stability-experimental-orange.svg)
 ![Github action](https://github.com/status-im/nim-json-serialization/workflows/CI/badge.svg)
 
-Flexible JSON serialization does not rely on run-time type information.
+## Introduction
 
-## Overview
-nim-json-serialization offers rich features on top of [nim-serialization](https://github.com/status-im/nim-serialization)
-framework. The following is available but not an exhaustive list of features:
+<!-- ANCHOR: Features -->
 
-  - Decode into Nim data types efficiently without an intermediate token.
-  - Able to parse full spec of JSON including the notorious JSON number.
-  - Support stdlib/JsonNode out of the box.
-  - While stdlib/JsonNode does not support the full spec of the JSON number, we offer an alternative `JsonValueRef`.
-  - Skipping JSON value is an efficient process, no token is generated at all and at the same time, the grammar is checked.
-    - Skipping is also free from custom serializer interference.
-  - An entire JSON value can be parsed into a valid JSON document string. This string document can be parsed again without losing any information.
-  - Custom serialization is easy and safe to implement with the help of many built-in parsers.
-  - Nonstandard features are put behind flags. You can choose which features to switch on or off.
-  - Because the intended usage of this library will be in a security-demanding application, we make sure malicious inputs will not crash
-    this library through fuzz tests.
-  - The user also can tweak certain limits of the lexer/parser behavior using the configuration object.
-  - `createJsonFlavor` is a powerful way to prevent cross contamination between different subsystem using different custom serializar on the same type.
+`nim-json-serialization` is a library in the [nim-serialization](https://github.com/status-im/nim-serialization) family for turning Nim objects into JSON documents and back. Features include:
 
-## Spec compliance
-nim-json-serialization implements [RFC8259](https://datatracker.ietf.org/doc/html/rfc8259)
-JSON spec and pass these test suites:
+- Efficient coding of JSON documents directly to and from Nim data types
+  - Full type-based customization of both parsing and formatting
+  - Flavors for defining multiple JSON serialization styles per Nim type
+  - Efficient skipping of tags and values for partial JSON parsing
+- Flexibility in mixing type-based and dynamic JSON access
+  - Structured `JsonValueRef` node type for DOM-style access to parsed document
+  - Flat `JsonString` type for passing nested JSON documents between abstraction layers
+  - Seamless interoperability with [`std/json`](https://nim-lang.org/docs/json.html) and `JsonNode`
+- Full [RFC8259 spec compliance](https://datatracker.ietf.org/doc/html/rfc8259) including the notorious JSON number
+  - Passes [JSONTestSuite](https://github.com/nst/JSONTestSuite)
+  - Customizable parser strictness including support for non-standard extensions
+- Well-defined handling of malformed / malicious inputs with configurable parsing limits
+  - Fuzzing and comprehensive manual test coverage
 
-  - [JSONTestSuite](https://github.com/nst/JSONTestSuite)
+<!-- ANCHOR_END: Features -->
 
-## Switchable features
-Many of these switchable features are widely used features in various projects but are not standard JSON features.
-But you can access them using the flags:
-
-  - **allowUnknownFields[=off]**: enable unknown fields to be skipped instead of throwing an error.
-  - **requireAllFields[=off]**: if one of the required fields is missing, the serializer will throw an error.
-  - **escapeHex[=off]**: JSON doesn't support `\xHH` escape sequence, but it is a common thing in many languages.
-  - **relaxedEscape[=off]**: only '0x00'..'0x1F' can be prepended by escape char `\\`, turn this on and you can escape any char.
-  - **portableInt[=off]**: set the limit of integer to `-2**53 + 1` and `+2**53 - 1`.
-  - **trailingComma[=on]**: allow the presence of a trailing comma after the last object member or array element.
-  - **allowComments[=on]**: JSON standard doesn't mention about comments. Turn this on to parse both C style comments of `//..EOL` and `/* .. */`.
-  - **leadingFraction[=on]**: something like `.123` is not a valid JSON number, but its widespread usage sometimes creeps into JSON documents.
-  - **integerPositiveSign[=on]**: `+123` is also not a valid JSON number, but since `-123` is a valid JSON number, why not parse it safely?
-
-## Safety features
-You can modify these default configurations to suit your needs.
-
-  - **nestedDepthLimit: 512**: maximum depth of the nested structure, they are a combination of objects and arrays depth(0=disable).
-  - **arrayElementsLimit: 0**: maximum number of allowed array elements(0=disable).
-  - **objectMembersLimit: 0**: maximum number of key-value pairs in an object(0=disable).
-  - **integerDigitsLimit: 128**: limit the maximum digits of the integer part of JSON number.
-  - **fractionDigitsLimit: 128**: limit the maximum digits of faction part of JSON number.
-  - **exponentDigitsLimit: 32**: limit the maximum digits of the exponent part of JSON number.
-  - **stringLengthLimit: 0**: limit the maximum bytes of string(0=disable).
-
-## Special types
-
-  - **JsonString**: Use this type if you want to parse a JSON value to a valid JSON document contained in a string.
-  - **JsonVoid**: Use this type to skip a valid JSON value.
-  - **JsonNumber**: Use this to parse a valid JSON number including the fraction and exponent part.
-    - Please note that this type is a generic, it support `uint64` and `string` as generic param.
-    - The generic param will define the integer and exponent part as `uint64` or `string`.
-    - If the generic param is `uint64`, overflow can happen, or max digit limit will apply.
-    - If the generic param is `string`, the max digit limit will apply.
-    - The fraction part is always a string to keep the leading zero of the fractional number.
-  - **JsonValueRef**: Use this type to parse any valid JSON value into something like stdlib/JsonNode.
-    - `JsonValueRef` is using `JsonNumber` instead of `int` or `float` like stdlib/JsonNode.
-
-## Flavor
-
-While flags and limits are runtime configuration, flavor is a powerful compile time mechanism to prevent
-cross contamination between different custom serializer operated the same type. For example,
-`json-rpc` subsystem dan `json-rest` subsystem maybe have different custom serializer for the same `UInt256`.
-
-Json-Flavor will make sure, the compiler picks the right serializer for the right subsystem.
-You can use `useDefaultSerializationIn` to add serializers of a flavor to a specific type.
-
-```Nim
-# These are the parameters you can pass to `createJsonFlavor` to create a new flavor.
-
-  FlavorName: untyped
-  mimeTypeValue = "application/json"
-  automaticObjectSerialization = false
-  requireAllFields = true
-  omitOptionalFields = true
-  allowUnknownFields = true
-  skipNullFields = false
-```
-
-```Nim
-type
-  OptionalFields = object
-    one: Opt[string]
-    two: Option[int]
-
-createJsonFlavor OptJson
-OptionalFields.useDefaultSerializationIn OptJson
-```
-
-`omitOptionalFields` is used by the Writer to ignore fields with null value.
-`skipNullFields` is used by the Reader to ignore fields with null value.
-
-## Decoder example
-```nim
-  type
-    NimServer = object
-      name: string
-      port: int
-
-    MixedServer = object
-      name: JsonValueRef
-      port: int
-
-    StringServer = object
-      name: JsonString
-      port: JsonString
-
-  # decode into native Nim
-  var nim_native = Json.decode(rawJson, NimServer)
-
-  # decode into mixed Nim + JsonValueRef
-  var nim_mixed = Json.decode(rawJson, MixedServer)
-
-  # decode any value into string
-  var nim_string = Json.decode(rawJson, StringServer)
-
-  # decode any valid JSON
-  var json_value = Json.decode(rawJson, JsonValueRef)
-```
-
-## Load and save
-```Nim
-  var server = Json.loadFile("filename.json", Server)
-  var server_string = Json.loadFile("filename.json", JsonString)
-
-  Json.saveFile("filename.json", server)
-```
-
-## Objects
-Decoding an object can be achieved via the `parseObject` template.
-To parse the value, you can use one of the helper functions or use `readValue`.
-`readObject` and `readObjectFields` iterators are also handy when creating a custom object parser.
-
-```Nim
-proc readValue*(r: var JsonReader, table: var Table[string, int]) =
-  parseObject(r, key):
-    table[key] = r.parseInt(int)
-```
-
-## Sets and list-like
-Similar to `Object`, sets and list or array-like data structures can be parsed using
-`parseArray` template. It comes in two variations, indexed and non-indexed.
-
-Built-in `readValue` for regular `seq` and `array` is implemented for you.
-No built-in `readValue` for `set` or `set-like` is provided, you must overload it yourself depending on your need.
+## Getting started
 
 ```nim
-type
-  HoldArray = object
-    data: array[3, int]
-
-  HoldSeq = object
-    data: seq[int]
-
-  WelderFlag = enum
-    TIG
-    MIG
-    MMA
-
-  Welder = object
-    flags: set[WelderFlag]
-
-proc readValue*(r: var JsonReader, value: var HoldArray) =
-  # parseArray with index, `i` can be any valid identifier
-  r.parseArray(i):
-    value.data[i] = r.parseInt(int)
-
-proc readValue*(r: var JsonReader, value: var HoldSeq) =
-  # parseArray without index
-  r.parseArray:
-    let lastPos = value.data.len
-    value.data.setLen(lastPos + 1)
-    readValue(r, value.data[lastPos])
-
-proc readValue*(r: var JsonReader, value: var Welder) =
-  # populating set also okay
-  r.parseArray:
-    value.flags.incl r.parseInt(int).WelderFlag
+requires "json_serialization"
 ```
 
-## Custom iterators
-Using these custom iterators, you can have access to sub-token elements.
+Create a type and use it to encode and decode JSON:
 
-```Nim
-customIntValueIt(r: var JsonReader; body: untyped)
-customNumberValueIt(r: var JsonReader; body: untyped)
-customStringValueIt(r: var JsonReader; limit: untyped; body: untyped)
-customStringValueIt(r: var JsonReader; body: untyped)
-```
-## Convenience iterators
+```nim
+import json_serialization
 
-```Nim
-readArray(r: var JsonReader, ElemType: typedesc): ElemType
-readObjectFields(r: var JsonReader, KeyType: type): KeyType
-readObjectFields(r: var JsonReader): string
-readObject(r: var JsonReader, KeyType: type, ValueType: type): (KeyType, ValueType)
-```
+type Request = object
+  jsonrpc: string
+  `method`: string
 
-## Helper procs
-When crafting a custom serializer, use these parsers, they are safe and intuitive.
-Avoid using the lexer directly.
+let
+  json = """{"jsonrpc": "2.0", "method": "name"}"""
+  decoded = Json.decode(json, Request)
 
-```Nim
-tokKind(r: var JsonReader): JsonValueKind
-parseString(r: var JsonReader, limit: int): string
-parseString(r: var JsonReader): string
-parseBool(r: var JsonReader): bool
-parseNull(r: var JsonReader)
-parseNumber(r: var JsonReader, T: type): JsonNumber[T: string or uint64]
-parseNumber(r: var JsonReader, val: var JsonNumber)
-toInt(r: var JsonReader, val: JsonNumber, T: type SomeInteger, portable: bool): T
-parseInt(r: var JsonReader, T: type SomeInteger, portable: bool = false): T
-toFloat(r: var JsonReader, val: JsonNumber, T: type SomeFloat): T
-parseFloat(r: var JsonReader, T: type SomeFloat): T
-parseAsString(r: var JsonReader, val: var string)
-parseAsString(r: var JsonReader): JsonString
-parseValue(r: var JsonReader, T: type): JsonValueRef[T: string or uint64]
-parseValue(r: var JsonReader, val: var JsonValueRef)
-parseArray(r: var JsonReader; body: untyped)
-parseArray(r: var JsonReader; idx: untyped; body: untyped)
-parseObject(r: var JsonReader, key: untyped, body: untyped)
-parseObjectWithoutSkip(r: var JsonReader, key: untyped, body: untyped)
-parseObjectSkipNullFields(r: var JsonReader, key: untyped, body: untyped)
-parseObjectCustomKey(r: var JsonReader, keyAction: untyped, body: untyped)
-parseJsonNode(r: var JsonReader): JsonNode
-skipSingleJsValue(r: var JsonReader)
-readRecordValue[T](r: var JsonReader, value: var T)
+echo decoded.jsonrpc
+echo Json.encode(decoded, pretty=true)
 ```
 
-## Helper procs of JsonWriter
+## Documentation
 
-```Nim
-beginRecord(w: var JsonWriter, T: type)
-beginRecord(w: var JsonWriter)
-endRecord(w: var JsonWriter)
+See the [user guide](https://status-im.github.io/nim-json-serialization/).
 
-writeObject(w: var JsonWriter, T: type)
-writeObject(w: var JsonWriter)
+## Contributing
 
-writeFieldName(w: var JsonWriter, name: string)
-writeField(w: var JsonWriter, name: string, value: auto)
+Contributions are welcome - please make sure to add test coverage for features and fixes!
 
-iterator stepwiseArrayCreation[C](w: var JsonWriter, collection: C): auto
-writeIterable(w: var JsonWriter, collection: auto)
-writeArray[T](w: var JsonWriter, elements: openArray[T])
-
-writeNumber[F,T](w: var JsonWriter[F], value: JsonNumber[T])
-writeJsonValueRef[F,T](w: var JsonWriter[F], value: JsonValueRef[T])
-```
-
-## Enums
-
-```Nim
-type
-  Fruit = enum
-    Apple = "Apple"
-    Banana = "Banana"
-
-  Drawer = enum
-    One
-    Two
-
-  Number = enum
-    Three = 3
-    Four = 4
-
-  Mixed = enum
-    Six = 6
-    Seven = "Seven"
-```
-
-nim-json-serialization automatically detect which representation an enum should be parsed.
-The detection occurs when parse JSON literal and from the enum declaration itself.
-'Fruit' expect string literal. 'Drawer' or 'Number' expect numeric literal.
-'Mixed' is disallowed. If the json literal does not match the expected enum style,
-exception will be raised. But you can configure individual enum type with:
-
-```Nim
-configureJsonDeserialization(
-    T: type[enum], allowNumericRepr: static[bool] = false,
-    stringNormalizer: static[proc(s: string): string] = strictNormalize)
-
-# example:
-Mixed.configureJsonDeserialization(allowNumericRepr = true) # only at top level
-```
-
-When encode an enum, user is also given flexibility to configure at Flavor level
-or for individual enum type.
-
-```Nim
-type
-  EnumRepresentation* = enum
-    EnumAsString
-    EnumAsNumber
-    EnumAsStringifiedNumber
-
-# examples:
-
-# Flavor level
-Json.flavorEnumRep(EnumAsString)   # default flavor, can be called from non top level
-Flavor.flavorEnumRep(EnumAsNumber) # custom flavor, can be called from non top level
-
-# individual enum type no matter what flavor
-Fruit.configureJsonSerialization(EnumAsNumber) # only at top level
-
-# individual enum type of specific flavor
-MyJson.flavorEnumRep(Drawer, EnumAsString) # only at top level
-```
+`json_serialization` follows the [Status Nim Style Guide](https://status-im.github.io/nim-style-guide/).
 
 ## License
 

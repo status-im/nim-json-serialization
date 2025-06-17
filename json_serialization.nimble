@@ -26,10 +26,14 @@ let lang = getEnv("NIMLANG", "c") # Which backend (c/cpp/js)
 let flags = getEnv("NIMFLAGS", "") # Extra flags for the compiler
 let verbose = getEnv("V", "") notin ["", "0"]
 
+from os import quoteShell
+from strutils import endsWith
+
 let cfg =
   " --styleCheck:usages --styleCheck:error" &
   (if verbose: "" else: " --verbosity:0 --hints:off") &
-  " --outdir:build --nimcache:build/nimcache -f" &
+  " --outdir:build " &
+  quoteShell("--nimcache:build/nimcache/$projectName") &
   " -d:nimOldCaseObjects"
 
 proc build(args, path: string) =
@@ -43,3 +47,15 @@ proc run(args, path: string) =
 task test, "Run all tests":
   for threads in ["--threads:off", "--threads:on"]:
     run threads, "tests/test_all"
+
+task examples, "Build examples":
+  # Build book examples
+  for file in listFiles("docs/examples"):
+    if file.endsWith(".nim"):
+      build "--threads:on", file
+
+task mdbook, "Install mdbook (requires cargo)":
+  exec "cargo install mdbook@0.4.51 mdbook-toc@0.14.2 mdbook-open-on-gh@2.4.3 mdbook-admonish@1.20.0"
+
+task docs, "Generate API documentation":
+  exec "mdbook build docs"
