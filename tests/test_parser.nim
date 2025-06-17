@@ -377,7 +377,7 @@ suite "Parse to runtime dynamic structure":
       n["object"]["def"].boolVal == false
 
   test "parse to json node bignum":
-    var r = toReader(jsonBignum)
+    var r = toReader(jsonBigNum)
     let n = r.parseJsonNode()
     check:
       n["bignum"].kind == JString
@@ -389,14 +389,14 @@ suite "Parse to runtime dynamic structure":
       n["int"].num == -12345
 
   test "parseValue bignum":
-    var r = toReader(jsonBignum)
+    var r = toReader(jsonBigNum)
     let n = r.parseValue(string)
     check:
       n["bignum"].kind == JsonValueKind.Number
       n["bignum"].numVal.integer == "9999999999999999999999999999999999999999999"
 
   test "parseValue bignum overflow":
-    var r = toReader(jsonBignum)
+    var r = toReader(jsonBigNum)
     expect JsonReaderError:
       let n = r.parseValue(uint64)
 

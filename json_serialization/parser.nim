@@ -469,14 +469,20 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
       var val: string
       r.lex.scanNumber(val)
       r.checkError
-      try:
-        # Cannot access `newJRawNumber` directly, because it's not exported.
-        # But this should produce either JInt, JFloat, or JString/Raw
-        result = parseJson(val)
-      except ValueError as exc:
-        r.raiseUnexpectedValue(exc.msg)
-      except OSError as exc:
-        raiseAssert "parseJson here should not raise OSError exception: " & exc.msg
+      when (NimMajor, NimMinor) > (1,6):
+        try:
+          # Cannot access `newJRawNumber` directly, because it's not exported.
+          # But this should produce either JInt, JFloat, or JString/Raw
+          result = parseJson(val)
+        except ValueError as exc:
+          r.raiseUnexpectedValue(exc.msg)
+        except OSError as exc:
+          raiseAssert "parseJson here should not raise OSError exception: " & exc.msg
+      else:
+        try:
+          result = parseJson(val)
+        except Exception as exc:
+          r.raiseUnexpectedValue(exc.msg)
   of JsonValueKind.Object:
     result = JsonNode(kind: JObject)
     parseObjectImpl(r.lex, false): discard # initial action
