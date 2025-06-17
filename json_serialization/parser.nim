@@ -13,7 +13,7 @@ import
   ./reader_desc,
   ./lexer
 
-from json import JsonNode, JsonNodeKind, escapeJson
+from json import JsonNode, JsonNodeKind, escapeJson, parseJson
 
 export
   reader_desc
@@ -418,7 +418,7 @@ template parseObjectSkipNullFields*(r: var JsonReader, key: untyped, body: untyp
     body
   do: # error action
     r.raiseParserError()
-    
+
 template parseObjectCustomKey*(r: var JsonReader, keyAction: untyped, body: untyped) =
   mixin flavorSkipNullFields
   type
@@ -456,14 +456,27 @@ proc parseJsonNode(r: var JsonReader): JsonNode =
   of JsonValueKind.String:
     result = JsonNode(kind: JString, str: r.parseString())
   of JsonValueKind.Number:
-    var val: JsonNumber[uint64]
-    r.lex.scanNumber(val)
-    r.checkError
-    if val.isFloat:
-      result = JsonNode(kind: JFloat, fnum: r.toFloat(val, typeof(result.fnum)))
+    if JsonReaderFlag.legacyJsonNodeNumber in r.lex.flags:
+      var val: JsonNumber[uint64]
+      r.lex.scanNumber(val)
+      r.checkError
+      if val.isFloat:
+        result = JsonNode(kind: JFloat, fnum: r.toFloat(val, typeof(result.fnum)))
+      else:
+        result = JsonNode(kind: JInt, num:
+          r.toInt(val, typeof(result.num), JsonReaderFlag.portableInt in r.lex.flags))
     else:
-      result = JsonNode(kind: JInt, num:
-        r.toInt(val, typeof(result.num), JsonReaderFlag.portableInt in r.lex.flags))
+      var val: string
+      r.lex.scanNumber(val)
+      r.checkError
+      try:
+        # Cannot access `newJRawNumber` directly, because it's not exported.
+        # But this should produce either JInt, JFloat, or JString/Raw
+        result = parseJson(val)
+      except ValueError as exc:
+        r.raiseUnexpectedValue(exc.msg)
+      except OSError as exc:
+        raiseAssert "parseJson here should not raise OSError exception: " & exc.msg
   of JsonValueKind.Object:
     result = JsonNode(kind: JObject)
     parseObjectImpl(r.lex, false): discard # initial action
