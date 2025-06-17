@@ -332,6 +332,14 @@ const
 
 """
 
+  jsonBigNum = """
+{
+  "bignum": 9999999999999999999999999999999999999999999,
+  "float": 124.123,
+  "int": -12345
+}
+"""
+
 suite "Parse to runtime dynamic structure":
   test "parse to json node":
     var r = toReader(jsonText)
@@ -345,6 +353,7 @@ suite "Parse to runtime dynamic structure":
       n["array"][0].bval == true
       n["array"][1].fnum == 567.89
       n["array"][2].str == "string in array"
+      $n["array"][2] == "\"string in array\"" # quoted string
       n["array"][3].kind == JNull
       n["array"][4].kind == JArray
       n["array"][4].len == 1
@@ -358,6 +367,7 @@ suite "Parse to runtime dynamic structure":
     check:
       n["string"].strVal == "hello world"
       n["bool"].boolVal == true
+      n["int"].numVal.integer == 789
       n["array"].len == 5
       n["array"][0].boolVal == true
       n["array"][2].strVal == "string in array"
@@ -366,14 +376,38 @@ suite "Parse to runtime dynamic structure":
       n["array"][4].len == 1
       n["object"]["def"].boolVal == false
 
+  test "parse to json node bignum":
+    var r = toReader(jsonBigNum)
+    let n = r.parseJsonNode()
+    check:
+      n["bignum"].kind == JString
+      n["bignum"].str == "9999999999999999999999999999999999999999999"
+      $n["bignum"] == "9999999999999999999999999999999999999999999" # unquoted raw string
+      n["float"].kind == JFloat
+      n["float"].fnum == 124.123
+      n["int"].kind == JInt
+      n["int"].num == -12345
+
+  test "parseValue bignum":
+    var r = toReader(jsonBigNum)
+    let n = r.parseValue(string)
+    check:
+      n["bignum"].kind == JsonValueKind.Number
+      n["bignum"].numVal.integer == "9999999999999999999999999999999999999999999"
+
+  test "parseValue bignum overflow":
+    var r = toReader(jsonBigNum)
+    expect JsonReaderError:
+      let n = r.parseValue(uint64)
+
   test "nim v2 regression #23233":
     # Nim compiler bug #23233 will prevent
     # compilation if both JsonValueRef[uint64] and JsonValueRef[string]
     # are instantiated at together.
     var r1 = toReader(jsonText)
     let n1 = r1.parseValue(uint64)
-    discard n1
+    check n1["int"].numVal.integer == 789
 
     var r2 = toReader(jsonText)
     let n2 = r2.parseValue(string)
-    discard n2
+    check n2["int"].numVal.integer == "789"
