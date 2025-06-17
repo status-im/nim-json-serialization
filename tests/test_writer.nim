@@ -54,6 +54,10 @@ proc writeValue*(w: var JsonWriter, val: OWOF)
     w.writeField("b", val.b)
     w.writeField("c", val.c)
 
+func toReader(input: string): JsonReader[DefaultFlavor] =
+  var stream = unsafeMemoryInput(input)
+  JsonReader[DefaultFlavor].init(stream)
+
 suite "Test writer":
   test "stdlib option top level some YourJson":
     var val = some(123)
@@ -272,3 +276,17 @@ suite "Test writer":
     # configuration: MyJson.configureJsonSerialization(Drawer, EnumAsString)
     let v = MyJson.encode(One)
     check v == "\"One\""
+
+  test "float writer":
+    template checkExp(src, res) =
+      var x = toReader(src)
+      let y = x.readValue(JsonNumber[uint64])
+      let z = Json.encode(y)
+      check z == res
+
+    checkExp("0.0E-1", "0.0e-1")
+    checkExp("+0.1e-2", "0.1e-2")
+    checkExp("-0.2e-9", "-0.2e-9")
+    checkExp("0.0E+1", "0.0e1")
+    checkExp("+0.1e+2", "0.1e2")
+    checkExp("-0.2e+9", "-0.2e9")
