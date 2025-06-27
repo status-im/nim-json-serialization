@@ -453,7 +453,7 @@ proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
     discard
 
   elif value is ref:
-    if value == nil:
+    if value.isNil:
       append "null"
     else:
       writeValue(w, value[])
