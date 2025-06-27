@@ -3,6 +3,7 @@
 # User guide
 
 - [Getting started](./getting_started.md)
+- [Streaming](./streaming.md)
 - [Reference](./reference.md)
 
 # Developer guide

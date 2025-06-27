@@ -18,11 +18,8 @@ type
 var conf = defaultJsonReaderConf
 conf.nestedDepthLimit = 0
 
-let native =
-  Json.decode(rawJson, NimServer, flags = defaultJsonReaderFlags, conf = conf)
-
 # decode into native Nim
-#let native = Json.decode(rawJson, NimServer)
+let native = Json.decode(rawJson, NimServer)
 
 # decode into mixed Nim + JsonValueRef
 let mixed = Json.decode(rawJson, MixedServer)
