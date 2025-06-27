@@ -7,6 +7,8 @@
 # This file may not be copied, modified, or distributed except according to
 # those terms.
 
+{.push gcsafe, raises: [].}
+
 import
   std/tables,
   serialization/errors
@@ -18,13 +20,13 @@ export
 type
   JsonError* = object of SerializationError
 
-  # This is a special type to parse whatever
-  # json value into string.
   JsonString* = distinct string
+    ## A string containing valid JSON.
+    ## Used to preserve and pass on parts of a JSON document to another parser
+    ## or layer without interpreting it further
 
-  # This is a special type to parse whatever
-  # json value into nothing/skip it.
   JsonVoid* = object
+    ## Marker used for skipping a JSON value during parsing
 
   JsonSign* {.pure.} = enum
     None
@@ -63,11 +65,11 @@ type
     stringLengthLimit*: int
 
   JsonValueKind* {.pure.} = enum
-    String,
-    Number,
-    Object,
-    Array,
-    Bool,
+    String
+    Number
+    Object
+    Array
+    Bool
     Null
 
   JsonObjectType*[T: string or uint64] = OrderedTable[string, JsonValueRef[T]]
@@ -87,7 +89,6 @@ type
       boolVal*: bool
     of JsonValueKind.Null:
       discard
-
 
 const
   minPortableInt* = -9007199254740991 # -2**53 + 1
@@ -109,8 +110,6 @@ const
     exponentDigitsLimit: 32,
     stringLengthLimit: 0,
   )
-
-{.push gcsafe, raises: [].}
 
 template `==`*(lhs, rhs: JsonString): bool =
   string(lhs) == string(rhs)
@@ -171,5 +170,8 @@ func `==`*(lhs, rhs: JsonValueRef): bool =
     lhs.boolVal == rhs.boolVal
   of JsonValueKind.Null:
     true
+
+template `$`*(s: JsonString): string =
+  string(s)
 
 {.pop.}
