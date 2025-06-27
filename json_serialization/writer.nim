@@ -19,30 +19,43 @@ export
   outputs, format, types, JsonString, DefaultFlavor
 
 type
-  JsonWriterState = enum
-    RecordExpected
-    RecordStarted
-    AfterField
+  CollectionKind = enum
+    Array
+    Object
+
 
   JsonWriter*[Flavor = DefaultFlavor] = object
     stream*: OutputStream
     hasTypeAnnotations: bool
     hasPrettyOutput*: bool # read-only
-    nestingLevel*: int     # read-only
-    state: JsonWriterState
+    stack: seq[CollectionKind]
+      ## Stack that keeps track of nested arrays/objects
+    empty: bool
+      ## True before any members / elements have been written to an object / array
+    wantName: bool
+      ## The next output should be a name (for an object member)
 
 Json.setWriter JsonWriter,
                PreferredOutput = string
+
+template nestingLevel(w: JsonWriter): int =
+  w.stack.len * 2
 
 func init*(W: type JsonWriter, stream: OutputStream,
            pretty = false, typeAnnotations = false): W =
   W(stream: stream,
     hasPrettyOutput: pretty,
-    hasTypeAnnotations: typeAnnotations,
-    nestingLevel: if pretty: 0 else: -1,
-    state: RecordExpected)
+    hasTypeAnnotations: typeAnnotations)
 
-proc writeValue*(w: var JsonWriter, value: auto) {.raises: [IOError].}
+proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
+  ## Write value as JSON, without adornments for arrays and objects.
+  ##
+  ## See also `writeElement` and `writeMember`.
+proc writeElement*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
+  ## Write `value` as a JSON element in an array or object member pair, adorning
+  ## it with `beginElement`/`endElement` as needed.
+proc writeMember*[V: not void](w: var JsonWriter, name: string, value: V) {.raises: [IOError].}
+  ## Write `name` and `value` as a JSON member / field of an object.
 
 # If it's an optional field, test for it's value before write something.
 # If it's non optional field, the field is always written.
@@ -52,22 +65,137 @@ template append(x: untyped) =
   write w.stream, x
 
 template indent =
-  for i in 0 ..< w.nestingLevel:
-    append ' '
-
-template `$`*(s: JsonString): string =
-  string(s)
-
-proc writeFieldName*(w: var JsonWriter, name: string) {.raises: [IOError].} =
-  # this is implemented as a separate proc in order to
-  # keep the code bloat from `writeField` to a minimum
-  doAssert w.state != RecordExpected
-
-  if w.state == AfterField:
-    append ','
-
   if w.hasPrettyOutput:
-    append '\n'
+    append "\n"
+    for i in 0 ..< w.nestingLevel:
+      append ' '
+
+func inArray(w: JsonWriter): bool =
+  w.stack.len > 0 and w.stack[^1] == Array
+
+func inObject(w: JsonWriter): bool =
+  w.stack.len > 0 and w.stack[^1] == Object
+
+proc beginElement*(w: var JsonWriter) {.raises: [IOError].} =
+  ## Start writing an array element or the value part of an object member.
+  ##
+  ## Must be closed with a corresponding `endElement`.
+  ##
+  ## See also `writeElement`, `writeMember`.
+  doAssert not w.wantName
+
+  if w.inArray:
+    if w.empty:
+      w.empty = false
+    else:
+      append ','
+
+    indent()
+
+proc endElement*(w: var JsonWriter) =
+  ## Matching `end` call for `beginElement`
+  w.wantName = w.inObject
+
+proc beginObject*(w: var JsonWriter, nested: static bool = false) {.raises: [IOError].} =
+  ## Start writing an object, to be followed by member fields.
+  ##
+  ## Must be closed with a matching `endObject`.
+  ##
+  ## See also `writeObject`.
+  ##
+  ## Use `writeMember`, `writeArrayMember`, `writeObjectMember` to add member
+  ## fields to the object.
+  ##
+  ## Use `nested = true` when creating the object nested inside another object
+  ## or array, or use `beginObjectElement` / `beginObjectMember`.
+  ##
+  ## Use `nested = false` (the default) in top-level calls both in `writeValue`
+  ## implementations and when streaming.
+  when nested:
+    w.beginElement()
+
+  append '{'
+
+  w.empty = true
+  w.wantName = true
+
+  w.stack.add(Object)
+
+proc beginObject*(w: var JsonWriter, O: type, nested: static bool = false) {.raises: [IOError].} =
+  w.beginObject(nested)
+  if w.hasTypeAnnotations: w.writeMember("$type", typetraits.name(O))
+
+proc endObject*(w: var JsonWriter, nested: static bool = false) {.raises: [IOError].} =
+  doAssert w.stack.pop() == Object
+
+  if not w.empty:
+    indent()
+
+  w.empty = false
+  append '}'
+
+  when nested:
+    w.endElement()
+
+proc beginArray*(w: var JsonWriter, nested: static bool = false) {.raises: [IOError].} =
+  when nested:
+    w.beginElement()
+
+  append '['
+
+  w.empty = true
+
+  w.stack.add(Array)
+
+proc endArray*(w: var JsonWriter, nested: static bool = false) {.raises: [IOError].} =
+  doAssert w.stack.pop() == Array
+
+  if not w.empty:
+    indent()
+
+  w.empty = false
+
+  append ']'
+
+  when nested:
+    w.endElement()
+
+template writeElement*[T: void](w: var JsonWriter, body: T) =
+  w.beginElement()
+  body
+  w.endElement()
+
+proc writeElement*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].} =
+  mixin writeValue
+
+  w.writeElement:
+    w.writeValue(value)
+
+template beginObjectElement*(w: var JsonWriter) =
+  ## Begin an object nested inside an array or after a member name
+  beginObject(w, nested = true)
+
+template beginObjectElement*(w: var JsonWriter, O: type) =
+  ## Begin an object nested inside an array or after a member name
+  beginObject(w, O, nested = true)
+
+template endObjectElement*(w: var JsonWriter) = endObject(w, nested = true)
+
+template beginArrayElement*(w: var JsonWriter) = beginArray(w, nested = true)
+
+template endArrayElement*(w: var JsonWriter) = endArray(w, nested = true)
+
+proc writeName*(w: var JsonWriter, name: string) {.raises: [IOError].} =
+  ## Write the name part of the member of an object, to be followed by the value
+  doAssert w.inObject()
+  doAssert w.wantName
+
+  w.wantName = false
+
+  if w.empty:
+    w.empty = false
+  else:
+    append ','
 
   indent()
 
@@ -77,10 +205,21 @@ proc writeFieldName*(w: var JsonWriter, name: string) {.raises: [IOError].} =
   append ':'
   if w.hasPrettyOutput: append ' '
 
-  w.state = RecordExpected
+template writeMember*[T: void](w: var JsonWriter, name: string, body: T) =
+  ## Write a member field of an object, ie the name followed by the value.
+  ##
+  ## Optional fields may be omitted depending on the Flavor.
+  mixin writeValue
 
-proc writeField*(
-    w: var JsonWriter, name: string, value: auto) {.raises: [IOError].} =
+  w.writeName(name)
+  w.writeElement:
+    body
+
+proc writeMember*[V: not void](
+    w: var JsonWriter, name: string, value: V) {.raises: [IOError].} =
+  ## Write a member field of an object, ie the name followed by the value.
+  ##
+  ## Optional fields may get omitted depending on the Flavor.
   mixin writeValue
   mixin flavorOmitsOptionalFields, shouldWriteObjectField
 
@@ -90,95 +229,96 @@ proc writeField*(
 
   when flavorOmitsOptionalFields(Flavor):
     if shouldWriteObjectField(value):
-      w.writeFieldName(name)
-      w.writeValue(value)
-      w.state = AfterField
+      w.writeName(name)
+      w.writeElement(value)
+
   else:
-    w.writeFieldName(name)
-    w.writeValue(value)
-    w.state = AfterField
+    w.writeName(name)
+    w.writeElement(value)
 
-template fieldWritten*(w: var JsonWriter) =
-  w.state = AfterField
+template beginObjectMember*(w: var JsonWriter, name: string) =
+  w.writeName(name)
+  w.beginObjectElement()
 
-proc beginRecord*(w: var JsonWriter) {.raises: [IOError].} =
-  doAssert w.state == RecordExpected
+template beginObjectMember*(w: var JsonWriter, name: string, O: type) =
+  w.writeName(name)
+  w.beginObjectElement(O)
 
-  append '{'
-  if w.hasPrettyOutput:
-    w.nestingLevel += 2
+template endObjectMember*(w: var JsonWriter) =
+  w.endObjectElement()
 
-  w.state = RecordStarted
+template beginArrayMember*(w: var JsonWriter, name: string) =
+  w.writeName(name)
+  w.beginArrayElement()
 
-proc beginRecord*(w: var JsonWriter, T: type) {.raises: [IOError].} =
-  w.beginRecord()
-  if w.hasTypeAnnotations: w.writeField("$type", typetraits.name(T))
-
-proc endRecord*(w: var JsonWriter) {.raises: [IOError].} =
-  doAssert w.state != RecordExpected
-
-  if w.hasPrettyOutput:
-    append '\n'
-    w.nestingLevel -= 2
-    indent()
-
-  append '}'
-
-template endRecordField*(w: var JsonWriter) =
-  endRecord(w)
-  w.state = AfterField
+template endArrayMember*(w: var JsonWriter) =
+  w.endArrayElement()
 
 iterator stepwiseArrayCreation*[C](w: var JsonWriter, collection: C): auto {.raises: [IOError].} =
-  append '['
-
-  if w.hasPrettyOutput:
-    append '\n'
-    w.nestingLevel += 2
-    indent()
-
-  var first = true
+  ## Iterate over the members of a collection, expecting each member to be
+  ## written directly to the stream (akin to using `writeValue` and not
+  ## `writeElement`)
+  w.beginArray()
   for e in collection:
-    if not first:
-      append ','
-      if w.hasPrettyOutput:
-        append '\n'
-        indent()
-
-    w.state = RecordExpected
+    w.beginElement()
     yield e
-    first = false
-
-  if w.hasPrettyOutput:
-    append '\n'
-    w.nestingLevel -= 2
-    indent()
-
-  append ']'
+    w.endElement()
+  w.endArray()
 
 proc writeIterable*(w: var JsonWriter, collection: auto) {.raises: [IOError].} =
   mixin writeValue
-  for e in w.stepwiseArrayCreation(collection):
-    w.writeValue(e)
+  w.beginArray()
+  for e in collection:
+    w.writeElement(e)
+  w.endArray()
 
-proc writeArray*[T](w: var JsonWriter, elements: openArray[T]) {.raises: [IOError].} =
-  writeIterable(w, elements)
-
-template writeObject*(w: var JsonWriter, T: type, body: untyped) =
-  w.beginRecord(T)
+template writeArray*[T: void](w: var JsonWriter, body: T) =
+  w.beginArray()
   body
-  w.endRecord()
+  w.endArray()
 
-template writeObject*(w: var JsonWriter, body: untyped) =
-  w.beginRecord()
+template writeArrayElement*[T: void](w: var JsonWriter, body: T) =
+  w.beginArrayElement()
   body
-  w.endRecord()
+  w.beginArrayElement()
 
-# this construct catches `array[N, char]` which otherwise won't decompose into
-# openArray[char] - we treat any array-like thing-of-characters as a string in
-# the output
-template isStringLike(v: string|cstring|openArray[char]|seq[char]): bool = true
-template isStringLike[N](v: array[N, char]): bool = true
-template isStringLike(v: auto): bool = false
+template writeArrayMember*[T: void](w: var JsonWriter, name: string, body: T) =
+  w.beginArrayMember(name)
+  body
+  w.endArrayMember()
+
+proc writeArray*[C: not void](w: var JsonWriter, values: C) {.raises: [IOError].} =
+  w.writeIterable(values)
+
+template writeObject*[T: void](w: var JsonWriter, O: type, body: T) =
+  w.beginObject(O)
+  body
+  w.endObject()
+
+template writeObject*[T: void](w: var JsonWriter, body: T) =
+  w.beginObject()
+  body
+  w.endObject()
+
+template writeObjectElement*[T: void](w: var JsonWriter, body: T) =
+  w.beginObjectElement()
+  body
+  w.endObjectElement()
+
+template writeObjectElement*[T: void](w: var JsonWriter, O: type, body: T) =
+  w.beginObjectElement(O)
+  body
+  w.endObjectElement()
+
+template writeObjectMember*[T: void](w: var JsonWriter, name: string, body: T) =
+  w.beginObjectMember(name)
+  body
+  w.endObjectMember()
+
+template writeObjectMember*[T: void](w: var JsonWriter, name: string, O: type, body: T) =
+  w.beginObjectMember(name, O)
+  body
+  w.endObjectMember()
 
 template writeObjectField*[FieldType, RecordType](w: var JsonWriter,
                                                   record: RecordType,
@@ -186,19 +326,22 @@ template writeObjectField*[FieldType, RecordType](w: var JsonWriter,
                                                   field: FieldType) =
   mixin writeFieldIMPL, writeValue
 
-  w.writeFieldName(fieldName)
+  w.writeName(fieldName)
+
+  w.beginElement()
   when RecordType is tuple:
     w.writeValue(field)
   else:
     type R = type record
     w.writeFieldIMPL(FieldTag[R, fieldName], field, record)
+  w.endElement()
 
-proc writeRecordValue*(w: var JsonWriter, value: auto) {.raises: [IOError].} =
+proc writeRecordValue*(w: var JsonWriter, value: object|tuple) {.raises: [IOError].} =
   mixin enumInstanceSerializedFields, writeObjectField
   mixin flavorOmitsOptionalFields, shouldWriteObjectField
 
   type RecordType = type value
-  w.beginRecord RecordType
+  w.beginObject(RecordType)
   value.enumInstanceSerializedFields(fieldName, fieldValue):
     when fieldValue isnot JsonVoid:
       type
@@ -207,19 +350,17 @@ proc writeRecordValue*(w: var JsonWriter, value: auto) {.raises: [IOError].} =
       when flavorOmitsOptionalFields(Flavor):
         if shouldWriteObjectField(fieldValue):
           writeObjectField(w, value, fieldName, fieldValue)
-          w.state = AfterField
       else:
         writeObjectField(w, value, fieldName, fieldValue)
-        w.state = AfterField
     else:
       discard fieldName
-  w.endRecord()
+  w.endObject()
 
-proc writeNumber*[F,T](w: var JsonWriter[F], value: JsonNumber[T]) {.raises: [IOError].} =
+proc writeValue*(w: var JsonWriter, value: JsonNumber) {.raises: [IOError].} =
   if value.sign == JsonSign.Neg:
     append '-'
 
-  when T is uint64:
+  when value.integer is uint64:
     w.stream.writeText value.integer
   else:
     append value.integer
@@ -229,7 +370,7 @@ proc writeNumber*[F,T](w: var JsonWriter[F], value: JsonNumber[T]) {.raises: [IO
     append value.fraction
 
   template writeExp(body: untyped) =
-    when T is uint64:
+    when value.exponent is uint64:
       if value.exponent > 0:
         body
     else:
@@ -240,33 +381,30 @@ proc writeNumber*[F,T](w: var JsonWriter[F], value: JsonNumber[T]) {.raises: [IO
     append 'e'
     if value.expSign == JsonSign.Neg:
       append '-'
-    when T is uint64:
+    when value.exponent is uint64:
       w.stream.writeText value.exponent
     else:
       append value.exponent
 
-proc writeJsonValueRef*[F,T](w: var JsonWriter[F], value: JsonValueRef[T]) {.raises: [IOError].} =
-  if value.isNil:
-    append "null"
-    return
+proc writeValue*(w: var JsonWriter, value: JsonObjectType) {.raises: [IOError].} =
+  w.beginObject()
+  for name, v in value:
+    w.writeMember(name, v)
+  w.endObject()
 
+proc writeValue*(w: var JsonWriter, value: JsonValue) {.raises: [IOError].} =
   case value.kind
   of JsonValueKind.String:
     w.writeValue(value.strVal)
   of JsonValueKind.Number:
-    w.writeNumber(value.numVal)
+    w.writeValue(value.numVal)
   of JsonValueKind.Object:
-    w.beginRecord typeof(value)
-    for k, v in value.objVal:
-      w.writeField(k, v)
-    w.endRecord()
+    w.writeValue(value.objVal)
   of JsonValueKind.Array:
-    w.writeArray(value.arrayVal)
+    w.writeValue(value.arrayVal)
   of JsonValueKind.Bool:
-    if value.boolVal:
-      append "true"
-    else:
-      append "false"
+    w.writeValue(value.boolVal)
+
   of JsonValueKind.Null:
     append "null"
 
@@ -275,7 +413,7 @@ template writeEnumImpl(w: var JsonWriter, value, enumRep) =
   when enumRep == EnumAsString:
     w.writeValue $value
   elif enumRep == EnumAsNumber:
-    w.stream.writeText(value.int)
+    w.writeValue value.int
   elif enumRep == EnumAsStringifiedNumber:
     w.writeValue $value.int
 
@@ -288,7 +426,20 @@ template writeValue*(w: var JsonWriter, value: enum) =
   type Flavor = type(w).Flavor
   writeEnumImpl(w, value, Flavor.flavorEnumRep())
 
-proc writeValue*(w: var JsonWriter, value: auto) {.raises: [IOError].} =
+# this construct catches `array[N, char]` which otherwise won't decompose into
+# openArray[char] - we treat any array-like thing-of-characters as a string in
+# the output
+template isStringLike(v: string|cstring|openArray[char]|seq[char]): bool = true
+template isStringLike[N](v: array[N, char]): bool = true
+template isStringLike(v: auto): bool = false
+
+proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].} =
+  ## `writeValue` is a low-level operation for encoding `value` as JSON without
+  ## adorning it with `beginElement`/`endElement`/`writeName`.
+  ##
+  ## When writing inside a nested object / array, prefer
+  ## `writeMember` / `writeElement` respectively that will make the right
+  ## adornments.
   mixin writeValue
 
   when value is JsonNode:
@@ -300,12 +451,6 @@ proc writeValue*(w: var JsonWriter, value: auto) {.raises: [IOError].} =
 
   elif value is JsonVoid:
     discard
-
-  elif value is JsonNumber:
-    w.writeNumber(value)
-
-  elif value is JsonValueRef:
-    w.writeJsonValueRef(value)
 
   elif value is ref:
     if value == nil:
@@ -388,9 +533,9 @@ proc writeValue*(w: var JsonWriter, value: auto) {.raises: [IOError].} =
       writeRecordValue(w, value)
   else:
     const typeName = typetraits.name(value.type)
-    {.fatal: "Failed to convert to JSON an unsupported type: " & typeName.}
+    {.error: "Failed to convert to JSON an unsupported type: " & typeName.}
 
-proc toJson*(v: auto, pretty = false, typeAnnotations = false, Flavor = DefaultFlavor): string {.raises: [].} =
+proc toJson*(v: auto, pretty = false, typeAnnotations = false, Flavor = DefaultFlavor): string =
   mixin writeValue
 
   var
@@ -401,6 +546,24 @@ proc toJson*(v: auto, pretty = false, typeAnnotations = false, Flavor = DefaultF
   except IOError:
     raiseAssert "no exceptions from memoryOutput"
   s.getOutput(string)
+
+# nim-serialization integration / naming
+
+template beginRecord*(w: var JsonWriter) = beginObject(w, false)
+template beginRecord*(w: var JsonWriter, T: type) = beginObject(w, T, false)
+
+template writeFieldName*(w: var JsonWriter, name: string) = writeName(w, name)
+
+template writeField*(w: var JsonWriter, name: string, value: auto) =
+  writeMember(w, name, value)
+
+template endRecord*(w: var JsonWriter) = w.endObject(false)
+
+template endRecordField*(w: var JsonWriter) {.deprecated: "endObject".} =
+  endRecord(w)
+
+template fieldWritten*(w: var JsonWriter) {.deprecated: "endElement".} =
+  w.endElement()
 
 template serializesAsTextInJson*(T: type[enum]) =
   template writeValue*(w: var JsonWriter, val: T) =

@@ -11,12 +11,18 @@ import
   std/[strutils, options],
   unittest2,
   results,
+  stew/byteutils,
   serialization,
   ../json_serialization/pkg/results,
   ../json_serialization/std/options,
   ../json_serialization
 
 createJsonFlavor StringyJson
+
+proc writeValue(w: var JsonWriter[StringyJson], value: seq[byte]) =
+  w.stream.write('"')
+  w.stream.write(toHex(value))
+  w.stream.write('"')
 
 proc writeValue*(
     w: var JsonWriter[StringyJson], val: SomeInteger) {.raises: [IOError].} =
@@ -200,3 +206,7 @@ suite "Test JsonFlavor":
     NullyFields.flavorEnumRep(EnumAsNumber)
     let z = NullyFields.encode(Banana)
     check z == "0"
+
+  test "custom writer that uses stream":
+    let value = @[@[byte 0, 1], @[byte 2, 3]]
+    check: StringyJson.encode(value) == """["0001","0203"]"""
