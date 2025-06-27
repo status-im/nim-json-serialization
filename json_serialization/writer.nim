@@ -1,11 +1,13 @@
 # json-serialization
-# Copyright (c) 2019-2023 Status Research & Development GmbH
+# Copyright (c) 2019-2025 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
 # at your option.
 # This file may not be copied, modified, or distributed except according to
 # those terms.
+
+{.push gcsafe, raises: [].}
 
 import
   std/[json, typetraits],
@@ -40,9 +42,7 @@ func init*(W: type JsonWriter, stream: OutputStream,
     nestingLevel: if pretty: 0 else: -1,
     state: RecordExpected)
 
-proc beginRecord*(w: var JsonWriter, T: type)
-proc beginRecord*(w: var JsonWriter)
-proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].}
+proc writeValue*(w: var JsonWriter, value: auto) {.raises: [IOError].}
 
 # If it's an optional field, test for it's value before write something.
 # If it's non optional field, the field is always written.
@@ -58,7 +58,7 @@ template indent =
 template `$`*(s: JsonString): string =
   string(s)
 
-proc writeFieldName*(w: var JsonWriter, name: string) =
+proc writeFieldName*(w: var JsonWriter, name: string) {.raises: [IOError].} =
   # this is implemented as a separate proc in order to
   # keep the code bloat from `writeField` to a minimum
   doAssert w.state != RecordExpected
@@ -101,7 +101,7 @@ proc writeField*(
 template fieldWritten*(w: var JsonWriter) =
   w.state = AfterField
 
-proc beginRecord*(w: var JsonWriter) =
+proc beginRecord*(w: var JsonWriter) {.raises: [IOError].} =
   doAssert w.state == RecordExpected
 
   append '{'
@@ -110,11 +110,11 @@ proc beginRecord*(w: var JsonWriter) =
 
   w.state = RecordStarted
 
-proc beginRecord*(w: var JsonWriter, T: type) =
+proc beginRecord*(w: var JsonWriter, T: type) {.raises: [IOError].} =
   w.beginRecord()
   if w.hasTypeAnnotations: w.writeField("$type", typetraits.name(T))
 
-proc endRecord*(w: var JsonWriter) =
+proc endRecord*(w: var JsonWriter) {.raises: [IOError].} =
   doAssert w.state != RecordExpected
 
   if w.hasPrettyOutput:
@@ -128,7 +128,7 @@ template endRecordField*(w: var JsonWriter) =
   endRecord(w)
   w.state = AfterField
 
-iterator stepwiseArrayCreation*[C](w: var JsonWriter, collection: C): auto =
+iterator stepwiseArrayCreation*[C](w: var JsonWriter, collection: C): auto {.raises: [IOError].} =
   append '['
 
   if w.hasPrettyOutput:
@@ -155,12 +155,12 @@ iterator stepwiseArrayCreation*[C](w: var JsonWriter, collection: C): auto =
 
   append ']'
 
-proc writeIterable*(w: var JsonWriter, collection: auto) =
+proc writeIterable*(w: var JsonWriter, collection: auto) {.raises: [IOError].} =
   mixin writeValue
   for e in w.stepwiseArrayCreation(collection):
     w.writeValue(e)
 
-proc writeArray*[T](w: var JsonWriter, elements: openArray[T]) =
+proc writeArray*[T](w: var JsonWriter, elements: openArray[T]) {.raises: [IOError].} =
   writeIterable(w, elements)
 
 template writeObject*(w: var JsonWriter, T: type, body: untyped) =
@@ -193,8 +193,7 @@ template writeObjectField*[FieldType, RecordType](w: var JsonWriter,
     type R = type record
     w.writeFieldIMPL(FieldTag[R, fieldName], field, record)
 
-proc writeRecordValue*(w: var JsonWriter, value: auto)
-                      {.gcsafe, raises: [IOError].} =
+proc writeRecordValue*(w: var JsonWriter, value: auto) {.raises: [IOError].} =
   mixin enumInstanceSerializedFields, writeObjectField
   mixin flavorOmitsOptionalFields, shouldWriteObjectField
 
@@ -216,7 +215,7 @@ proc writeRecordValue*(w: var JsonWriter, value: auto)
       discard fieldName
   w.endRecord()
 
-proc writeNumber*[F,T](w: var JsonWriter[F], value: JsonNumber[T]) =
+proc writeNumber*[F,T](w: var JsonWriter[F], value: JsonNumber[T]) {.raises: [IOError].} =
   if value.sign == JsonSign.Neg:
     append '-'
 
@@ -246,7 +245,7 @@ proc writeNumber*[F,T](w: var JsonWriter[F], value: JsonNumber[T]) =
     else:
       append value.exponent
 
-proc writeJsonValueRef*[F,T](w: var JsonWriter[F], value: JsonValueRef[T]) =
+proc writeJsonValueRef*[F,T](w: var JsonWriter[F], value: JsonValueRef[T]) {.raises: [IOError].} =
   if value.isNil:
     append "null"
     return
@@ -289,7 +288,7 @@ template writeValue*(w: var JsonWriter, value: enum) =
   type Flavor = type(w).Flavor
   writeEnumImpl(w, value, Flavor.flavorEnumRep())
 
-proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
+proc writeValue*(w: var JsonWriter, value: auto) {.raises: [IOError].} =
   mixin writeValue
 
   when value is JsonNode:
@@ -391,13 +390,16 @@ proc writeValue*(w: var JsonWriter, value: auto) {.gcsafe, raises: [IOError].} =
     const typeName = typetraits.name(value.type)
     {.fatal: "Failed to convert to JSON an unsupported type: " & typeName.}
 
-proc toJson*(v: auto, pretty = false, typeAnnotations = false): string =
+proc toJson*(v: auto, pretty = false, typeAnnotations = false, Flavor = DefaultFlavor): string {.raises: [].} =
   mixin writeValue
 
   var
     s = memoryOutput()
-    w = JsonWriter[DefaultFlavor].init(s, pretty, typeAnnotations)
-  w.writeValue v
+    w = JsonWriter[Flavor].init(s, pretty, typeAnnotations)
+  try:
+    w.writeValue v
+  except IOError:
+    raiseAssert "no exceptions from memoryOutput"
   s.getOutput(string)
 
 template serializesAsTextInJson*(T: type[enum]) =
