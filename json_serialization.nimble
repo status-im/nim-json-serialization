@@ -59,3 +59,4 @@ task mdbook, "Install mdbook (requires cargo)":
 
 task docs, "Generate API documentation":
   exec "mdbook build docs"
+  exec nimc & " doc " & "--git.url:https://github.com/status-im/nim-json-serialization --git.commit:master --outdir:docs/book/api --project json_serialization"
