@@ -15,3 +15,8 @@ Via `nimble install`:
 ```text
 nimble install json_serialization
 ```
+
+## API documentation
+
+This guide covers basic usage of `json_serialization` - for details, see the
+[API reference](./api/).

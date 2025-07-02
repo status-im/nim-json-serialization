@@ -2,6 +2,9 @@
 
 <!-- toc -->
 
+This page provides an overview of the `json_serialization` API - for details, see the
+[API reference](./api/).
+
 ## Parsing
 
 ### Common API
@@ -283,7 +286,7 @@ type
     Seven = "Seven"
 ```
 
-`nim-json-serialization` automatically detects the expected representation for each enum based on its declaration.
+`json_serialization` automatically detects the expected representation for each enum based on its declaration.
 - `Fruit` expects string literals.
 - `Drawer` and `Number` expect numeric literals.
 - `Mixed` (with both string and numeric values) is disallowed by default.
