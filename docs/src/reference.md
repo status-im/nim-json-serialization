@@ -243,28 +243,7 @@ readRecordValue[T](r: var JsonReader, value: var T)
 
 ## JsonWriter Helper Procedures
 
-```nim
-# Begin/end a value that is not an object/array
-beginElement(w: var JsonWriter)
-endElement(w: var JsonWriter)
-
-beginObject(w: var JsonWriter)
-beginObject(w: var JsonWriter, O: type)
-endObject(w: var JsonWriter)
-
-beginArray(w: var JsonWriter)
-endArray(w: var JsonWriter)
-
-writeName(w: var JsonWriter, name: string)
-writeMember(w: var JsonWriter, name: string, value: V)
-
-writeValue(w: var JsonWriter, name: string, value: V)
-
-iterator stepwiseArrayCreation[C](w: var JsonWriter, collection: C): auto
-
-writeIterable(w: var JsonWriter, collection: auto)
-writeArray[T](w: var JsonWriter, elements: openArray[T])
-```
+See the [API reference](./api/json_serialization/writer.html)
 
 ## Enums
 
