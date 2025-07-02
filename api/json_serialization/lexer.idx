@@ -1,0 +1,61 @@
+nimTitle	lexer	json_serialization/lexer.html	module json_serialization/lexer		0
+nim	errNone	json_serialization/lexer.html#errNone	JsonErrorKind.errNone		19
+nim	errHexCharExpected	json_serialization/lexer.html#errHexCharExpected	JsonErrorKind.errHexCharExpected		19
+nim	errStringExpected	json_serialization/lexer.html#errStringExpected	JsonErrorKind.errStringExpected		19
+nim	errColonExpected	json_serialization/lexer.html#errColonExpected	JsonErrorKind.errColonExpected		19
+nim	errCommaExpected	json_serialization/lexer.html#errCommaExpected	JsonErrorKind.errCommaExpected		19
+nim	errBracketRiExpected	json_serialization/lexer.html#errBracketRiExpected	JsonErrorKind.errBracketRiExpected		19
+nim	errCurlyRiExpected	json_serialization/lexer.html#errCurlyRiExpected	JsonErrorKind.errCurlyRiExpected		19
+nim	errBracketLeExpected	json_serialization/lexer.html#errBracketLeExpected	JsonErrorKind.errBracketLeExpected		19
+nim	errCurlyLeExpected	json_serialization/lexer.html#errCurlyLeExpected	JsonErrorKind.errCurlyLeExpected		19
+nim	errQuoteExpected	json_serialization/lexer.html#errQuoteExpected	JsonErrorKind.errQuoteExpected		19
+nim	errNumberExpected	json_serialization/lexer.html#errNumberExpected	JsonErrorKind.errNumberExpected		19
+nim	errExponentTooLarge	json_serialization/lexer.html#errExponentTooLarge	JsonErrorKind.errExponentTooLarge		19
+nim	errUnexpectedEof	json_serialization/lexer.html#errUnexpectedEof	JsonErrorKind.errUnexpectedEof		19
+nim	errCommentExpected	json_serialization/lexer.html#errCommentExpected	JsonErrorKind.errCommentExpected		19
+nim	errBoolExpected	json_serialization/lexer.html#errBoolExpected	JsonErrorKind.errBoolExpected		19
+nim	errNullExpected	json_serialization/lexer.html#errNullExpected	JsonErrorKind.errNullExpected		19
+nim	errCommentNotAllowed	json_serialization/lexer.html#errCommentNotAllowed	JsonErrorKind.errCommentNotAllowed		19
+nim	errTrailingComma	json_serialization/lexer.html#errTrailingComma	JsonErrorKind.errTrailingComma		19
+nim	errOrphanSurrogate	json_serialization/lexer.html#errOrphanSurrogate	JsonErrorKind.errOrphanSurrogate		19
+nim	errNonPortableInt	json_serialization/lexer.html#errNonPortableInt	JsonErrorKind.errNonPortableInt		19
+nim	errCustomIntExpected	json_serialization/lexer.html#errCustomIntExpected	JsonErrorKind.errCustomIntExpected		19
+nim	errCustomBlobExpected	json_serialization/lexer.html#errCustomBlobExpected	JsonErrorKind.errCustomBlobExpected		19
+nim	errLeadingZero	json_serialization/lexer.html#errLeadingZero	JsonErrorKind.errLeadingZero		19
+nim	errU64Overflow	json_serialization/lexer.html#errU64Overflow	JsonErrorKind.errU64Overflow		19
+nim	errIntDigitLimit	json_serialization/lexer.html#errIntDigitLimit	JsonErrorKind.errIntDigitLimit		19
+nim	errFracDigitLimit	json_serialization/lexer.html#errFracDigitLimit	JsonErrorKind.errFracDigitLimit		19
+nim	errExpDigitLimit	json_serialization/lexer.html#errExpDigitLimit	JsonErrorKind.errExpDigitLimit		19
+nim	errInvalidBool	json_serialization/lexer.html#errInvalidBool	JsonErrorKind.errInvalidBool		19
+nim	errInvalidNull	json_serialization/lexer.html#errInvalidNull	JsonErrorKind.errInvalidNull		19
+nim	errStringLengthLimit	json_serialization/lexer.html#errStringLengthLimit	JsonErrorKind.errStringLengthLimit		19
+nim	errEscapeHex	json_serialization/lexer.html#errEscapeHex	JsonErrorKind.errEscapeHex		19
+nim	errRelaxedEscape	json_serialization/lexer.html#errRelaxedEscape	JsonErrorKind.errRelaxedEscape		19
+nim	errLeadingFraction	json_serialization/lexer.html#errLeadingFraction	JsonErrorKind.errLeadingFraction		19
+nim	errUnknownChar	json_serialization/lexer.html#errUnknownChar	JsonErrorKind.errUnknownChar		19
+nim	errNestedDepthLimit	json_serialization/lexer.html#errNestedDepthLimit	JsonErrorKind.errNestedDepthLimit		19
+nim	errArrayElementsLimit	json_serialization/lexer.html#errArrayElementsLimit	JsonErrorKind.errArrayElementsLimit		19
+nim	errObjectMembersLimit	json_serialization/lexer.html#errObjectMembersLimit	JsonErrorKind.errObjectMembersLimit		19
+nim	errMissingFirstElement	json_serialization/lexer.html#errMissingFirstElement	JsonErrorKind.errMissingFirstElement		19
+nim	errEmptyFraction	json_serialization/lexer.html#errEmptyFraction	JsonErrorKind.errEmptyFraction		19
+nim	errIntPosSign	json_serialization/lexer.html#errIntPosSign	JsonErrorKind.errIntPosSign		19
+nim	errValueExpected	json_serialization/lexer.html#errValueExpected	JsonErrorKind.errValueExpected		19
+nim	errEscapeControlChar	json_serialization/lexer.html#errEscapeControlChar	JsonErrorKind.errEscapeControlChar		19
+nim	errInvalidInt	json_serialization/lexer.html#errInvalidInt	JsonErrorKind.errInvalidInt		19
+nim	JsonErrorKind	json_serialization/lexer.html#JsonErrorKind	enum JsonErrorKind		19
+nim	JsonLexer	json_serialization/lexer.html#JsonLexer	object JsonLexer		64
+nim	init	json_serialization/lexer.html#init,typeJsonLexer,InputStream,JsonReaderFlags,JsonReaderConf	proc init(T: type JsonLexer; stream: InputStream;\n     flags: JsonReaderFlags = defaultJsonReaderFlags;\n     conf: JsonReaderConf = defaultJsonReaderConf): T:type		345
+nim	isErr	json_serialization/lexer.html#isErr,JsonLexer	proc isErr(lex: JsonLexer): bool		361
+nim	col	json_serialization/lexer.html#col,JsonLexer	proc col(lex: JsonLexer): int		364
+nim	tokenStartCol	json_serialization/lexer.html#tokenStartCol,JsonLexer	proc tokenStartCol(lex: JsonLexer): int		367
+nim	nonws	json_serialization/lexer.html#nonws,JsonLexer	proc nonws(lex: var JsonLexer): char		370
+nim	scanBool	json_serialization/lexer.html#scanBool,JsonLexer	proc scanBool(lex: var JsonLexer): bool		376
+nim	scanNull	json_serialization/lexer.html#scanNull,JsonLexer	proc scanNull(lex: var JsonLexer)		400
+nim	scanNumber	json_serialization/lexer.html#scanNumber,JsonLexer,T	proc scanNumber[T](lex: var JsonLexer; val: var T)		411
+nim	scanString	json_serialization/lexer.html#scanString,JsonLexer,T,int	proc scanString[T](lex: var JsonLexer; val: var T; limit: int)		492
+nim	scanValue	json_serialization/lexer.html#scanValue,JsonLexer,T	proc scanValue[T](lex: var JsonLexer; val: var T)		581
+nim	tokKind	json_serialization/lexer.html#tokKind,JsonLexer	proc tokKind(lex: var JsonLexer): JsonValueKind		584
+nim	parseObjectImpl	json_serialization/lexer.html#parseObjectImpl.t,JsonLexer,static[bool],untyped,untyped,untyped,untyped,untyped,untyped	template parseObjectImpl(lex: JsonLexer; skipNullFields: static[bool];\n                actionInitial: untyped; actionClosing: untyped;\n                actionComma: untyped; actionKey: untyped; actionValue: untyped;\n                actionError: untyped)		587
+nim	scanObject	json_serialization/lexer.html#scanObject,JsonLexer,T	proc scanObject[T](lex: var JsonLexer; val: var T)		666
+nim	parseArrayImpl	json_serialization/lexer.html#parseArrayImpl.t,JsonLexer,untyped,untyped,untyped,untyped,untyped,untyped	template parseArrayImpl(lex: JsonLexer; numElem: untyped; actionInitial: untyped;\n               actionClosing: untyped; actionComma: untyped;\n               actionValue: untyped; actionError: untyped)		710
+nim	scanArray	json_serialization/lexer.html#scanArray,JsonLexer,T	proc scanArray[T](lex: var JsonLexer; val: var T)		775
