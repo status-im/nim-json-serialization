@@ -23,17 +23,16 @@ type
     Array
     Object
 
-
   JsonWriter*[Flavor = DefaultFlavor] = object
     stream: OutputStream
     hasTypeAnnotations: bool
     hasPrettyOutput*: bool # read-only
     stack: seq[CollectionKind]
-      ## Stack that keeps track of nested arrays/objects
+      # Stack that keeps track of nested arrays/objects
     empty: bool
-      ## True before any members / elements have been written to an object / array
+      # True before any members / elements have been written to an object / array
     wantName: bool
-      ## The next output should be a name (for an object member)
+      # The next output should be a name (for an object member)
 
 Json.setWriter JsonWriter,
                PreferredOutput = string
@@ -143,6 +142,13 @@ proc endArray*(w: var JsonWriter) {.raises: [IOError].} =
 
   w.endElement()
 
+template streamElement*(w: var JsonWriter, streamVar: untyped, body: untyped) =
+  ## Write an element giving direct access to the underlying stream
+  w.beginElement()
+  let streamVar = w.stream
+  body
+  w.endElement()
+
 proc writeName*(w: var JsonWriter, name: string) {.raises: [IOError].} =
   ## Write the name part of the member of an object, to be followed by the value
   doAssert w.inObject()
@@ -163,18 +169,10 @@ proc writeName*(w: var JsonWriter, name: string) {.raises: [IOError].} =
   w.stream.write ':'
   if w.hasPrettyOutput: w.stream.write ' '
 
-template streamElement*(w: var JsonWriter, streamVar: untyped, body: untyped) =
-  w.beginElement()
-  let streamVar = w.stream
-  body
-  w.endElement()
-
 template writeMember*[T: void](w: var JsonWriter, name: string, body: T) =
   ## Write a member field of an object, ie the name followed by the value.
   ##
-  ## Optional fields may be omitted depending on the Flavor.
-  mixin writeValue
-
+  ## Optional field handling is not performed and must be done manually.
   w.writeName(name)
   body
 

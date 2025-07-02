@@ -244,17 +244,24 @@ readRecordValue[T](r: var JsonReader, value: var T)
 ## JsonWriter Helper Procedures
 
 ```nim
-beginRecord(w: var JsonWriter, T: type)
-beginRecord(w: var JsonWriter)
-endRecord(w: var JsonWriter)
+# Begin/end a value that is not an object/array
+beginElement(w: var JsonWriter)
+endElement(w: var JsonWriter)
 
-writeObject(w: var JsonWriter, T: type)
-writeObject(w: var JsonWriter)
+beginObject(w: var JsonWriter)
+beginObject(w: var JsonWriter, O: type)
+endObject(w: var JsonWriter)
 
-writeFieldName(w: var JsonWriter, name: string)
-writeField(w: var JsonWriter, name: string, value: auto)
+beginArray(w: var JsonWriter)
+endArray(w: var JsonWriter)
+
+writeName(w: var JsonWriter, name: string)
+writeMember(w: var JsonWriter, name: string, value: V)
+
+writeValue(w: var JsonWriter, name: string, value: V)
 
 iterator stepwiseArrayCreation[C](w: var JsonWriter, collection: C): auto
+
 writeIterable(w: var JsonWriter, collection: auto)
 writeArray[T](w: var JsonWriter, elements: openArray[T])
 ```
