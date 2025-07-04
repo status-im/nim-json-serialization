@@ -419,25 +419,20 @@ proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
       template addPrefixSlash(c) =
         s.write '\\'
         s.write c
-
+      const hexChars = "0123456789abcde"
       for c in value:
         case c
-        of '\L': addPrefixSlash 'n'
-        of '\b': addPrefixSlash 'b'
-        of '\f': addPrefixSlash 'f'
-        of '\t': addPrefixSlash 't'
-        of '\r': addPrefixSlash 'r'
+        of '\b': addPrefixSlash 'b' # \x08
+        of '\t': addPrefixSlash 't' # \x09
+        of '\n': addPrefixSlash 'n' # \x0a
+        of '\f': addPrefixSlash 'f' # \x0c
+        of '\r': addPrefixSlash 'r' # \x0d
         of '"' : addPrefixSlash '\"'
-        of '\0'..'\7':
-          s.write "\\u000"
-          s.write char(ord('0') + ord(c))
-        of '\14'..'\31':
+        of '\x00'..'\x07', '\x0b', '\x0e'..'\x1f':
           s.write "\\u00"
-          # TODO: Should this really use a decimal representation?
-          # Or perhaps $ord(c) returns hex?
-          # This is potentially a bug in Nim's json module.
-          s.write $ord(c)
-        of '\\': addPrefixSlash '\\'
+          s.write hexChars[(uint8(c) shr 4) and 0x0f]
+          s.write hexChars[uint8(c) and 0x0f]
+
         else: s.write c
 
       s.write '"'

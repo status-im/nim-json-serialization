@@ -290,3 +290,6 @@ suite "Test writer":
     checkExp("0.0E+1", "0.0e1")
     checkExp("+0.1e+2", "0.1e2")
     checkExp("-0.2e+9", "-0.2e9")
+
+  test "escapes":
+    check Json.encode("\x12") == """"\u0012""""
