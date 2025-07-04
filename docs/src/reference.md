@@ -83,7 +83,7 @@ You can adjust these defaults to suit your needs:
 
 ### Common API
 
-Similar to parsing, the [common serialization API]() is used to produce JSON documents.
+Similar to parsing, the [common serialization API](https://github.com/status-im/nim-serialization?tab=readme-ov-file#common-api) is used to produce JSON documents.
 
 ```nim
 {{#include ../examples/reference0.nim:Encode}}
@@ -246,24 +246,7 @@ readRecordValue[T](r: var JsonReader, value: var T)
 
 ## JsonWriter Helper Procedures
 
-```nim
-beginRecord(w: var JsonWriter, T: type)
-beginRecord(w: var JsonWriter)
-endRecord(w: var JsonWriter)
-
-writeObject(w: var JsonWriter, T: type)
-writeObject(w: var JsonWriter)
-
-writeFieldName(w: var JsonWriter, name: string)
-writeField(w: var JsonWriter, name: string, value: auto)
-
-iterator stepwiseArrayCreation[C](w: var JsonWriter, collection: C): auto
-writeIterable(w: var JsonWriter, collection: auto)
-writeArray[T](w: var JsonWriter, elements: openArray[T])
-
-writeNumber[F,T](w: var JsonWriter[F], value: JsonNumber[T])
-writeJsonValueRef[F,T](w: var JsonWriter[F], value: JsonValueRef[T])
-```
+See the [API reference](./api/json_serialization/writer.html)
 
 ## Enums
 
