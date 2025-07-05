@@ -18,11 +18,11 @@ createJsonFlavor NullFields,
   skipNullFields = true
 
 func toReader(input: string): JsonReader[DefaultFlavor] =
-  var stream = unsafeMemoryInput(input)
+  var stream = memoryInput(input)
   JsonReader[DefaultFlavor].init(stream)
 
 func toReaderNullFields(input: string): JsonReader[NullFields] =
-  var stream = unsafeMemoryInput(input)
+  var stream = memoryInput(input)
   JsonReader[NullFields].init(stream)
 
 const
@@ -220,3 +220,20 @@ suite "JsonReader basic test":
     var r = toReader "[false, true, false]"
     expect JsonReaderError:
       discard r.readValue(array[2, bool])
+
+  test "readValue of object without fields":
+    type NoFields = object
+
+    block:
+      var stream = memoryInput(jsonText)
+      var r = JsonReader[DefaultFlavor].init(stream, allowUnknownFields=true)
+
+      check:
+        r.readValue(NoFields) == NoFields()
+
+    block:
+      var stream = memoryInput(jsonText)
+      var r = JsonReader[DefaultFlavor].init(stream, allowUnknownFields=false)
+
+      expect(JsonReaderError):
+        discard r.readValue(NoFields)

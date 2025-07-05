@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2019-2023 Status Research & Development GmbH
+# Copyright (c) 2019-2025 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -8,6 +8,7 @@
 # those terms.
 
 {.experimental: "notnil".}
+{.push raises: [], gcsafe.}
 
 import
   std/[strformat],
@@ -64,8 +65,6 @@ type
 
 Json.setReader JsonReader
 
-{.push gcsafe, raises: [].}
-
 func valueStr(err: ref IntOverflowError): string =
   if err.isNegative:
     result.add '-'
@@ -75,32 +74,25 @@ template tryFmt(expr: untyped): string =
   try: expr
   except CatchableError as err: err.msg
 
-method formatMsg*(err: ref JsonReaderError, filename: string):
-    string {.gcsafe, raises: [].} =
+method formatMsg*(err: ref JsonReaderError, filename: string): string =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Error while reading json file: {err.msg}"
 
-method formatMsg*(err: ref UnexpectedField, filename: string):
-    string {.gcsafe, raises: [].} =
+method formatMsg*(err: ref UnexpectedField, filename: string): string =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Unexpected field '{err.encounteredField}' while deserializing {err.deserializedType}"
 
-method formatMsg*(err: ref UnexpectedTokenError, filename: string):
-    string {.gcsafe, raises: [].} =
+method formatMsg*(err: ref UnexpectedTokenError, filename: string): string =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Unexpected token '{err.encountedToken}' in place of '{err.expectedToken}'"
 
-method formatMsg*(err: ref GenericJsonReaderError, filename: string):
-    string {.gcsafe, raises: [].} =
+method formatMsg*(err: ref GenericJsonReaderError, filename: string): string =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Exception encountered while deserializing '{err.deserializedField}': [{err.innerException.name}] {err.innerException.msg}"
 
-method formatMsg*(err: ref IntOverflowError, filename: string):
-    string {.gcsafe, raises: [].} =
+method formatMsg*(err: ref IntOverflowError, filename: string): string =
   tryFmt: fmt"{filename}({err.line}, {err.col}) The value '{err.valueStr}' is outside of the allowed range"
 
-method formatMsg*(err: ref UnexpectedValueError, filename: string):
-    string {.gcsafe, raises: [].} =
+method formatMsg*(err: ref UnexpectedValueError, filename: string): string =
   tryFmt: fmt"{filename}({err.line}, {err.col}) {err.msg}"
 
-method formatMsg*(err: ref IncompleteObjectError, filename: string):
-    string {.gcsafe, raises: [].} =
+method formatMsg*(err: ref IncompleteObjectError, filename: string): string =
   tryFmt: fmt"{filename}({err.line}, {err.col}) Not all required fields were specified when reading '{err.objectType}'"
 
 func assignLineNumber*(ex: ref JsonReaderError, lex: JsonLexer) =
@@ -184,13 +176,13 @@ template handleReadException*(r: JsonReader,
 proc init*(T: type JsonReader,
            stream: InputStream,
            flags: JsonReaderFlags,
-           conf: JsonReaderConf = defaultJsonReaderConf): T {.raises: [].} =
+           conf: JsonReaderConf = defaultJsonReaderConf): T =
   result.lex = JsonLexer.init(stream, flags, conf)
 
 proc init*(T: type JsonReader,
            stream: InputStream,
            allowUnknownFields = false,
-           requireAllFields = false): T {.raises: [].} =
+           requireAllFields = false): T =
   mixin flavorAllowsUnknownFields, flavorRequiresAllFields
   type Flavor = T.Flavor
 
