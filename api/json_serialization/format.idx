@@ -1,0 +1,29 @@
+nimTitle	format	json_serialization/format.html	module json_serialization/format		0
+nim	Json	json_serialization/format.html#Json	object Json		13
+nim	mimeType	json_serialization/format.html#mimeType.t,typeJson	template mimeType(T: type Json): string		16
+nim	supports	json_serialization/format.html#supports.t,typeJson,type	template supports(_: type Json; T: type): bool		19
+nim	EnumAsString	json_serialization/format.html#EnumAsString	EnumRepresentation.EnumAsString		24
+nim	EnumAsNumber	json_serialization/format.html#EnumAsNumber	EnumRepresentation.EnumAsNumber		24
+nim	EnumAsStringifiedNumber	json_serialization/format.html#EnumAsStringifiedNumber	EnumRepresentation.EnumAsStringifiedNumber		24
+nim	EnumRepresentation	json_serialization/format.html#EnumRepresentation	enum EnumRepresentation		24
+nim	flavorUsesAutomaticObjectSerialization	json_serialization/format.html#flavorUsesAutomaticObjectSerialization.t,typeDefaultFlavor	template flavorUsesAutomaticObjectSerialization(T: type DefaultFlavor): bool		29
+nim	flavorOmitsOptionalFields	json_serialization/format.html#flavorOmitsOptionalFields.t,typeDefaultFlavor	template flavorOmitsOptionalFields(T: type DefaultFlavor): bool		30
+nim	flavorRequiresAllFields	json_serialization/format.html#flavorRequiresAllFields.t,typeDefaultFlavor	template flavorRequiresAllFields(T: type DefaultFlavor): bool		31
+nim	flavorAllowsUnknownFields	json_serialization/format.html#flavorAllowsUnknownFields.t,typeDefaultFlavor	template flavorAllowsUnknownFields(T: type DefaultFlavor): bool		32
+nim	flavorSkipNullFields	json_serialization/format.html#flavorSkipNullFields.t,typeDefaultFlavor	template flavorSkipNullFields(T: type DefaultFlavor): bool		33
+nim	flavorEnumRep	json_serialization/format.html#flavorEnumRep.t,typeDefaultFlavor	template flavorEnumRep(T: type DefaultFlavor): EnumRepresentation		36
+nim	flavorEnumRep	json_serialization/format.html#flavorEnumRep.t,typeDefaultFlavor,static[EnumRepresentation]	template flavorEnumRep(T: type DefaultFlavor; rep: static[EnumRepresentation])		39
+nim	flavorEnumRep	json_serialization/format.html#flavorEnumRep.t,typeJson,static[EnumRepresentation]	template flavorEnumRep(T: type Json; rep: static[EnumRepresentation])		44
+nim	DummyFlavor	json_serialization/format.html#DummyFlavor	object DummyFlavor		49
+nim	flavorUsesAutomaticObjectSerialization	json_serialization/format.html#flavorUsesAutomaticObjectSerialization.t,typeDummyFlavor	template flavorUsesAutomaticObjectSerialization(T: type DummyFlavor): bool		50
+nim	flavorOmitsOptionalFields	json_serialization/format.html#flavorOmitsOptionalFields.t,typeDummyFlavor	template flavorOmitsOptionalFields(T: type DummyFlavor): bool		51
+nim	flavorRequiresAllFields	json_serialization/format.html#flavorRequiresAllFields.t,typeDummyFlavor	template flavorRequiresAllFields(T: type DummyFlavor): bool		52
+nim	flavorAllowsUnknownFields	json_serialization/format.html#flavorAllowsUnknownFields.t,typeDummyFlavor	template flavorAllowsUnknownFields(T: type DummyFlavor): bool		53
+nim	flavorSkipNullFields	json_serialization/format.html#flavorSkipNullFields.t,typeDummyFlavor	template flavorSkipNullFields(T: type DummyFlavor): bool		54
+nim	createJsonFlavor	json_serialization/format.html#createJsonFlavor.t,untyped,string	template createJsonFlavor(FlavorName: untyped; mimeTypeValue = "application/json";\n                 automaticObjectSerialization = false; requireAllFields = true;\n                 omitOptionalFields = true; allowUnknownFields = true;\n                 skipNullFields = false)		56
+nimgrp	flavorrequiresallfields	json_serialization/format.html#flavorRequiresAllFields-templates-all	template		31
+nimgrp	flavoromitsoptionalfields	json_serialization/format.html#flavorOmitsOptionalFields-templates-all	template		30
+nimgrp	flavorskipnullfields	json_serialization/format.html#flavorSkipNullFields-templates-all	template		33
+nimgrp	flavorusesautomaticobjectserialization	json_serialization/format.html#flavorUsesAutomaticObjectSerialization-templates-all	template		29
+nimgrp	flavorenumrep	json_serialization/format.html#flavorEnumRep-templates-all	template		36
+nimgrp	flavorallowsunknownfields	json_serialization/format.html#flavorAllowsUnknownFields-templates-all	template		32
