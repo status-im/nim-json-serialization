@@ -7,6 +7,8 @@
 # This file may not be copied, modified, or distributed except according to
 # those terms.
 
+{.push raises: [], gcsafe.}
+
 import
   pkg/results, ../../json_serialization/[reader, writer, lexer]
 
@@ -25,7 +27,8 @@ proc writeValue*[T](
   else:
     writer.writeValue JsonString("null")
 
-proc readValue*[T](reader: var JsonReader, value: var Result[T, void]) =
+proc readValue*[T](reader: var JsonReader, value: var Result[T, void]) {.
+      raises: [IOError, SerializationError].} =
   mixin readValue
 
   if reader.tokKind == JsonValueKind.Null:

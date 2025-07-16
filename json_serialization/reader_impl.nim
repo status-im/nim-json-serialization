@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2019-2023 Status Research & Development GmbH
+# Copyright (c) 2019-2025 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -8,9 +8,10 @@
 # those terms.
 
 {.experimental: "notnil".}
+{.push raises: [], gcsafe.}
 
 import
-  std/[enumutils, tables, macros, strformat, typetraits],
+  std/[enumutils, tables, macros, typetraits],
   stew/[enums, objects],
   faststreams/inputs,
   serialization/[object_serialization, errors],
@@ -20,8 +21,6 @@ from json import JsonNode
 
 export
   enumutils, inputs, format, types, errors, parser, reader_desc
-
-{.push gcsafe, raises: [].}
 
 # ------------------------------------------------------------------------------
 # Private helpers
@@ -161,14 +160,13 @@ func totalExpectedFields*(T: type): int {.compileTime.} =
     if isFieldExpected(FieldType):
       inc result
 
-func expectedFieldsBitmask*(TT: type): auto {.compileTime.} =
+func expectedFieldsBitmask*(TT: type, fields: static int): auto {.compileTime.} =
   type T = TT
 
   mixin isFieldExpected,
         enumAllSerializedFields
 
-  const requiredWords =
-    (totalSerializedFields(T) + bitsPerWord - 1) div bitsPerWord
+  const requiredWords = (fields + bitsPerWord - 1) div bitsPerWord
 
   var res: array[requiredWords, uint]
 
@@ -186,20 +184,18 @@ proc readRecordValue*[T](r: var JsonReader, value: var T)
     ReaderType {.used.} = type r
     T = type value
 
-  const someCode = T.totalSerializedFields > 0
+  const
+    fieldsTable = T.fieldReadersTable(ReaderType)
+    typeName = typetraits.name(T)
 
-  when someCode:
-    const
-      fieldsTable = T.fieldReadersTable(ReaderType)
-      expectedFields = T.expectedFieldsBitmask
+  when fieldsTable.len > 0:
+    const expectedFields = T.expectedFieldsBitmask(fieldsTable.len)
 
     var
       encounteredFields: typeof(expectedFields)
       mostLikelyNextField = 0
 
-  r.parseObjectCustomKey:
-    when someCode:
-      let key = r.parseString()
+    r.parseObject(key):
       when T is tuple:
         let fieldIdx = mostLikelyNextField
         mostLikelyNextField += 1
@@ -208,8 +204,7 @@ proc readRecordValue*[T](r: var JsonReader, value: var T)
         let fieldIdx = findFieldIdx(fieldsTable,
                                     key,
                                     mostLikelyNextField)
-  do:
-    when someCode:
+
       if fieldIdx != -1:
         let reader = fieldsTable[fieldIdx].reader
         reader(value, r)
@@ -217,17 +212,21 @@ proc readRecordValue*[T](r: var JsonReader, value: var T)
       elif r.allowUnknownFields:
         r.skipSingleJsValue()
       else:
-        const typeName = typetraits.name(T)
         r.raiseUnexpectedField(key, cstring typeName)
 
-  when someCode:
     if r.requireAllFields and
       not expectedFields.isBitwiseSubsetOf(encounteredFields):
-      const typeName = typetraits.name(T)
       r.raiseIncompleteObject(typeName)
+  else:
+    r.parseObject(key):
+      # avoid bloat by putting this if inside parseObject
+      if r.allowUnknownFields:
+        r.skipSingleJsValue()
+      else:
+        r.raiseUnexpectedField(key, cstring typeName)
 
 proc readValue*[T](r: var JsonReader, value: var T)
-                  {.gcsafe, raises: [SerializationError, IOError].} =
+                  {.raises: [SerializationError, IOError].} =
   ## Master field/object parser. This function relies on
   ## customised sub-mixins for particular object types.
   ##

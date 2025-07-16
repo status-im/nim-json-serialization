@@ -22,7 +22,8 @@
 ## Finally, `streamElement` can be used when direct access to the stream is
 ## needed, for example to efficiently encode a value without intermediate
 ## allocations.
-{.push gcsafe, raises: [].}
+
+{.push raises: [], gcsafe.}
 
 import
   std/[json, typetraits],
@@ -524,7 +525,7 @@ template configureJsonSerialization*(
     T: type[enum], enumRep: static[EnumRepresentation]) =
   ## Configure JSON serialization for an enum type with a specific representation.
   proc writeValue*(w: var JsonWriter,
-                   value: T) {.gcsafe, raises: [IOError].} =
+                   value: T) {.raises: [IOError].} =
     writeEnumImpl(w, value, enumRep)
 
 template configureJsonSerialization*(Flavor: type,
@@ -533,9 +534,9 @@ template configureJsonSerialization*(Flavor: type,
   ## Configure JSON serialization for an enum type and flavor with a specific representation.
   when Flavor is Json:
     proc writeValue*(w: var JsonWriter[DefaultFlavor],
-                     value: T) {.gcsafe, raises: [IOError].} =
+                     value: T) {.raises: [IOError].} =
       writeEnumImpl(w, value, enumRep)
   else:
     proc writeValue*(w: var JsonWriter[Flavor],
-                     value: T) {.gcsafe, raises: [IOError].} =
+                     value: T) {.raises: [IOError].} =
       writeEnumImpl(w, value, enumRep)
