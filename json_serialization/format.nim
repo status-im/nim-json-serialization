@@ -10,8 +10,7 @@
 import
   serialization/[formats, object_serialization]
 
-export
-  formats
+export formats
 
 serializationFormat Json,
                     mimeType = "application/json"
@@ -60,12 +59,15 @@ template createJsonFlavor*(FlavorName: untyped,
                            omitOptionalFields = true,
                            allowUnknownFields = true,
                            skipNullFields = false) {.dirty.} =
-  type FlavorName* = object
+  when declared(SerializationFormat): # Earlier versions lack mimeTypeValue
+    createFlavor(Json, FlavorName, mimeTypeValue)
+  else:
+    type FlavorName* = object
 
-  template Reader*(T: type FlavorName): type = Reader(Json, FlavorName)
-  template Writer*(T: type FlavorName): type = Writer(Json, FlavorName)
-  template PreferredOutputType*(T: type FlavorName): type = string
-  template mimeType*(T: type FlavorName): string = mimeTypeValue
+    template Reader*(T: type FlavorName): type = Reader(Json, FlavorName)
+    template Writer*(T: type FlavorName): type = Writer(Json, FlavorName)
+    template PreferredOutputType*(T: type FlavorName): type = string
+    template mimeType*(T: type FlavorName): string = mimeTypeValue
 
   template flavorUsesAutomaticObjectSerialization*(T: type FlavorName): bool = automaticObjectSerialization
   template flavorOmitsOptionalFields*(T: type FlavorName): bool = omitOptionalFields
