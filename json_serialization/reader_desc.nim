@@ -24,7 +24,7 @@ type
   JsonReader*[Flavor = DefaultFlavor] = object
     lex*: JsonLexer
 
-  JsonReaderError* = object of JsonError
+  JsonReaderError* = object of types.JsonError
     line*, col*: int
 
   UnexpectedField* = object of JsonReaderError

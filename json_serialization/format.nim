@@ -8,9 +8,45 @@
 # those terms.
 
 import
-  serialization/[formats, object_serialization]
+  std/json,
+  serialization/[formats, object_serialization],
+  ./types
 
-export formats
+export formats, json
+
+template generateJsonAutoSerializationAddon*(FLAVOR: typed) {.dirty.} =
+  generateAutoSerializationAddon(FLAVOR)
+
+  template automaticPrimitivesSerialization*(F: type FLAVOR, enable: static[bool]) =
+    ## Set all supported primitives automatic serialization flag.
+    static:
+      F.setAutoSerialize(string, enable)
+      F.setAutoSerialize(seq[char], enable)
+      F.setAutoSerialize(bool, enable)
+      F.setAutoSerialize(ref, enable)
+      F.setAutoSerialize(ptr, enable)
+      F.setAutoSerialize(enum, enable)
+      F.setAutoSerialize(SomeInteger, enable)
+      F.setAutoSerialize(SomeFloat, enable)
+      F.setAutoSerialize(seq, enable)
+      F.setAutoSerialize(array, enable)
+      F.setAutoSerialize(cstring, enable)
+      F.setAutoSerialize(openArray[char], enable)
+      F.setAutoSerialize(openArray, enable)
+
+  template automaticBuiltinSerialization*(F: type FLAVOR, enable: static[bool]) =
+    ## Enable or disable all builtin serialization.
+    automaticPrimitivesSerialization(F, enable)
+    static:
+      F.setAutoSerialize(JsonString, enable)
+      F.setAutoSerialize(JsonNode, enable)
+      F.setAutoSerialize(JsonNumber, enable)
+      F.setAutoSerialize(JsonVoid, enable)
+      F.setAutoSerialize(JsonValueRef, enable)
+      F.setAutoSerialize(object, enable)
+      F.setAutoSerialize(tuple, enable)
+
+
 
 serializationFormat Json,
                     mimeType = "application/json"
@@ -44,6 +80,10 @@ template flavorEnumRep*(T: type Json, rep: static[EnumRepresentation]) =
   static:
     DefaultFlavorEnumRep = rep
 
+# Keep backward compatibility behavior, DefaultFlavor always enable all built in serialization.
+generateJsonAutoSerializationAddon(DefaultFlavor)
+DefaultFlavor.automaticBuiltinSerialization(true)
+
 # We create overloads of these traits to force the mixin treatment of the symbols
 type DummyFlavor* = object
 template flavorUsesAutomaticObjectSerialization*(T: type DummyFlavor): bool = true
@@ -51,6 +91,9 @@ template flavorOmitsOptionalFields*(T: type DummyFlavor): bool = false
 template flavorRequiresAllFields*(T: type DummyFlavor): bool = false
 template flavorAllowsUnknownFields*(T: type DummyFlavor): bool = false
 template flavorSkipNullFields*(T: type DummyFlavor): bool = false
+
+generateJsonAutoSerializationAddon(DummyFlavor)
+DummyFlavor.automaticBuiltinSerialization(false)
 
 template createJsonFlavor*(FlavorName: untyped,
                            mimeTypeValue = "application/json",
@@ -82,3 +125,10 @@ template createJsonFlavor*(FlavorName: untyped,
   template flavorEnumRep*(T: type FlavorName, rep: static[EnumRepresentation]) =
     static:
       `FlavorName EnumRep` = rep
+
+  generateJsonAutoSerializationAddon(FlavorName)
+
+  # Set if default to true for backward compatibility
+  # but user can call it again later with different value.
+  # Or fine tuning use `Flavor.automaticSerialization(type, true/false)`
+  FlavorName.automaticBuiltinSerialization(true)

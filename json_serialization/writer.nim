@@ -380,28 +380,52 @@ template writeValue*(w: var JsonWriter, value: enum) =
   type Flavor = type(w).Flavor
   writeEnumImpl(w, value, Flavor.flavorEnumRep())
 
-template isStringLike(v: string|cstring|openArray[char]|seq[char]): bool = true
+type
+  StringLikeTypes = string|cstring|openArray[char]|seq[char]
+
+template isStringLike(v: StringLikeTypes): bool = true
 template isStringLike[N](v: array[N, char]): bool = true
 template isStringLike(v: auto): bool = false
+
+template autoSerializeCheck(F: distinct type, T: distinct type) =
+  mixin typeAutoSerialize
+  when not F.typeAutoSerialize(T):
+    const typeName = typetraits.name(T)
+    {.error: "automatic serialization is not enabled or writeValue not implemented for `" &
+      typeName & "`".}
+
+template autoSerializeCheck(F: distinct type, TC: distinct type, M: distinct type) =
+  mixin typeClassOrMemberAutoSerialize
+  when not F.typeClassOrMemberAutoSerialize(TC, M):
+    const typeName = typetraits.name(M)
+    const typeClassName = typetraits.name(TC)
+    {.error: "automatic serialization is not enabled or writeValue not implemented for `" &
+      typeName & "` of typeclass `" & typeClassName & "`".}
 
 proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].} =
   ## Write a generic value as JSON, using type-based dispatch. Overload this
   ## function to provide custom conversions of your own types.
   mixin writeValue
 
+  type Flavor = JsonWriter.Flavor
+
   when value is JsonNode:
+    autoSerializeCheck(Flavor, JsonNode)
     w.streamElement(s):
       s.write if w.hasPrettyOutput: value.pretty
               else: $value
 
   elif value is JsonString:
+    autoSerializeCheck(Flavor, JsonString)
     w.streamElement(s):
       s.write $value
 
   elif value is JsonVoid:
+    autoSerializeCheck(Flavor, JsonVoid)
     discard
 
   elif value is ref:
+    autoSerializeCheck(Flavor, ref, typeof(value))
     if value.isNil:
       w.streamElement(s):
         s.write "null"
@@ -409,6 +433,10 @@ proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
       writeValue(w, value[])
 
   elif isStringLike(value):
+    when value isnot array:
+      autoSerializeCheck(Flavor, StringLikeTypes, typeof(value))
+    when value is array:
+      autoSerializeCheck(Flavor, array, typeof(value))
     w.streamElement(s):
       when value is cstring:
         if value == nil:
@@ -439,20 +467,24 @@ proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
       s.write '"'
 
   elif value is bool:
+    autoSerializeCheck(Flavor, bool)
     w.streamElement(s):
       s.write if value: "true" else: "false"
 
   elif value is range:
+    autoSerializeCheck(Flavor, range)
     when low(typeof(value)) < 0:
       w.writeValue int64(value)
     else:
       w.writeValue uint64(value)
 
   elif value is SomeInteger:
+    autoSerializeCheck(Flavor, SomeInteger, typeof(value))
     w.streamElement(s):
       s.writeText value
 
   elif value is SomeFloat:
+    autoSerializeCheck(Flavor, SomeFloat, typeof(value))
     w.streamElement(s):
       # TODO Implement writeText for floats
       #      to avoid the allocation here:
@@ -460,15 +492,27 @@ proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
 
   elif value is (seq or array or openArray) or
       (value is distinct and distinctBase(value) is (seq or array or openArray)):
+
+    when value is seq or(value is distinct and distinctBase(value) is seq):
+      autoSerializeCheck(Flavor, seq, typeof(value))
+    when value is array or(value is distinct and distinctBase(value) is array):
+      autoSerializeCheck(Flavor, array, typeof(value))
+    when value is openArray or(value is distinct and distinctBase(value) is openArray):
+      autoSerializeCheck(Flavor, openArray, typeof(value))
     when value is distinct:
       w.writeArray(distinctBase value)
     else:
       w.writeArray(value)
 
   elif value is (distinct or object or tuple):
+    when value is object:
+      autoSerializeCheck(Flavor, object, typeof(value))
+    when value is tuple:
+      autoSerializeCheck(Flavor, tuple, typeof(value))
+    when value is distinct:
+      autoSerializeCheck(Flavor, distinct, typeof(value))
     mixin flavorUsesAutomaticObjectSerialization
 
-    type Flavor = JsonWriter.Flavor
     const isAutomatic =
       flavorUsesAutomaticObjectSerialization(Flavor)
 
