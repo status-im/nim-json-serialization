@@ -507,12 +507,14 @@ proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
       w.writeArray(value)
 
   elif value is (distinct or object or tuple):
-    when value is object:
-      autoSerializeCheck(Flavor, object, typeof(value))
-    when value is tuple:
-      autoSerializeCheck(Flavor, tuple, typeof(value))
-    when value is distinct:
-      autoSerializeCheck(Flavor, distinct, typeof(value))
+    when declared(macrocache.hasKey):# Nim 1.6 have no macrocache.hasKey
+      when value is object:
+        autoSerializeCheck(Flavor, object, typeof(value))
+      when value is tuple:
+        autoSerializeCheck(Flavor, tuple, typeof(value))
+      when value is distinct:
+        autoSerializeCheck(Flavor, distinct, typeof(value))
+
     mixin flavorUsesAutomaticObjectSerialization
 
     const isAutomatic =

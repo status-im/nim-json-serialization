@@ -357,11 +357,12 @@ proc readValue*[T](r: var JsonReader, value: var T)
         r.raiseUnexpectedValue("Too many items for " & $(typeof(value)))
 
   elif value is (object or tuple):
-    when value is object:
-      autoSerializeCheck(Flavor, object, typeof(value))
+    when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
+      when value is object:
+        autoSerializeCheck(Flavor, object, typeof(value))
 
-    when value is tuple:
-      autoSerializeCheck(Flavor, tuple, typeof(value))
+      when value is tuple:
+        autoSerializeCheck(Flavor, tuple, typeof(value))
 
     # Keep existing object/tuple auto serialization
     # But make it deprecated.
