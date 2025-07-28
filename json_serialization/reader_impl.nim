@@ -225,6 +225,23 @@ proc readRecordValue*[T](r: var JsonReader, value: var T)
       else:
         r.raiseUnexpectedField(key, cstring typeName)
 
+template autoSerializeCheck(F: distinct type, T: distinct type) =
+  when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
+    mixin typeAutoSerialize
+    when not F.typeAutoSerialize(T):
+      const typeName = typetraits.name(T)
+      {.error: "automatic serialization is not enabled or readValue not implemented for `" &
+        typeName & "`".}
+
+template autoSerializeCheck(F: distinct type, TC: distinct type, M: distinct type) =
+  when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
+    mixin typeClassOrMemberAutoSerialize
+    when not F.typeClassOrMemberAutoSerialize(TC, M):
+      const typeName = typetraits.name(M)
+      const typeClassName = typetraits.name(TC)
+      {.error: "automatic serialization is not enabled or readValue not implemented for `" &
+        typeName & "` of typeclass `" & typeClassName & "`".}
+
 proc readValue*[T](r: var JsonReader, value: var T)
                   {.raises: [SerializationError, IOError].} =
   ## Master field/object parser. This function relies on
@@ -241,31 +258,41 @@ proc readValue*[T](r: var JsonReader, value: var T)
   ##       value = reader.readValue(int).FancyInt
   mixin readValue
 
+  type Flavor = JsonReader.Flavor
+
   when value is JsonString:
+    autoSerializeCheck(Flavor, JsonString)
     value = r.parseAsString()
 
   elif value is JsonNode:
+    autoSerializeCheck(Flavor, JsonNode)
     value = r.parseJsonNode()
 
   elif value is JsonNumber:
+    autoSerializeCheck(Flavor, JsonNumber)
     r.parseNumber(value)
 
   elif value is JsonVoid:
+    autoSerializeCheck(Flavor, JsonVoid)
     r.skipSingleJsValue()
 
   elif value is JsonValueRef:
+    autoSerializeCheck(Flavor, JsonValueRef)
     r.parseValue(value)
 
   elif value is string:
+    autoSerializeCheck(Flavor, string)
     value = r.parseString()
 
   elif value is seq[char]:
+    autoSerializeCheck(Flavor, seq[char])
     let val = r.parseString()
     value.setLen(val.len)
     for i in 0..<val.len:
       value[i] = val[i]
 
   elif isCharArray(value):
+    autoSerializeCheck(Flavor, array, typeof(value))
     let val = r.parseString()
     if val.len != value.len:
       # Raise tkString because we expected a `"` earlier
@@ -274,9 +301,16 @@ proc readValue*[T](r: var JsonReader, value: var T)
       value[i] = val[i]
 
   elif value is bool:
+    autoSerializeCheck(Flavor, bool)
     value = r.parseBool()
 
   elif value is ref|ptr:
+    when value is ref:
+      autoSerializeCheck(Flavor, ref, typeof(value))
+
+    when value is ptr:
+      autoSerializeCheck(Flavor, ptr, typeof(value))
+
     when compiles(isNotNilCheck(value)):
       allocPtr value
       value[] = readValue(r, type(value[]))
@@ -289,13 +323,16 @@ proc readValue*[T](r: var JsonReader, value: var T)
         value[] = readValue(r, type(value[]))
 
   elif value is enum:
+    autoSerializeCheck(Flavor, enum, typeof(value))
     r.parseEnum(value)
 
   elif value is SomeInteger:
+    autoSerializeCheck(Flavor, SomeInteger, typeof(value))
     value = r.parseInt(typeof value,
       JsonReaderFlag.portableInt in r.lex.flags)
 
   elif value is SomeFloat:
+    autoSerializeCheck(Flavor, SomeFloat, typeof(value))
     let val = r.parseNumber(uint64)
     if val.isFloat:
       value = r.toFloat(val, typeof value)
@@ -303,12 +340,14 @@ proc readValue*[T](r: var JsonReader, value: var T)
       value = T(val.integer)
 
   elif value is seq:
+    autoSerializeCheck(Flavor, seq, typeof(value))
     r.parseArray:
       let lastPos = value.len
       value.setLen(lastPos + 1)
       readValue(r, value[lastPos])
 
   elif value is array:
+    autoSerializeCheck(Flavor, array, typeof(value))
     type IDX = typeof low(value)
     r.parseArray(idx):
       if idx < value.len:
@@ -318,9 +357,17 @@ proc readValue*[T](r: var JsonReader, value: var T)
         r.raiseUnexpectedValue("Too many items for " & $(typeof(value)))
 
   elif value is (object or tuple):
+    when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
+      when value is object:
+        autoSerializeCheck(Flavor, object, typeof(value))
+
+      when value is tuple:
+        autoSerializeCheck(Flavor, tuple, typeof(value))
+
+    # Keep existing object/tuple auto serialization
+    # But make it deprecated.
     mixin flavorUsesAutomaticObjectSerialization
 
-    type Flavor = JsonReader.Flavor
     const isAutomatic =
       flavorUsesAutomaticObjectSerialization(Flavor)
 
