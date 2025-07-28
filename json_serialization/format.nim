@@ -34,6 +34,7 @@ template generateJsonAutoSerializationAddon*(FLAVOR: typed) {.dirty.} =
       F.setAutoSerialize(openArray[char], enable)
       F.setAutoSerialize(openArray, enable)
       F.setAutoSerialize(range, enable)
+      F.setAutoSerialize(distinct, enable)
 
   template automaticBuiltinSerialization*(F: type FLAVOR, enable: static[bool]) =
     ## Enable or disable all builtin serialization.
