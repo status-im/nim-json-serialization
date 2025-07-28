@@ -8,11 +8,12 @@
 # those terms.
 
 import
-  std/json,
   serialization/[formats, object_serialization],
   ./types
 
-export formats, json
+from std/json import JsonNode
+
+export formats, JsonNode
 
 template generateJsonAutoSerializationAddon*(FLAVOR: typed) {.dirty.} =
   generateAutoSerializationAddon(FLAVOR)
