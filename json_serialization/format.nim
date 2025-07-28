@@ -130,7 +130,7 @@ template createJsonFlavor*(FlavorName: untyped,
 
   generateJsonAutoSerializationAddon(FlavorName)
 
-  # Set if default to true for backward compatibility
+  # Set default to true for backward compatibility
   # but user can call it again later with different value.
   # Or fine tuning use `Flavor.automaticSerialization(type, true/false)`
   FlavorName.automaticBuiltinSerialization(true)
