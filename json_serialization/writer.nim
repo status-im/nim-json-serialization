@@ -388,19 +388,21 @@ template isStringLike[N](v: array[N, char]): bool = true
 template isStringLike(v: auto): bool = false
 
 template autoSerializeCheck(F: distinct type, T: distinct type) =
-  mixin typeAutoSerialize
-  when not F.typeAutoSerialize(T):
-    const typeName = typetraits.name(T)
-    {.error: "automatic serialization is not enabled or writeValue not implemented for `" &
-      typeName & "`".}
+  when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
+    mixin typeAutoSerialize
+    when not F.typeAutoSerialize(T):
+      const typeName = typetraits.name(T)
+      {.error: "automatic serialization is not enabled or writeValue not implemented for `" &
+        typeName & "`".}
 
 template autoSerializeCheck(F: distinct type, TC: distinct type, M: distinct type) =
-  mixin typeClassOrMemberAutoSerialize
-  when not F.typeClassOrMemberAutoSerialize(TC, M):
-    const typeName = typetraits.name(M)
-    const typeClassName = typetraits.name(TC)
-    {.error: "automatic serialization is not enabled or writeValue not implemented for `" &
-      typeName & "` of typeclass `" & typeClassName & "`".}
+  when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
+    mixin typeClassOrMemberAutoSerialize
+    when not F.typeClassOrMemberAutoSerialize(TC, M):
+      const typeName = typetraits.name(M)
+      const typeClassName = typetraits.name(TC)
+      {.error: "automatic serialization is not enabled or writeValue not implemented for `" &
+        typeName & "` of typeclass `" & typeClassName & "`".}
 
 proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].} =
   ## Write a generic value as JSON, using type-based dispatch. Overload this

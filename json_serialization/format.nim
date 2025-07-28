@@ -83,9 +83,10 @@ template flavorEnumRep*(T: type Json, rep: static[EnumRepresentation]) =
   static:
     DefaultFlavorEnumRep = rep
 
-# Keep backward compatibility behavior, DefaultFlavor always enable all built in serialization.
-generateJsonAutoSerializationAddon(DefaultFlavor)
-DefaultFlavor.automaticBuiltinSerialization(true)
+when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
+  # Keep backward compatibility behavior, DefaultFlavor always enable all built in serialization.
+  generateJsonAutoSerializationAddon(DefaultFlavor)
+  DefaultFlavor.automaticBuiltinSerialization(true)
 
 # We create overloads of these traits to force the mixin treatment of the symbols
 type DummyFlavor* = object
@@ -95,8 +96,9 @@ template flavorRequiresAllFields*(T: type DummyFlavor): bool = false
 template flavorAllowsUnknownFields*(T: type DummyFlavor): bool = false
 template flavorSkipNullFields*(T: type DummyFlavor): bool = false
 
-generateJsonAutoSerializationAddon(DummyFlavor)
-DummyFlavor.automaticBuiltinSerialization(false)
+when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
+  generateJsonAutoSerializationAddon(DummyFlavor)
+  DummyFlavor.automaticBuiltinSerialization(false)
 
 template createJsonFlavor*(FlavorName: untyped,
                            mimeTypeValue = "application/json",
@@ -129,9 +131,11 @@ template createJsonFlavor*(FlavorName: untyped,
     static:
       `FlavorName EnumRep` = rep
 
-  generateJsonAutoSerializationAddon(FlavorName)
+  when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
+    generateJsonAutoSerializationAddon(FlavorName)
 
-  # Set default to true for backward compatibility
-  # but user can call it again later with different value.
-  # Or fine tuning use `Flavor.automaticSerialization(type, true/false)`
-  FlavorName.automaticBuiltinSerialization(true)
+    # Set default to true for backward compatibility
+    # but user can call it again later with different value.
+    # Or fine tuning use `Flavor.automaticSerialization(type, true/false)`
+    FlavorName.automaticBuiltinSerialization(true)
+
