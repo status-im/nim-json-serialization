@@ -472,7 +472,7 @@ proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
       s.write if value: "true" else: "false"
 
   elif value is range:
-    autoSerializeCheck(Flavor, range)
+    autoSerializeCheck(Flavor, range, typeof(value))
     when low(typeof(value)) < 0:
       w.writeValue int64(value)
     else:
