@@ -393,8 +393,11 @@ template autoSerializeCheck(F: distinct type, T: distinct type, body) =
   when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
     mixin typeAutoSerialize
     when not F.typeAutoSerialize(T):
-      const typeName = typetraits.name(T)
-      {.error: "automatic serialization is not enabled or writeValue not implemented for `" &
+      const
+        typeName = typetraits.name(T)
+        flavorName = typetraits.name(F)
+      {.error: flavorName &
+        ": automatic serialization is not enabled or writeValue not implemented for `" &
         typeName & "`".}
     else:
       body
@@ -405,9 +408,12 @@ template autoSerializeCheck(F: distinct type, TC: distinct type, M: distinct typ
   when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
     mixin typeClassOrMemberAutoSerialize
     when not F.typeClassOrMemberAutoSerialize(TC, M):
-      const typeName = typetraits.name(M)
-      const typeClassName = typetraits.name(TC)
-      {.error: "automatic serialization is not enabled or writeValue not implemented for `" &
+      const
+        typeName = typetraits.name(M)
+        typeClassName = typetraits.name(TC)
+        flavorName = typetraits.name(F)
+      {.error: flavorName &
+        ": automatic serialization is not enabled or writeValue not implemented for `" &
         typeName & "` of typeclass `" & typeClassName & "`".}
     else:
       body
