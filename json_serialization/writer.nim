@@ -384,25 +384,86 @@ type
   StringLikeTypes = string|cstring|openArray[char]|seq[char]
 
 template isStringLike(v: StringLikeTypes): bool = true
-template isStringLike[N](v: array[N, char]): bool = true
 template isStringLike(v: auto): bool = false
 
-template autoSerializeCheck(F: distinct type, T: distinct type) =
+template isStringLikeArray[N](v: array[N, char]): bool = true
+template isStringLikeArray(v: auto): bool = false
+
+template autoSerializeCheck(F: distinct type, T: distinct type, body) =
   when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
     mixin typeAutoSerialize
     when not F.typeAutoSerialize(T):
-      const typeName = typetraits.name(T)
-      {.error: "automatic serialization is not enabled or writeValue not implemented for `" &
+      const
+        typeName = typetraits.name(T)
+        flavorName = typetraits.name(F)
+      {.error: flavorName &
+        ": automatic serialization is not enabled or writeValue not implemented for `" &
         typeName & "`".}
+    else:
+      body
+  else:
+    body
 
-template autoSerializeCheck(F: distinct type, TC: distinct type, M: distinct type) =
+template autoSerializeCheck(F: distinct type, TC: distinct type, M: distinct type, body) =
   when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
     mixin typeClassOrMemberAutoSerialize
     when not F.typeClassOrMemberAutoSerialize(TC, M):
-      const typeName = typetraits.name(M)
-      const typeClassName = typetraits.name(TC)
-      {.error: "automatic serialization is not enabled or writeValue not implemented for `" &
+      const
+        typeName = typetraits.name(M)
+        typeClassName = typetraits.name(TC)
+        flavorName = typetraits.name(F)
+      {.error: flavorName &
+        ": automatic serialization is not enabled or writeValue not implemented for `" &
         typeName & "` of typeclass `" & typeClassName & "`".}
+    else:
+      body
+  else:
+    body
+
+template writeValueObjectOrTuple(Flavor, w, value) =
+  mixin flavorUsesAutomaticObjectSerialization
+
+  const isAutomatic =
+    flavorUsesAutomaticObjectSerialization(Flavor)
+
+  when not isAutomatic:
+    const typeName = typetraits.name(type value)
+    {.error: "Please override writeValue for the " & typeName & " type (or import the module where the override is provided)".}
+
+  when value is distinct:
+    writeRecordValue(w, distinctBase(value, recursive = false))
+  else:
+    writeRecordValue(w, value)
+
+template writeValueStringLike(w, value) =
+  w.streamElement(s):
+    when value is cstring:
+      if value == nil:
+        s.write "null"
+        return
+
+    s.write '"'
+
+    template addPrefixSlash(c) =
+      s.write '\\'
+      s.write c
+    const hexChars = "0123456789abcde"
+    for c in value:
+      case c
+      of '\b': addPrefixSlash 'b' # \x08
+      of '\t': addPrefixSlash 't' # \x09
+      of '\n': addPrefixSlash 'n' # \x0a
+      of '\f': addPrefixSlash 'f' # \x0c
+      of '\r': addPrefixSlash 'r' # \x0d
+      of '"' : addPrefixSlash '\"'
+      of '\x00'..'\x07', '\x0b', '\x0e'..'\x1f':
+        s.write "\\u00"
+        s.write hexChars[(uint8(c) shr 4) and 0x0f]
+        s.write hexChars[uint8(c) and 0x0f]
+
+      else: s.write c
+
+    s.write '"'
 
 proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].} =
   ## Write a generic value as JSON, using type-based dispatch. Overload this
@@ -412,125 +473,104 @@ proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
   type Flavor = JsonWriter.Flavor
 
   when value is JsonNode:
-    autoSerializeCheck(Flavor, JsonNode)
-    w.streamElement(s):
-      s.write if w.hasPrettyOutput: value.pretty
-              else: $value
+    autoSerializeCheck(Flavor, JsonNode):
+      w.streamElement(s):
+        s.write if w.hasPrettyOutput: value.pretty
+                else: $value
 
   elif value is JsonString:
-    autoSerializeCheck(Flavor, JsonString)
-    w.streamElement(s):
-      s.write $value
+    autoSerializeCheck(Flavor, JsonString):
+      w.streamElement(s):
+        s.write $value
 
   elif value is JsonVoid:
-    autoSerializeCheck(Flavor, JsonVoid)
-    discard
+    autoSerializeCheck(Flavor, JsonVoid):
+      discard
 
   elif value is ref:
-    autoSerializeCheck(Flavor, ref, typeof(value))
-    if value.isNil:
-      w.streamElement(s):
-        s.write "null"
-    else:
-      writeValue(w, value[])
+    autoSerializeCheck(Flavor, ref, typeof(value)):
+      if value.isNil:
+        w.streamElement(s):
+          s.write "null"
+      else:
+        writeValue(w, value[])
 
   elif isStringLike(value):
-    when value isnot array:
-      autoSerializeCheck(Flavor, StringLikeTypes, typeof(value))
-    when value is array:
-      autoSerializeCheck(Flavor, array, typeof(value))
-    w.streamElement(s):
-      when value is cstring:
-        if value == nil:
-          s.write "null"
-          return
+    autoSerializeCheck(Flavor, StringLikeTypes, typeof(value)):
+      writeValueStringLike(w, value)
 
-      s.write '"'
-
-      template addPrefixSlash(c) =
-        s.write '\\'
-        s.write c
-      const hexChars = "0123456789abcde"
-      for c in value:
-        case c
-        of '\b': addPrefixSlash 'b' # \x08
-        of '\t': addPrefixSlash 't' # \x09
-        of '\n': addPrefixSlash 'n' # \x0a
-        of '\f': addPrefixSlash 'f' # \x0c
-        of '\r': addPrefixSlash 'r' # \x0d
-        of '"' : addPrefixSlash '\"'
-        of '\x00'..'\x07', '\x0b', '\x0e'..'\x1f':
-          s.write "\\u00"
-          s.write hexChars[(uint8(c) shr 4) and 0x0f]
-          s.write hexChars[uint8(c) and 0x0f]
-
-        else: s.write c
-
-      s.write '"'
+  elif isStringLikeArray(value):
+    autoSerializeCheck(Flavor, array, typeof(value)):
+      writeValueStringLike(w, value)
 
   elif value is bool:
-    autoSerializeCheck(Flavor, bool)
-    w.streamElement(s):
-      s.write if value: "true" else: "false"
+    autoSerializeCheck(Flavor, bool):
+      w.streamElement(s):
+        s.write if value: "true" else: "false"
 
   elif value is range:
-    autoSerializeCheck(Flavor, range, typeof(value))
-    when low(typeof(value)) < 0:
-      w.writeValue int64(value)
-    else:
-      w.writeValue uint64(value)
+    autoSerializeCheck(Flavor, range, typeof(value)):
+      when low(typeof(value)) < 0:
+        w.writeValue int64(value)
+      else:
+        w.writeValue uint64(value)
 
   elif value is SomeInteger:
-    autoSerializeCheck(Flavor, SomeInteger, typeof(value))
-    w.streamElement(s):
-      s.writeText value
+    autoSerializeCheck(Flavor, SomeInteger, typeof(value)):
+      w.streamElement(s):
+        s.writeText value
 
   elif value is SomeFloat:
-    autoSerializeCheck(Flavor, SomeFloat, typeof(value))
-    w.streamElement(s):
-      # TODO Implement writeText for floats
-      #      to avoid the allocation here:
-      s.write $value
+    autoSerializeCheck(Flavor, SomeFloat, typeof(value)):
+      w.streamElement(s):
+        # TODO Implement writeText for floats
+        #      to avoid the allocation here:
+        s.write $value
 
-  elif value is (seq or array or openArray) or
-      (value is distinct and distinctBase(value) is (seq or array or openArray)):
-
-    when value is seq or(value is distinct and distinctBase(value) is seq):
-      autoSerializeCheck(Flavor, seq, typeof(value))
-    when value is array or(value is distinct and distinctBase(value) is array):
-      autoSerializeCheck(Flavor, array, typeof(value))
-    when value is openArray or(value is distinct and distinctBase(value) is openArray):
-      autoSerializeCheck(Flavor, openArray, typeof(value))
-    when value is distinct:
-      w.writeArray(distinctBase value)
-    else:
-      w.writeArray(value)
-
-  elif value is (distinct or object or tuple):
-    when declared(macrocache.hasKey):# Nim 1.6 have no macrocache.hasKey
-      when value is object:
-        autoSerializeCheck(Flavor, object, typeof(value))
-      when value is tuple:
-        autoSerializeCheck(Flavor, tuple, typeof(value))
+  elif value is seq or(value is distinct and distinctBase(value) is seq):
+    autoSerializeCheck(Flavor, seq, typeof(value)):
       when value is distinct:
-        autoSerializeCheck(Flavor, distinct, typeof(value))
+        w.writeArray(distinctBase value)
+      else:
+        w.writeArray(value)
 
-    mixin flavorUsesAutomaticObjectSerialization
+  elif value is array or(value is distinct and distinctBase(value) is array):
+    autoSerializeCheck(Flavor, array, typeof(value)):
+      when value is distinct:
+        w.writeArray(distinctBase value)
+      else:
+        w.writeArray(value)
 
-    const isAutomatic =
-      flavorUsesAutomaticObjectSerialization(Flavor)
+  elif value is openArray or(value is distinct and distinctBase(value) is openArray):
+    autoSerializeCheck(Flavor, openArray, typeof(value)):
+      when value is distinct:
+        w.writeArray(distinctBase value)
+      else:
+        w.writeArray(value)
 
-    when not isAutomatic:
-      const typeName = typetraits.name(type value)
-      {.error: "Please override writeValue for the " & typeName & " type (or import the module where the override is provided)".}
-
-    when value is distinct:
-      writeRecordValue(w, distinctBase(value, recursive = false))
+  elif value is object:
+    when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey and cannot accept `object` param
+      autoSerializeCheck(Flavor, object, typeof(value)):
+        writeValueObjectOrTuple(Flavor, w, value)
     else:
-      writeRecordValue(w, value)
+      writeValueObjectOrTuple(Flavor, w, value)
+
+  elif value is tuple:
+    when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey and cannot accept `tuple` param
+      autoSerializeCheck(Flavor, tuple, typeof(value)):
+        writeValueObjectOrTuple(Flavor, w, value)
+    else:
+      writeValueObjectOrTuple(Flavor, w, value)
+
+  elif value is distinct:
+    autoSerializeCheck(Flavor, distinct, typeof(value)):
+      writeValueObjectOrTuple(Flavor, w, value)
+
   else:
-    const typeName = typetraits.name(value.type)
-    {.error: "Failed to convert to JSON an unsupported type: " & typeName.}
+    const
+      typeName = typetraits.name(value.type)
+      flavorName = typetraits.name(Flavor)
+    {.error: flavorName & ": Failed to convert to JSON an unsupported type: " & typeName.}
 
 proc toJson*(v: auto, pretty = false, typeAnnotations = false, Flavor = DefaultFlavor): string =
   ## Convert a value to its JSON string representation.

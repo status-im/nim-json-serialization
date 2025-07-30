@@ -106,7 +106,8 @@ template createJsonFlavor*(FlavorName: untyped,
                            requireAllFields = true,
                            omitOptionalFields = true,
                            allowUnknownFields = true,
-                           skipNullFields = false) {.dirty.} =
+                           skipNullFields = false,
+                           automaticPrimitivesSerialization = true) {.dirty.} =
   when declared(SerializationFormat): # Earlier versions lack mimeTypeValue
     createFlavor(Json, FlavorName, mimeTypeValue)
   else:
@@ -137,5 +138,4 @@ template createJsonFlavor*(FlavorName: untyped,
     # Set default to true for backward compatibility
     # but user can call it again later with different value.
     # Or fine tuning use `Flavor.automaticSerialization(type, true/false)`
-    FlavorName.automaticBuiltinSerialization(true)
-
+    FlavorName.automaticBuiltinSerialization(automaticPrimitivesSerialization)
