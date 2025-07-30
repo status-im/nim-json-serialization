@@ -549,13 +549,18 @@ proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
         w.writeArray(value)
 
   elif value is object:
-    autoSerializeCheck(Flavor, object, typeof(value)):
+    when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey and cannot accept `object` param
+      autoSerializeCheck(Flavor, object, typeof(value)):
+        writeValueObjectOrTuple(Flavor, w, value)
+    else:
       writeValueObjectOrTuple(Flavor, w, value)
 
   elif value is tuple:
-    autoSerializeCheck(Flavor, tuple, typeof(value)):
+    when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey and cannot accept `tuple` param
+      autoSerializeCheck(Flavor, tuple, typeof(value)):
+        writeValueObjectOrTuple(Flavor, w, value)
+    else:
       writeValueObjectOrTuple(Flavor, w, value)
-
 
   elif value is distinct:
     autoSerializeCheck(Flavor, distinct, typeof(value)):
