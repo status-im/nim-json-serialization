@@ -100,6 +100,14 @@ when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
   generateJsonAutoSerializationAddon(DummyFlavor)
   DummyFlavor.automaticBuiltinSerialization(false)
 
+template decode*(
+    Format: type Json,
+    inputParam: JsonString,
+    RecordType: type,
+    params: varargs[untyped],
+): auto =
+  decode(Format, string(inputParam), RecordType, params)
+
 template createJsonFlavor*(FlavorName: untyped,
                            mimeTypeValue = "application/json",
                            automaticObjectSerialization = false,
@@ -117,6 +125,14 @@ template createJsonFlavor*(FlavorName: untyped,
     template Writer*(T: type FlavorName): type = Writer(Json, FlavorName)
     template PreferredOutputType*(T: type FlavorName): type = string
     template mimeType*(T: type FlavorName): string = mimeTypeValue
+
+  template decode*(
+      Format: type FlavorName,
+      inputParam: JsonString,
+      RecordType: type,
+      params: varargs[untyped],
+  ): auto =
+    decode(Format, string(inputParam), RecordType, params)
 
   template flavorUsesAutomaticObjectSerialization*(T: type FlavorName): bool = automaticObjectSerialization
   template flavorOmitsOptionalFields*(T: type FlavorName): bool = omitOptionalFields
