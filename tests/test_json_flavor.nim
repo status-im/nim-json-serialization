@@ -130,8 +130,9 @@ suite "Test JsonFlavor":
 
   test "object with null fields":
     expect JsonReaderError:
-      let x = Json.decode(jsonTextWithNullFields, Container)
-      discard x
+      discard Json.decode(jsonTextWithNullFields, Container)
+    expect JsonReaderError:
+      discard Json.decode(JsonString(jsonTextWithNullFields), Container)
 
     let x = NullyFields.decode(jsonTextWithNullFields, Container)
     check x.list.len == 0
@@ -203,7 +204,7 @@ suite "Test JsonFlavor":
     NullyFields.flavorEnumRep(EnumAsStringifiedNumber)
     let x = NullyFields.encode(JackFruit)
     check x == "\"2\""
-    
+
     NullyFields.flavorEnumRep(EnumAsNumber)
     let z = NullyFields.encode(Banana)
     check z == "0"

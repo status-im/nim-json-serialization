@@ -608,8 +608,11 @@ suite "toJson tests":
     """
 
     expect IncompleteObjectError:
-      let shouldNotDecode = Json.decode(json, Simple, requireAllFields = true)
-      echo "This should not have decoded ", shouldNotDecode
+      discard Json.decode(json, Simple, requireAllFields = true)
+
+    expect IncompleteObjectError:
+      # JsonString overload parameters forwarding..
+      discard Json.decode(JsonString(json), Simple, requireAllFields = true)
 
   test "all fields were required, but not all were provided (additional fields present instead)":
     let json = test_dedent"""
