@@ -9,35 +9,25 @@
 
 {.push raises: [], gcsafe.}
 
-import
-  std/[net, strutils],
-  chronos/transports/common,
-  ../../json_serialization
+import ../../json_serialization, std/net
+export net
 
-export
-  net, common
-
-proc writeValue*(
-    writer: var JsonWriter, value: IpAddress) {.raises: [IOError].} =
+proc writeValue*(writer: var JsonWriter, value: IpAddress) {.raises: [IOError].} =
   writeValue(writer, $value)
 
-proc readValue*(reader: var JsonReader, value: var IpAddress) =
+proc readValue*(
+    reader: var JsonReader, value: var IpAddress
+) {.raises: [IOError, SerializationError].} =
   let s = reader.readValue(string)
   try:
     value = parseIpAddress s
   except CatchableError:
     raiseUnexpectedValue(reader, "Invalid IP address")
 
-proc writeValue*(
-    writer: var JsonWriter, value: Port) {.raises: [IOError].} =
+proc writeValue*(writer: var JsonWriter, value: Port) {.raises: [IOError].} =
   writeValue(writer, uint16 value)
 
-proc readValue*(reader: var JsonReader, value: var Port) =
+proc readValue*(
+    reader: var JsonReader, value: var Port
+) {.raises: [IOError, SerializationError].} =
   value = Port reader.readValue(uint16)
-
-proc writeValue*(
-    writer: var JsonWriter, value: AddressFamily) {.raises: [IOError].} =
-  writeValue(writer, $value)
-
-proc readValue*(reader: var JsonReader, value: var AddressFamily) =
-  value = parseEnum[AddressFamily](reader.readValue(string))
