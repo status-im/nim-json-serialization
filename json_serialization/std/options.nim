@@ -15,20 +15,21 @@ export options
 template shouldWriteObjectField*(field: Option): bool =
   field.isSome
 
-proc writeValue*(writer: var JsonWriter, value: Option) {.raises: [IOError].} =
+proc writeValue*(w: var JsonWriter, value: Option) {.raises: [IOError].} =
   mixin writeValue
 
   if value.isSome:
-    writer.writeValue value.get
+    w.writeValue value.get
   else:
-    writer.writeValue JsonString("null")
+    w.writeValue JsonString("null")
 
-proc readValue*[T](reader: var JsonReader, value: var Option[T]) {.
-      raises: [IOError, SerializationError].} =
+proc readValue*[T](
+    r: var JsonReader, value: var Option[T]
+) {.raises: [IOError, SerializationError].} =
   mixin readValue
 
-  if reader.tokKind == JsonValueKind.Null:
+  if r.tokKind == JsonValueKind.Null:
     reset value
-    reader.parseNull()
+    r.parseNull()
   else:
-    value = some reader.readValue(T)
+    value = some r.readValue(T)

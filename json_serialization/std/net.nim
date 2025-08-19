@@ -12,22 +12,22 @@
 import ../../json_serialization, std/net
 export net
 
-proc writeValue*(writer: var JsonWriter, value: IpAddress) {.raises: [IOError].} =
-  writeValue(writer, $value)
+proc writeValue*(w: var JsonWriter, value: IpAddress) {.raises: [IOError].} =
+  writeValue(w, $value)
 
 proc readValue*(
-    reader: var JsonReader, value: var IpAddress
+    r: var JsonReader, value: var IpAddress
 ) {.raises: [IOError, SerializationError].} =
-  let s = reader.readValue(string)
+  let s = r.readValue(string)
   try:
     value = parseIpAddress s
   except CatchableError:
-    raiseUnexpectedValue(reader, "Invalid IP address")
+    raiseUnexpectedValue(r, "Invalid IP address")
 
-proc writeValue*(writer: var JsonWriter, value: Port) {.raises: [IOError].} =
-  writeValue(writer, uint16 value)
+proc writeValue*(w: var JsonWriter, value: Port) {.raises: [IOError].} =
+  writeValue(w, uint16 value)
 
 proc readValue*(
-    reader: var JsonReader, value: var Port
+    r: var JsonReader, value: var Port
 ) {.raises: [IOError, SerializationError].} =
-  value = Port reader.readValue(uint16)
+  value = Port r.readValue(uint16)

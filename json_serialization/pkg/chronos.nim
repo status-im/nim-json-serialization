@@ -9,20 +9,18 @@
 
 {.push raises: [], gcsafe.}
 
-import chronos/transports/common, ../../json_serialization, ../std/net
+import chronos/transports/common, ../../json_serialization/[reader, writer], ../std/net
 
 export common, net
 
-proc writeValue*(
-    writer: var JsonWriter, value: TransportAddress
-) {.raises: [IOError].} =
-  writeValue(writer, $value)
+proc writeValue*(w: var JsonWriter, value: TransportAddress) {.raises: [IOError].} =
+  w.writeValue($value)
 
 proc readValue*(
-    reader: var JsonReader, value: var TransportAddress
+    r: var JsonReader, value: var TransportAddress
 ) {.raises: [IOError, SerializationError].} =
   value =
     try:
-      initTAddress(reader.readValue(string))
+      initTAddress(r.readValue(string))
     except TransportAddressError as exc:
-      reader.raiseUnexpectedValue("Cannot parse TransportAddress: " & exc.msg)
+      r.raiseUnexpectedValue("Cannot parse TransportAddress: " & exc.msg)
