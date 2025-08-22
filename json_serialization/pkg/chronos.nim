@@ -11,7 +11,8 @@
 
 import ../../json_serialization/[reader, writer], ../std/net
 
-from chronos/transports/common import TransportAddress, initTAddress, `$`
+from chronos/transports/common import
+  TransportAddress, TransportAddressError, initTAddress, `$`
 
 export TransportAddress, net
 
