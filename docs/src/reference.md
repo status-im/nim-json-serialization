@@ -133,12 +133,12 @@ Parsing and writing can be customized by providing overloads for the `readValue`
 
 ```nim
 # Custom serializers for MyType should match the following signatures
-proc readValue*(r: var JsonReader, v: var MyType) {.raises: [IOError, SerializationError].}
-proc writeValue*(w: var JsonWriter, v: MyType) {.raises: [IOError].}
+proc readValue*(r: var JsonReader, value: var MyType) {.raises: [IOError, SerializationError].}
+proc writeValue*(w: var JsonWriter, value: MyType) {.raises: [IOError].}
 
 # When flavors are used, add the flavor as well
-proc readValue*(r: var JsonReader[MyFlavor], v: var MyType) {.raises: [IOError, SerializationError].}
-proc writeValue*(w: var JsonWriter[MyFlavor], v: MyType) {.raises: [IOError].}
+proc readValue*(r: var JsonReader[MyFlavor], value: var MyType) {.raises: [IOError, SerializationError].}
+proc writeValue*(w: var JsonWriter[MyFlavor], value: MyType) {.raises: [IOError].}
 ```
 
 The JsonReader provides access to the JSON token stream coming out of the lexer. While the token stream can be accessed directly, there are several helpers that make it easier to correctly parse common JSON shapes.
@@ -148,9 +148,9 @@ The JsonReader provides access to the JSON token stream coming out of the lexer.
 Decode objects using the `parseObject` template. To parse values, use helper functions or `readValue`. The `readObject` and `readObjectFields` iterators are also useful for custom object parsers.
 
 ```nim
-proc readValue*(r: var JsonReader, table: var Table[string, int]) =
+proc readValue*(r: var JsonReader, value: var Table[string, int]) =
   parseObject(r, key):
-    table[key] = r.parseInt(int)
+    value[key] = r.parseInt(int)
 ```
 
 ### Sets and List-like Types

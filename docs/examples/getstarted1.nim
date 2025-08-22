@@ -6,18 +6,19 @@ import json_serialization
 type JsonRpcId = distinct JsonString
 
 proc readValue*(
-    r: var JsonReader, val: var JsonRpcId
+    r: var JsonReader, value: var JsonRpcId
 ) {.raises: [IOError, JsonReaderError].} =
   let tok = r.tokKind
   case tok
   of JsonValueKind.Number, JsonValueKind.String, JsonValueKind.Null:
     # Keep the original value without further processing
-    val = JsonRpcId(r.parseAsString())
+    value = JsonRpcId(r.parseAsString())
   else:
     r.raiseUnexpectedValue("Invalid RequestId, got " & $tok)
 
-proc writeValue*(w: var JsonWriter, val: JsonRpcId) {.raises: [IOError].} =
-  w.writeValue(JsonString(val)) # Preserve the original content
+proc writeValue*(w: var JsonWriter, value: JsonRpcId) {.raises: [IOError].} =
+  w.writeValue(JsonString(value)) # Preserve the original content
+
 # ANCHOR_END: Custom
 
 type Request = object

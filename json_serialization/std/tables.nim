@@ -9,25 +9,19 @@
 
 {.push raises: [], gcsafe.}
 
-import
-  std/strutils,
-  stew/shims/tables,
-  ../../json_serialization/[reader, writer, lexer]
+import std/strutils, stew/shims/tables, ../../json_serialization/[reader, writer, lexer]
 
 export tables
 
-type
-  TableType = OrderedTable | Table
+type TableType = OrderedTable | Table
 
-proc writeValue*(
-    writer: var JsonWriter, value: TableType) {.raises: [IOError].} =
-  writer.beginRecord()
-  for key, val in value:
-    writer.writeField $key, val
-  writer.endRecord()
+proc writeValue*(w: var JsonWriter, value: TableType) {.raises: [IOError].} =
+  w.writeObject:
+    for key, val in value:
+      w.writeField $key, val
 
 template to*(a: string, b: typed): untyped =
-  {.error: "doesnt support keys with type " & $type(b) .}
+  {.error: "doesnt support keys with type " & $type(b).}
 
 template to*(a: string, b: type int): int =
   parseInt(a)
@@ -38,13 +32,14 @@ template to*(a: string, b: type float): float =
 template to*(a: string, b: type string): string =
   a
 
-proc readValue*(reader: var JsonReader, value: var TableType) {.
-      raises: [IOError, SerializationError].} =
+proc readValue*(
+    r: var JsonReader, value: var TableType
+) {.raises: [IOError, SerializationError].} =
   try:
     type KeyType = type(value.keys)
     type ValueType = type(value.values)
     value = init TableType
-    for key, val in readObject(reader, string, ValueType):
+    for key, val in r.readObject(string, ValueType):
       value[to(key, KeyType)] = val
   except ValueError as ex:
-    reader.raiseUnexpectedValue("TableType: " & ex.msg)
+    r.raiseUnexpectedValue("TableType: " & ex.msg)

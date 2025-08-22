@@ -9,33 +9,31 @@
 
 {.push raises: [], gcsafe.}
 
-import
-  pkg/results, ../../json_serialization/[reader, writer, lexer]
+import pkg/results, ../../json_serialization/[reader, writer, lexer]
 
-export
-  results
+export results
 
-template shouldWriteObjectField*[T](field: Result[T, void]): bool =
+template shouldWriteObjectField*[T](field: Opt[T]): bool =
   field.isOk
 
-proc writeValue*[T](
-    writer: var JsonWriter, value: Result[T, void]) {.raises: [IOError].} =
+proc writeValue*[T](w: var JsonWriter, value: Opt[T]) {.raises: [IOError].} =
   mixin writeValue
 
   if value.isOk:
-    writer.writeValue value.get
+    w.writeValue(value.get)
   else:
-    writer.writeValue JsonString("null")
+    w.writeValue JsonString("null")
 
-proc readValue*[T](reader: var JsonReader, value: var Result[T, void]) {.
-      raises: [IOError, SerializationError].} =
+proc readValue*[T](
+    r: var JsonReader, value: var Opt[T]
+) {.raises: [IOError, SerializationError].} =
   mixin readValue
 
-  if reader.tokKind == JsonValueKind.Null:
+  if r.tokKind == JsonValueKind.Null:
     reset value
-    reader.parseNull()
+    r.parseNull()
   else:
-    value.ok reader.readValue(T)
+    value.ok r.readValue(T)
 
-func isFieldExpected*[T, E](_: type[Result[T, E]]): bool {.compileTime.} =
+func isFieldExpected*[T](_: type[Opt[T]]): bool {.compileTime.} =
   false

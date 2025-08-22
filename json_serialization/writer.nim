@@ -606,8 +606,8 @@ template endRecord*(w: var JsonWriter) = w.endObject()
 
 template serializesAsTextInJson*(T: type[enum]) =
   ## Configure an enum type to serialize as text in JSON.
-  template writeValue*(w: var JsonWriter, val: T) =
-    w.writeValue $val
+  template writeValue*(w: var JsonWriter, value: T) =
+    w.writeValue $value
 
 template configureJsonSerialization*(
     T: type[enum], enumRep: static[EnumRepresentation]) =
