@@ -12,6 +12,11 @@
 import ../../json_serialization, std/net
 export net
 
+when compiles((; import chronos/transports/common)):
+  # Backwards-compat with json_ser <= 0.4.2
+  import ../pkg/chronos as jschronos
+  export jschronos
+
 proc writeValue*(w: var JsonWriter, value: IpAddress) {.raises: [IOError].} =
   w.writeValue($value)
 
