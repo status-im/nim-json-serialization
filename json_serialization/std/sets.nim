@@ -12,15 +12,15 @@
 import stew/shims/sets, ../../json_serialization/[reader, writer, lexer]
 export sets
 
-type
-  SetType = OrderedSet | HashSet | set
+type SetType = OrderedSet | HashSet | set
 
-proc writeValue*(writer: var JsonWriter, value: SetType) {.raises: [IOError].} =
-  writer.writeIterable value
+proc writeValue*(w: var JsonWriter, value: SetType) {.raises: [IOError].} =
+  w.writeIterable value
 
-proc readValue*(reader: var JsonReader, value: var SetType) {.
-      raises: [IOError, SerializationError].} =
+proc readValue*(
+    r: var JsonReader, value: var SetType
+) {.raises: [IOError, SerializationError].} =
   type ElemType = type(value.items)
   value = init SetType
-  for elem in readArray(reader, ElemType):
+  for elem in r.readArray(ElemType):
     value.incl elem
