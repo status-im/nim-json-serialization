@@ -1,0 +1,367 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Getting started - json_serialization</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="open-in.css">
+        <link rel="stylesheet" href="./mdbook-admonish.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">json_serialization</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/status-im/nim-json-serialization/" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="getting-started"><a class="header" href="#getting-started">Getting started</a></h1>
+<ul>
+<li><a href="#imports-and-exports">Imports and exports</a></li>
+<li><a href="#simple-reader">Simple reader</a></li>
+<li><a href="#encoding-and-pretty-printing">Encoding and pretty printing</a></li>
+<li><a href="#handling-errors">Handling errors</a></li>
+<li><a href="#custom-parsing">Custom parsing</a></li>
+<li><a href="#flavors-and-strictness">Flavors and strictness</a></li>
+<li><a href="#required-and-optional-fields">Required and optional fields</a></li>
+<li><a href="#automatic-object-conversion">Automatic object conversion</a></li>
+<li><a href="#almost-there">...almost there!</a></li>
+</ul>
+<p><code>json_serialization</code> is used to parse JSON documents directly into Nim types and to encode them back as JSON efficiently.</p>
+<p>Let's start with a simple <a href="https://www.jsonrpc.org/specification#examples">JSON-RPC</a> example:</p>
+<pre><code class="language-json">{"jsonrpc": "2.0", "method": "subtract", "params": [42, 3], "id": 1}
+</code></pre>
+<h2 id="imports-and-exports"><a class="header" href="#imports-and-exports">Imports and exports</a></h2>
+<p>Before we can use <code>json_serialization</code>, we have to import the library.</p>
+<p>If you put your custom serialization code in a separate module, make sure to re-export <code>json_serialization</code>:</p>
+<pre><code class="language-nim">{.push gcsafe, raises: [].} # Encourage exception handling hygiene in procedures!
+
+import json_serialization
+export json_serialization
+</code></pre>
+<p>A common way to organize serialization code is to use a separate module named either after the library (<code>mylibrary_json_serialization</code>) or the flavor (<code>myflavor_json_serialization</code>).</p>
+<p>For types that mainly exist to interface with JSON, custom serializers can also be placed together with the type definitions.</p>
+<div id="admonition-re-exports" class="admonition admonish-tip" role="note" aria-labelledby="admonition-re-exports-title">
+<div class="admonition-title">
+<div id="admonition-re-exports-title">
+<p>Re-exports</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-re-exports"></a>
+</div>
+<div>
+<p>When importing a module that contains custom serializers, make sure to re-export it or you might end up with cryptic compiler errors or worse, the default serializers being used!</p>
+</div>
+</div>
+<h2 id="simple-reader"><a class="header" href="#simple-reader">Simple reader</a></h2>
+<p>Looking at the example, we'll define a Nim <code>object</code> to hold the request data, with matching field names and types:</p>
+<pre><code class="language-nim">type Request = object
+  jsonrpc: string
+  `method`: string # Quote Nim keywords
+  params: seq[int] # Map JSON array to `seq`
+  id: int
+
+</code></pre>
+<p><code>Json.decode</code> can now turn our JSON input into a <code>Request</code>:</p>
+<pre><code class="language-nim"># Decode the string into our Request type
+let decoded = Json.decode(
+  """{"jsonrpc": "2.0", "method": "subtract", "params": [42, 3], "id": 1}""", Request
+)
+
+echo decoded.id
+</code></pre>
+<div id="admonition-default" class="admonition admonish-tip" role="note">
+<div>
+<p>Replace <code>decode</code>/<code>encode</code> with <code>loadFile</code>/<code>saveFile</code> to read and write a file instead!</p>
+</div>
+</div>
+<h2 id="encoding-and-pretty-printing"><a class="header" href="#encoding-and-pretty-printing">Encoding and pretty printing</a></h2>
+<p>Having parsed the example with <code>Json.decode</code>, we can pretty-print it back to the console using <code>Json.encode</code> that returns a <code>string</code>:</p>
+<pre><code class="language-nim"># Now that we have a `Request` instance, we can pretty-print it:
+echo Json.encode(decoded, pretty = true)
+</code></pre>
+<h2 id="handling-errors"><a class="header" href="#handling-errors">Handling errors</a></h2>
+<p>Of course, someone might give us some invalid data - <code>json_serialization</code> will raise an exception when that happens:</p>
+<pre><code class="language-nim">try:
+  # Oops, a string was used for the `id` field!
+  discard Json.decode("""{"id": "test"}""", Request)
+except JsonError as exc:
+  # "&lt;string&gt;" helps identify the source of the document - this can be a
+  # filename, URL or something else that helps the user find the error
+  echo "Failed to parse document: ", exc.formatMsg("&lt;string&gt;")
+</code></pre>
+<p>The error message points out where things went wrong:</p>
+<pre><code class="language-text">Failed to parse document: &lt;string&gt;(1, 8) number expected
+</code></pre>
+<h2 id="custom-parsing"><a class="header" href="#custom-parsing">Custom parsing</a></h2>
+<p>Happy we averted a crisis by adding the forgotten exception handler, we go back to the <a href="https://www.jsonrpc.org/specification#request_object">JSON-RPC specification</a> and notice that strings are actually allowed in the <code>id</code> field - further, the only thing we have to do with <code>id</code> is to pass it back in the response - we don't really care about its contents.</p>
+<p>We'll define a helper type to deal with this situation and attach some custom parsing code to it that checks the type. Using <code>JsonString</code> as underlying storage is an easy way to pass around snippets of JSON whose contents we don't need.</p>
+<p>The custom code is added to <code>readValue</code>/<code>writeValue</code> procedures that take the stream and our custom type as arguments:</p>
+<pre><code class="language-nim">type JsonRpcId = distinct JsonString
+
+proc readValue*(
+    r: var JsonReader, value: var JsonRpcId
+) {.raises: [IOError, JsonReaderError].} =
+  let tok = r.tokKind
+  case tok
+  of JsonValueKind.Number, JsonValueKind.String, JsonValueKind.Null:
+    # Keep the original value without further processing
+    value = JsonRpcId(r.parseAsString())
+  else:
+    r.raiseUnexpectedValue("Invalid RequestId, got " &amp; $tok)
+
+proc writeValue*(w: var JsonWriter, value: JsonRpcId) {.raises: [IOError].} =
+  w.writeValue(JsonString(value)) # Preserve the original content
+
+</code></pre>
+<h2 id="flavors-and-strictness"><a class="header" href="#flavors-and-strictness">Flavors and strictness</a></h2>
+<p>While the defaults that <code>json_serialization</code> offers are sufficient to get started, implementing JSON-based standards often requires more fine-grained control, such as what to do when a field is missing, unknown or has high-level requirements for parsing and formatting.</p>
+<p>We use <code>createJsonFlavor</code> to declare the new flavor passing to it the customization options that we're interested in:</p>
+<pre><code class="language-nim">createJsonFlavor JrpcSys,
+  automaticObjectSerialization = false,
+  requireAllFields = true,
+  omitOptionalFields = true, # Don't output `none` values when writing
+  allowUnknownFields = false
+</code></pre>
+<h2 id="required-and-optional-fields"><a class="header" href="#required-and-optional-fields">Required and optional fields</a></h2>
+<p>In the JSON-RPC example, both the <code>jsonrpc</code> version tag and <code>method</code> are required while parameters and <code>id</code> can be omitted. Our flavor required all fields to be present except those explicitly optional - we use <code>Opt</code> from <a href="https://github.com/arnetheduck/nim-results">results</a> to select the optional ones:</p>
+<pre><code class="language-nim">type Request = object
+  jsonrpc: string
+  `method`: string
+  params: Opt[seq[int]]
+  id: Opt[JsonRpcId]
+</code></pre>
+<h2 id="automatic-object-conversion"><a class="header" href="#automatic-object-conversion">Automatic object conversion</a></h2>
+<p>The default <code>Json</code> flavor allows any <code>object</code> to be converted to JSON. If you define a custom serializer and someone forgets to import it, the compiler might end up using the default instead resulting in a nasty runtime surprise.</p>
+<p><code>automaticObjectSerialization = false</code> forces a compiler error for any type that has not opted in to be serialized:</p>
+<pre><code class="language-nim"># Allow serializing the `Request` type - serializing other types will result in
+# a compile-time error because `automaticObjectSerialization` is false!
+JrpcSys.useDefaultSerializationFor Request
+</code></pre>
+<p>With all that work done, we can finally use our custom flavor to encode and decode the <code>Request</code>:</p>
+<pre><code class="language-nim">const json = """{"jsonrpc": "2.0", "method": "subtract", "params": [42, 3], "id": 1}"""
+
+echo JrpcSys.encode(JrpcSys.decode(json, Request))
+</code></pre>
+<h2 id="almost-there"><a class="header" href="#almost-there">...almost there!</a></h2>
+<p>While we've covered a fair bit of ground already, our <code>Request</code> parser is still not fully standards-compliant - in particular, the list of parameters must be able to handle both positional and named arguments and the values can themselves be full JSON documents that need custom parsing based on the <code>method</code> value.</p>
+<p>A more mature JSON-RPC parser can be found in <a href="https://github.com/status-im/nim-json-rpc/blob/master/json_rpc/private/jrpc_sys.nim">nim-json-rpc</a> which connects the <code>json_serialization</code> library to a DSL that conveniently allows mapping Nim procedures to JSON-RPC methods, featuring automatic parameter conversion and other nice conveniences..</p>
+<p>Furtyher examples of how to use <code>json_serialization</code> can be found in the <code>tests</code> folder.</p>
+<div id="admonition-read-that-spec" class="admonition admonish-tip" role="note" aria-labelledby="admonition-read-that-spec-title">
+<div class="admonition-title">
+<div id="admonition-read-that-spec-title">
+<p>Read that spec!</p>
+</div>
+<a class="admonition-anchor-link" href="#admonition-read-that-spec"></a>
+</div>
+<div>
+<p>Not only did we learn to about <code>json_serialization</code>, but also that examples are no substitute for reading the spec!</p>
+</div>
+</div>
+<footer id="open-on-gh">Found a bug? <a href="https://github.com/status-im/nim-json-serialization//edit/master/docs/src/getting_started.md">Edit this page on GitHub.</a></footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="introduction.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="streaming.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="introduction.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="streaming.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
