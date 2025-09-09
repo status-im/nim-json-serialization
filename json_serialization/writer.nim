@@ -431,7 +431,10 @@ template writeValueObjectOrTuple(Flavor, w, value) =
     {.error: "Please override writeValue for the " & typeName & " type (or import the module where the override is provided)".}
 
   when value is distinct:
-    writeRecordValue(w, distinctBase(value, recursive = false))
+    when distinctBase(value) is object|tuple:
+      writeRecordValue(w, distinctBase(value, recursive = false))
+    else:
+      writeValue(w, distinctBase(value, recursive = false))
   else:
     writeRecordValue(w, value)
 
