@@ -1,0 +1,48 @@
+nimTitle	parser	json_serialization/parser.html	module json_serialization/parser		0
+nim	SignPart	json_serialization/parser.html#SignPart	NumberPart.SignPart		23
+nim	IntegerPart	json_serialization/parser.html#IntegerPart	NumberPart.IntegerPart		23
+nim	FractionPart	json_serialization/parser.html#FractionPart	NumberPart.FractionPart		23
+nim	ExpSignPart	json_serialization/parser.html#ExpSignPart	NumberPart.ExpSignPart		23
+nim	ExponentPart	json_serialization/parser.html#ExponentPart	NumberPart.ExponentPart		23
+nim	NumberPart	json_serialization/parser.html#NumberPart	enum NumberPart		23
+nim	CustomNumberHandler	json_serialization/parser.html#CustomNumberHandler	type CustomNumberHandler		30
+nim	CustomIntHandler	json_serialization/parser.html#CustomIntHandler	type CustomIntHandler		34
+nim	CustomStringHandler	json_serialization/parser.html#CustomStringHandler	type CustomStringHandler		38
+nim	checkError	json_serialization/parser.html#checkError.t,JsonReader	template checkError(r: var JsonReader)		56
+nim	tokKind	json_serialization/parser.html#tokKind,JsonReader	proc tokKind(r: var JsonReader): JsonValueKind		60
+nim	customIntHandler	json_serialization/parser.html#customIntHandler,JsonReader,CustomIntHandler	proc customIntHandler(r: var JsonReader; handler: CustomIntHandler)		69
+nim	customNumberHandler	json_serialization/parser.html#customNumberHandler,JsonReader,CustomNumberHandler	proc customNumberHandler(r: var JsonReader; handler: CustomNumberHandler)		84
+nim	customStringHandler	json_serialization/parser.html#customStringHandler,JsonReader,int,CustomStringHandler	proc customStringHandler(r: var JsonReader; limit: int; handler: CustomStringHandler)		102
+nim	customIntValueIt	json_serialization/parser.html#customIntValueIt.t,JsonReader,untyped	template customIntValueIt(r: var JsonReader; body: untyped)		115
+nim	customNumberValueIt	json_serialization/parser.html#customNumberValueIt.t,JsonReader,untyped	template customNumberValueIt(r: var JsonReader; body: untyped)		126
+nim	customStringValueIt	json_serialization/parser.html#customStringValueIt.t,JsonReader,untyped,untyped	template customStringValueIt(r: var JsonReader; limit: untyped; body: untyped)		140
+nim	customStringValueIt	json_serialization/parser.html#customStringValueIt.t,JsonReader,untyped	template customStringValueIt(r: var JsonReader; body: untyped)		152
+nim	parseString	json_serialization/parser.html#parseString,JsonReader,int	proc parseString(r: var JsonReader; limit: int): string		168
+nim	parseString	json_serialization/parser.html#parseString,JsonReader	proc parseString(r: var JsonReader): string		175
+nim	parseBool	json_serialization/parser.html#parseBool,JsonReader	proc parseBool(r: var JsonReader): bool		179
+nim	parseNull	json_serialization/parser.html#parseNull,JsonReader	proc parseNull(r: var JsonReader)		186
+nim	parseNumber	json_serialization/parser.html#parseNumber.t,JsonReader,type	template parseNumber(r: var JsonReader; T: type): auto		200
+nim	parseNumber	json_serialization/parser.html#parseNumber,JsonReader,JsonNumber	proc parseNumber(r: var JsonReader; val: var JsonNumber)		207
+nim	toInt	json_serialization/parser.html#toInt,JsonReader,JsonNumber,typeSomeSignedInt,bool	proc toInt(r: var JsonReader; val: JsonNumber; T: type SomeSignedInt; portable: bool): T:type		214
+nim	toInt	json_serialization/parser.html#toInt,JsonReader,JsonNumber,typeSomeUnsignedInt,bool	proc toInt(r: var JsonReader; val: JsonNumber; T: type SomeUnsignedInt;\n      portable: bool): T:type		233
+nim	parseInt	json_serialization/parser.html#parseInt,JsonReader,typeSomeInteger,bool	proc parseInt(r: var JsonReader; T: type SomeInteger; portable: bool = false): T:type		245
+nim	toFloat	json_serialization/parser.html#toFloat,JsonReader,JsonNumber,typeSomeFloat	proc toFloat(r: var JsonReader; val: JsonNumber; T: type SomeFloat): T:type		256
+nim	parseFloat	json_serialization/parser.html#parseFloat,JsonReader,typeSomeFloat	proc parseFloat(r: var JsonReader; T: type SomeFloat): T:type		282
+nim	parseAsString	json_serialization/parser.html#parseAsString,JsonReader,string	proc parseAsString(r: var JsonReader; val: var string)		291
+nim	parseAsString	json_serialization/parser.html#parseAsString,JsonReader	proc parseAsString(r: var JsonReader): JsonString		335
+nim	parseValue	json_serialization/parser.html#parseValue.t,JsonReader,type	template parseValue(r: var JsonReader; T: type): auto		346
+nim	parseValue	json_serialization/parser.html#parseValue,JsonReader,JsonValueRef	proc parseValue(r: var JsonReader; val: var JsonValueRef)		353
+nim	parseArray	json_serialization/parser.html#parseArray.t,JsonReader,untyped	template parseArray(r: var JsonReader; body: untyped)		358
+nim	parseArray	json_serialization/parser.html#parseArray.t,JsonReader,untyped,untyped	template parseArray(r: var JsonReader; idx: untyped; body: untyped)		367
+nim	parseObject	json_serialization/parser.html#parseObject.t,JsonReader,untyped,untyped	template parseObject(r: var JsonReader; key: untyped; body: untyped)		376
+nim	parseObjectWithoutSkip	json_serialization/parser.html#parseObjectWithoutSkip.t,JsonReader,untyped,untyped	template parseObjectWithoutSkip(r: var JsonReader; key: untyped; body: untyped)		395
+nim	parseObjectSkipNullFields	json_serialization/parser.html#parseObjectSkipNullFields.t,JsonReader,untyped,untyped	template parseObjectSkipNullFields(r: var JsonReader; key: untyped; body: untyped)		408
+nim	parseObjectCustomKey	json_serialization/parser.html#parseObjectCustomKey.t,JsonReader,untyped,untyped	template parseObjectCustomKey(r: var JsonReader; keyAction: untyped; body: untyped)		421
+nim	parseJsonNode	json_serialization/parser.html#parseJsonNode,JsonReader	proc parseJsonNode(r: var JsonReader): JsonNode		444
+nim	skipSingleJsValue	json_serialization/parser.html#skipSingleJsValue,JsonLexer	proc skipSingleJsValue(lex: var JsonLexer)		508
+nim	skipSingleJsValue	json_serialization/parser.html#skipSingleJsValue.t,JsonReader	template skipSingleJsValue(r: var JsonReader)		514
+nimgrp	toint	json_serialization/parser.html#toInt-procs-all	proc		214
+nimgrp	parsestring	json_serialization/parser.html#parseString-procs-all	proc		168
+nimgrp	parseasstring	json_serialization/parser.html#parseAsString-procs-all	proc		291
+nimgrp	customstringvalueit	json_serialization/parser.html#customStringValueIt-templates-all	template		140
+nimgrp	parsearray	json_serialization/parser.html#parseArray-templates-all	template		358

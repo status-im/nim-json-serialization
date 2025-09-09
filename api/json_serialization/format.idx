@@ -1,0 +1,46 @@
+nimTitle	format	json_serialization/format.html	module json_serialization/format		0
+nim	generateJsonAutoSerializationAddon	json_serialization/format.html#generateJsonAutoSerializationAddon.t,typed	template generateJsonAutoSerializationAddon(FLAVOR: typed)		18
+nim	Json	json_serialization/format.html#Json	object Json		22
+nim	mimeType	json_serialization/format.html#mimeType.t,typeJson	template mimeType(T: type Json): string		54
+nim	supports	json_serialization/format.html#supports.t,typeJson,type	template supports(_: type Json; T: type): bool		57
+nim	EnumAsString	json_serialization/format.html#EnumAsString	EnumRepresentation.EnumAsString		62
+nim	EnumAsNumber	json_serialization/format.html#EnumAsNumber	EnumRepresentation.EnumAsNumber		62
+nim	EnumAsStringifiedNumber	json_serialization/format.html#EnumAsStringifiedNumber	EnumRepresentation.EnumAsStringifiedNumber		62
+nim	EnumRepresentation	json_serialization/format.html#EnumRepresentation	enum EnumRepresentation		62
+nim	flavorUsesAutomaticObjectSerialization	json_serialization/format.html#flavorUsesAutomaticObjectSerialization.t,typeDefaultFlavor	template flavorUsesAutomaticObjectSerialization(T: type DefaultFlavor): bool		67
+nim	flavorOmitsOptionalFields	json_serialization/format.html#flavorOmitsOptionalFields.t,typeDefaultFlavor	template flavorOmitsOptionalFields(T: type DefaultFlavor): bool		68
+nim	flavorRequiresAllFields	json_serialization/format.html#flavorRequiresAllFields.t,typeDefaultFlavor	template flavorRequiresAllFields(T: type DefaultFlavor): bool		69
+nim	flavorAllowsUnknownFields	json_serialization/format.html#flavorAllowsUnknownFields.t,typeDefaultFlavor	template flavorAllowsUnknownFields(T: type DefaultFlavor): bool		70
+nim	flavorSkipNullFields	json_serialization/format.html#flavorSkipNullFields.t,typeDefaultFlavor	template flavorSkipNullFields(T: type DefaultFlavor): bool		71
+nim	flavorEnumRep	json_serialization/format.html#flavorEnumRep.t,typeDefaultFlavor	template flavorEnumRep(T: type DefaultFlavor): EnumRepresentation		74
+nim	flavorEnumRep	json_serialization/format.html#flavorEnumRep.t,typeDefaultFlavor,static[EnumRepresentation]	template flavorEnumRep(T: type DefaultFlavor; rep: static[EnumRepresentation])		77
+nim	flavorEnumRep	json_serialization/format.html#flavorEnumRep.t,typeJson,static[EnumRepresentation]	template flavorEnumRep(T: type Json; rep: static[EnumRepresentation])		82
+nim	typeClassOrMemberAutoSerialize	json_serialization/format.html#typeClassOrMemberAutoSerialize,typeDefaultFlavor,,	proc typeClassOrMemberAutoSerialize(F: type DefaultFlavor; TC: distinct type;\n                               TM: distinct type): bool		53
+nim	typeAutoSerialize	json_serialization/format.html#typeAutoSerialize,typeDefaultFlavor,	proc typeAutoSerialize(F: type DefaultFlavor; TM: distinct type): bool		68
+nim	automaticSerialization	json_serialization/format.html#automaticSerialization.t,typeDefaultFlavor,,static[bool]	template automaticSerialization(F: type DefaultFlavor; T: distinct type;\n                       enable: static[bool])		19
+nim	automaticPrimitivesSerialization	json_serialization/format.html#automaticPrimitivesSerialization.t,typeDefaultFlavor,static[bool]	template automaticPrimitivesSerialization(F: type DefaultFlavor; enable: static[bool])		21
+nim	automaticBuiltinSerialization	json_serialization/format.html#automaticBuiltinSerialization.t,typeDefaultFlavor,static[bool]	template automaticBuiltinSerialization(F: type DefaultFlavor; enable: static[bool])		88
+nim	DummyFlavor	json_serialization/format.html#DummyFlavor	object DummyFlavor		92
+nim	flavorUsesAutomaticObjectSerialization	json_serialization/format.html#flavorUsesAutomaticObjectSerialization.t,typeDummyFlavor	template flavorUsesAutomaticObjectSerialization(T: type DummyFlavor): bool		93
+nim	flavorOmitsOptionalFields	json_serialization/format.html#flavorOmitsOptionalFields.t,typeDummyFlavor	template flavorOmitsOptionalFields(T: type DummyFlavor): bool		94
+nim	flavorRequiresAllFields	json_serialization/format.html#flavorRequiresAllFields.t,typeDummyFlavor	template flavorRequiresAllFields(T: type DummyFlavor): bool		95
+nim	flavorAllowsUnknownFields	json_serialization/format.html#flavorAllowsUnknownFields.t,typeDummyFlavor	template flavorAllowsUnknownFields(T: type DummyFlavor): bool		96
+nim	flavorSkipNullFields	json_serialization/format.html#flavorSkipNullFields.t,typeDummyFlavor	template flavorSkipNullFields(T: type DummyFlavor): bool		97
+nim	typeClassOrMemberAutoSerialize	json_serialization/format.html#typeClassOrMemberAutoSerialize,typeDummyFlavor,,	proc typeClassOrMemberAutoSerialize(F: type DummyFlavor; TC: distinct type;\n                               TM: distinct type): bool		53
+nim	typeAutoSerialize	json_serialization/format.html#typeAutoSerialize,typeDummyFlavor,	proc typeAutoSerialize(F: type DummyFlavor; TM: distinct type): bool		68
+nim	automaticSerialization	json_serialization/format.html#automaticSerialization.t,typeDummyFlavor,,static[bool]	template automaticSerialization(F: type DummyFlavor; T: distinct type;\n                       enable: static[bool])		19
+nim	automaticPrimitivesSerialization	json_serialization/format.html#automaticPrimitivesSerialization.t,typeDummyFlavor,static[bool]	template automaticPrimitivesSerialization(F: type DummyFlavor; enable: static[bool])		21
+nim	automaticBuiltinSerialization	json_serialization/format.html#automaticBuiltinSerialization.t,typeDummyFlavor,static[bool]	template automaticBuiltinSerialization(F: type DummyFlavor; enable: static[bool])		100
+nim	decode	json_serialization/format.html#decode.t,typeJson,JsonString,type,varargs[untyped]	template decode(Format: type Json; inputParam: JsonString; RecordType: type;\n       params: varargs[untyped]): auto		103
+nim	createJsonFlavor	json_serialization/format.html#createJsonFlavor.t,untyped,string	template createJsonFlavor(FlavorName: untyped; mimeTypeValue = "application/json";\n                 automaticObjectSerialization = false; requireAllFields = true;\n                 omitOptionalFields = true; allowUnknownFields = true;\n                 skipNullFields = false; automaticPrimitivesSerialization = true)		111
+nimgrp	typeclassormemberautoserialize	json_serialization/format.html#typeClassOrMemberAutoSerialize-procs-all	proc		53
+nimgrp	typeautoserialize	json_serialization/format.html#typeAutoSerialize-procs-all	proc		68
+nimgrp	automaticserialization	json_serialization/format.html#automaticSerialization-templates-all	template		75
+nimgrp	flavorrequiresallfields	json_serialization/format.html#flavorRequiresAllFields-templates-all	template		69
+nimgrp	flavoromitsoptionalfields	json_serialization/format.html#flavorOmitsOptionalFields-templates-all	template		68
+nimgrp	flavorskipnullfields	json_serialization/format.html#flavorSkipNullFields-templates-all	template		71
+nimgrp	automaticprimitivesserialization	json_serialization/format.html#automaticPrimitivesSerialization-templates-all	template		21
+nimgrp	automaticbuiltinserialization	json_serialization/format.html#automaticBuiltinSerialization-templates-all	template		40
+nimgrp	flavorusesautomaticobjectserialization	json_serialization/format.html#flavorUsesAutomaticObjectSerialization-templates-all	template		67
+nimgrp	flavorenumrep	json_serialization/format.html#flavorEnumRep-templates-all	template		74
+nimgrp	flavorallowsunknownfields	json_serialization/format.html#flavorAllowsUnknownFields-templates-all	template		70
