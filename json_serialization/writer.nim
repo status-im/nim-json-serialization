@@ -459,6 +459,7 @@ template writeValueStringLike(w, value) =
       of '\f': addPrefixSlash 'f' # \x0c
       of '\r': addPrefixSlash 'r' # \x0d
       of '"' : addPrefixSlash '\"'
+      of '\\': addPrefixSlash '\\'
       of '\x00'..'\x07', '\x0b', '\x0e'..'\x1f':
         s.write "\\u00"
         s.write hexChars[(uint8(c) shr 4) and 0x0f]
