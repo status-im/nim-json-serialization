@@ -24,9 +24,11 @@ type
     b: Option[string]
     c: int
 
-createJsonFlavor YourJson, omitOptionalFields = false
+createJsonFlavor YourJson,
+  omitOptionalFields = false
 
-createJsonFlavor MyJson, omitOptionalFields = true
+createJsonFlavor MyJson,
+  omitOptionalFields = true
 
 ObjectWithOptionalFields.useDefaultSerializationIn YourJson
 ObjectWithOptionalFields.useDefaultSerializationIn MyJson
@@ -34,8 +36,8 @@ ObjectWithOptionalFields.useDefaultSerializationIn MyJson
 type
   FruitX = enum
     BananaX = "BaNaNa"
-    AppleX = "ApplE"
-    GrapeX = "VVV"
+    AppleX  = "ApplE"
+    GrapeX  = "VVV"
 
   Drawer = enum
     One
@@ -45,7 +47,8 @@ FruitX.configureJsonSerialization(EnumAsString)
 Json.configureJsonSerialization(Drawer, EnumAsNumber)
 MyJson.configureJsonSerialization(Drawer, EnumAsString)
 
-proc writeValue*(w: var JsonWriter, val: OWOF) {.gcsafe, raises: [IOError].} =
+proc writeValue*(w: var JsonWriter, val: OWOF)
+                  {.gcsafe, raises: [IOError].} =
   w.writeObject(OWOF):
     w.writeField("a", val.a)
     w.writeField("b", val.b)
@@ -137,9 +140,17 @@ suite "Test writer":
     check json == "[123,null,777]"
 
   test "object with optional fields":
-    let x = ObjectWithOptionalFields(a: Opt.some(123), b: some("nano"), c: 456)
+    let x = ObjectWithOptionalFields(
+      a: Opt.some(123),
+      b: some("nano"),
+      c: 456,
+    )
 
-    let y = ObjectWithOptionalFields(a: Opt.none(int), b: none(string), c: 999)
+    let y = ObjectWithOptionalFields(
+      a: Opt.none(int),
+      b: none(string),
+      c: 999,
+    )
 
     let u = YourJson.encode(x)
     check u == """{"a":123,"b":"nano","c":456}"""
@@ -154,9 +165,17 @@ suite "Test writer":
     check yy == """{"c":999}"""
 
   test "writeField with object with optional fields":
-    let x = OWOF(a: Opt.some(123), b: some("nano"), c: 456)
+    let x = OWOF(
+      a: Opt.some(123),
+      b: some("nano"),
+      c: 456,
+    )
 
-    let y = OWOF(a: Opt.none(int), b: none(string), c: 999)
+    let y = OWOF(
+      a: Opt.none(int),
+      b: none(string),
+      c: 999,
+    )
 
     let xx = MyJson.encode(x)
     check xx == """{"a":123,"b":"nano","c":456}"""
@@ -193,10 +212,11 @@ suite "Test writer":
       check true
 
   test "Enum value representation of DefaultFlavor":
-    type ExoticFruits = enum
-      DragonFruit
-      SnakeFruit
-      StarFruit
+    type
+      ExoticFruits = enum
+        DragonFruit
+        SnakeFruit
+        StarFruit
 
     DefaultFlavor.flavorEnumRep(EnumAsNumber)
     let u = Json.encode(DragonFruit)
@@ -214,7 +234,7 @@ suite "Test writer":
     type
       Fruit = enum
         Banana = "BaNaNa"
-        Apple = "ApplE"
+        Apple  = "ApplE"
         JackFruit = "VVV"
 
       ObjectWithEnumField = object
@@ -278,5 +298,4 @@ suite "Test writer":
   test "Empty object":
     type NoFields = object
 
-    check:
-      Json.encode(default(NoFields)) == "{}"
+    check: Json.encode(default(NoFields)) == "{}"
