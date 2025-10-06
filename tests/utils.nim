@@ -8,7 +8,7 @@
 # those terms.
 
 import
-  strutils
+  strutils, os
 
 # `dedent` exists in newer Nim version and doesn't behave the same
 func test_dedent*(s: string): string =
@@ -20,6 +20,12 @@ func test_dedent*(s: string): string =
     if indent == 0: continue
     if indent < minIndent: minIndent = indent
   s.unindent(minIndent)
+
+proc pathRelativeTo*(fileName, base: string): string =
+  try:
+    relativePath(fileName, base)
+  except Exception as err:
+    raise newException(Defect, err.msg)
 
 const
   parsingPath* = "tests/test_vectors/test_parsing"

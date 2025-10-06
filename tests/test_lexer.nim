@@ -279,11 +279,7 @@ suite "lexer test suite":
     var conf = defaultJsonReaderConf
     conf.fractionDigitsLimit = 3
     testScanNumber(".1234", ".123", error = errFracDigitLimit, conf = conf)
-
     testScanNumber("1234.5555", "1234.5555")
-
-    conf = defaultJsonReaderConf
-    conf.fractionDigitsLimit = 3
     testScanNumber("1234.1234", "1234.123", error = errFracDigitLimit, conf = conf)
 
   test "scanNumber exponent part string":
@@ -343,11 +339,7 @@ suite "lexer test suite":
     var conf = defaultJsonReaderConf
     conf.fractionDigitsLimit = 3
     testScanNumber(".1234", JsonVoid(), error = errFracDigitLimit, conf = conf)
-
     testScanNumber("1234.5555", JsonVoid())
-
-    conf = defaultJsonReaderConf
-    conf.fractionDigitsLimit = 3
     testScanNumber("1234.1234", JsonVoid(), error = errFracDigitLimit, conf = conf)
 
   test "scanNumber exponent part JsonVoid":
@@ -411,11 +403,7 @@ suite "lexer test suite":
     conf.fractionDigitsLimit = 3
     testScanNumber(".1234", JsonNumber[string](fraction: "123"),
       error = errFracDigitLimit, conf = conf)
-
     testScanNumber("1234.5555", JsonNumber[string](integer: "1234", fraction: "5555"))
-
-    conf = defaultJsonReaderConf
-    conf.fractionDigitsLimit = 3
     testScanNumber("1234.1234", JsonNumber[string](integer: "1234", fraction: "123"),
       error = errFracDigitLimit, conf = conf)
 
@@ -501,7 +489,6 @@ suite "lexer test suite":
 
     testScanNumber("1234.5555", JsonNumber[uint64](integer: 1234, fraction: "5555"))
 
-    conf = defaultJsonReaderConf
     conf.fractionDigitsLimit = 3
     testScanNumber("1234.1234", JsonNumber[uint64](integer: 1234, fraction: "123"),
       error = errFracDigitLimit, conf = conf)

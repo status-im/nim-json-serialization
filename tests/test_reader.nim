@@ -163,7 +163,10 @@ suite "JsonReader basic test":
         val.fourteen == SecondObject(one: "world", two: false)
 
     except JsonReaderError as ex:
-      debugEcho ex.formatMsg("jsonText3")
+      when nimvm:
+        debugEcho "jsonText3", ex.msg
+      else:
+        debugEcho ex.formatMsg("jsonText3")
       check false
 
   test "Special Types":

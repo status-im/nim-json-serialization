@@ -52,16 +52,18 @@ suite "Custom iterators":
       exponent == 789
 
   test "customStringValueIt":
-    var text: string
-    var r = toReader "\"hello \\t world\""
-    r.customStringValueIt:
-      text.add it
-
-    expect JsonReaderError:
-      r.customStringValueIt(10):
+    proc customTest() =
+      var text: string
+      var r = toReader "\"hello \\t world\""
+      r.customStringValueIt:
         text.add it
 
-    check text == "hello \t world"
+      expect JsonReaderError:
+        r.customStringValueIt(10):
+          text.add it
+
+      check text == "hello \t world"
+    customTest()
 
 suite "Public parser":
   test "parseArray":
@@ -222,16 +224,26 @@ suite "Public parser":
     val = r.parseFloat(float64)
     check val == -56009000.0
 
+  proc inputFile(fileName: string): InputStream =
+    when nimvm:
+      let data = staticRead(pathRelativeTo(fileName, "tests"))
+      unsafeMemoryInput(data)
+    else:
+      memFileInput(fileName)
+
   template testParseAsString(fileName: string) =
     try:
-      var stream = memFileInput(fileName)
+      var stream = inputFile(fileName)
       var r = JsonReader[DefaultFlavor].init(stream)
       let val = r.parseAsString()
       var xr = toReader val.string
       let xval = xr.parseAsString()
       check val == xval
     except JsonReaderError as ex:
-      debugEcho ex.formatMsg(fileName)
+      when nimvm:
+        debugEcho fileName, ex.msg
+      else:
+        debugEcho ex.formatMsg(fileName)
       check false
 
   test "parseAsString":

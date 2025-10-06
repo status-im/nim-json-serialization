@@ -18,7 +18,7 @@ func jsonBool(x: bool): JsonValueRef[uint64] =
 func jsonNull(): JsonValueRef[uint64] =
   JsonValueRef[uint64](kind: JsonValueKind.Null)
 
-suite "Test JsonValueRef":
+template valueRefVars() {.dirty.} =
   let objA = JsonValueRef[uint64](
     kind: JsonValueKind.Object,
     objVal: [
@@ -105,7 +105,9 @@ suite "Test JsonValueRef":
     ].toOrderedTable
   )
 
+suite "Test JsonValueRef":
   test "Test table keys equality":
+    valueRefVars()
     check objA != objAB
     check objA == objA2
     check objA != objABNull
@@ -122,6 +124,7 @@ suite "Test JsonValueRef":
     check objInObjAB != objInObjABNull
 
   test "Test compare":
+    valueRefVars()
     check compare(objA, objAB) == false
     check compare(objA, objA2) == true
     check compare(objA, objABNull) == true
