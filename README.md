@@ -24,6 +24,7 @@
   - Customizable parser strictness including support for non-standard extensions
 - Well-defined handling of malformed / malicious inputs with configurable parsing limits
   - Fuzzing and comprehensive manual test coverage
+- Since v0.4.4, compile time encode/decode is supported. This means you can initialize a const value using decode. It is also ok to use it inside a static block or other Nim VM code.
 
 <!-- ANCHOR_END: Features -->
 
