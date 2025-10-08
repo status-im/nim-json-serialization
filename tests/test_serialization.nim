@@ -376,6 +376,11 @@ suite "toJson tests":
       "".toJson == "\"\""
       "abc".toJson == "\"abc\""
 
+  test "float":
+    Json.roundtripTest 1.23, "1.23"
+    Json.roundtripTest 1.23'f32, "1.23"
+    Json.roundtripTest 1.23'f64, "1.23"
+
   test "enums":
     Json.roundtripTest x0, "\"x0\""
     Json.roundtripTest x1, "\"x1\""
