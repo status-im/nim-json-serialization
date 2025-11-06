@@ -21,7 +21,7 @@ requires "nim >= 1.6.0",
          "serialization",
          "stew >= 0.2.0",
          "results",
-         "https://github.com/nitely/nim-serialization#0e90655d3f851529cc70e05f1e0b038656eafdf1"
+         "https://github.com/nitely/nim-serialization#6011d2662cbcb9cf84f6376e6a46b6f6728a22d2"
 
 let nimc = getEnv("NIMC", "nim") # Which nim compiler to use
 let lang = getEnv("NIMLANG", "c") # Which backend (c/cpp/js)
