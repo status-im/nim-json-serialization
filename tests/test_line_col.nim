@@ -122,7 +122,7 @@ const testCases = [
 
 suite "Test line col":
   for i, tc in testCases:
-    test $i:
+    runtimeTest $i:
       var stream = unsafeMemoryInput(tc.text)
       var lex = init(JsonLexer, stream, tc.flags, tc.conf)
       var value: JsonValueRef[uint64]

@@ -146,6 +146,8 @@ suite "JsonReader basic test":
       r.readValue(valOrig)
       # workaround for https://github.com/nim-lang/Nim/issues/24274
       let val = valOrig
+      # TODO: https://github.com/status-im/nim-unittest2/pull/58
+      doAssert val.seven[] == 555
       check:
         val.one == JsonString("[1,true,null]")
         val.two.num == 123
@@ -153,7 +155,7 @@ suite "JsonReader basic test":
         val.four ==  "012"
         val.five ==  "345"
         val.six ==  true
-        val.seven[] == 555
+        #val.seven[] == 555
         val.eight ==  mTwo
         val.nine ==  77
         val.ten ==  88

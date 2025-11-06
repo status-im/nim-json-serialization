@@ -20,7 +20,8 @@ requires "nim >= 1.6.0",
          "faststreams >= 0.5.0",
          "serialization",
          "stew >= 0.2.0",
-         "results"
+         "results",
+         "https://github.com/status-im/nim-serialization#0e90655d3f851529cc70e05f1e0b038656eafdf1"
 
 let nimc = getEnv("NIMC", "nim") # Which nim compiler to use
 let lang = getEnv("NIMLANG", "c") # Which backend (c/cpp/js)
@@ -35,7 +36,7 @@ let cfg =
   (if verbose: "" else: " --verbosity:0 --hints:off") &
   " --outdir:build " &
   quoteShell("--nimcache:build/nimcache/$projectName") &
-  " -d:nimOldCaseObjects"
+  " -d:nimOldCaseObjects -d:unittest2Static -d:serializationTestAllRountrips"
 
 proc build(args, path: string) =
   exec nimc & " " & lang & " " & cfg & " " & flags & " " & args & " " & path
