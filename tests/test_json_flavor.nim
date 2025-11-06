@@ -142,6 +142,7 @@ suite "Test JsonFlavor":
     check y.list.string.len == 0
 
   test "Enum value representation primitives":
+    NullyFields.flavorEnumRep(EnumAsString)
     when NullyFields.flavorEnumRep() == EnumAsString:
       check true
     elif NullyFields.flavorEnumRep() == EnumAsNumber:

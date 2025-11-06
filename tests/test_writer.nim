@@ -188,6 +188,7 @@ suite "Test writer":
     check vv == """{"a":null,"b":null,"c":999}"""
 
   test "Enum value representation primitives":
+    DefaultFlavor.flavorEnumRep(EnumAsString)
     when DefaultFlavor.flavorEnumRep() == EnumAsString:
       check true
     elif DefaultFlavor.flavorEnumRep() == EnumAsNumber:

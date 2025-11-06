@@ -236,7 +236,7 @@ proc readValue*(r: var JsonReader[DefaultFlavor], value: var MyCaseObject)
 {.pop.}
 
 var
-  customVisit: TokenRegistry
+  customVisit {.global, compileTime.}: TokenRegistry
 
 Json.useCustomSerialization(WithCustomFieldRule.intVal):
   read:
@@ -377,14 +377,14 @@ suite "toJson tests":
       "abc".toJson == "\"abc\""
 
   test "float":
-    Json.roundtripTest 1.23, "1.23"
-    Json.roundtripTest 1.23'f32, "1.23"
-    Json.roundtripTest 1.23'f64, "1.23"
+    Json.roundtripChecks 1.23, "1.23"
+    Json.roundtripChecks 1.23'f32, "1.23"
+    Json.roundtripChecks 1.23'f64, "1.23"
 
   test "enums":
-    Json.roundtripTest x0, "\"x0\""
-    Json.roundtripTest x1, "\"x1\""
-    Json.roundtripTest x2, "\"x2\""
+    Json.roundtripChecks x0, "\"x0\""
+    Json.roundtripChecks x1, "\"x1\""
+    Json.roundtripChecks x2, "\"x2\""
     expect UnexpectedTokenError:
       discard Json.decode("0", EnumTestX)
     expect UnexpectedTokenError:
@@ -406,10 +406,10 @@ suite "toJson tests":
     expect UnexpectedValueError:
       discard Json.decode("\"0\"", EnumTestX)
 
-    Json.roundtripTest y1, "\"y1\""
-    Json.roundtripTest y3, "\"y3\""
-    Json.roundtripTest y4, "\"y4\""
-    Json.roundtripTest y6, "\"y6\""
+    Json.roundtripChecks y1, "\"y1\""
+    Json.roundtripChecks y3, "\"y3\""
+    Json.roundtripChecks y4, "\"y4\""
+    Json.roundtripChecks y6, "\"y6\""
     check:
       Json.decode("1", EnumTestY) == y1
       Json.decode("3", EnumTestY) == y3
@@ -438,9 +438,9 @@ suite "toJson tests":
     expect UnexpectedValueError:
       discard Json.decode("\"1\"", EnumTestY)
 
-    Json.roundtripTest z1, "\"aaa\""
-    Json.roundtripTest z2, "\"bbb\""
-    Json.roundtripTest z3, "\"ccc\""
+    Json.roundtripChecks z1, "\"aaa\""
+    Json.roundtripChecks z2, "\"bbb\""
+    Json.roundtripChecks z3, "\"ccc\""
     expect UnexpectedTokenError:
       discard Json.decode("0", EnumTestZ)
     expect UnexpectedValueError:
@@ -458,9 +458,9 @@ suite "toJson tests":
     expect UnexpectedValueError:
       discard Json.decode("\"\ud83d\udc3c\"", EnumTestZ)
 
-    Json.roundtripTest n1, "\"aaa\""
-    Json.roundtripTest n2, "\"bbb\""
-    Json.roundtripTest n3, "\"ccc\""
+    Json.roundtripChecks n1, "\"aaa\""
+    Json.roundtripChecks n2, "\"bbb\""
+    Json.roundtripChecks n3, "\"ccc\""
     check:
       Json.decode("\"aAA\"", EnumTestN) == n1
       Json.decode("\"bBB\"", EnumTestN) == n2
@@ -491,9 +491,9 @@ suite "toJson tests":
     expect UnexpectedValueError:
       discard Json.decode("\"\ud83d\udc3c\"", EnumTestN)
 
-    Json.roundtripTest o1, "\"o1\""
-    Json.roundtripTest o2, "\"o2\""
-    Json.roundtripTest o3, "\"o3\""
+    Json.roundtripChecks o1, "\"o1\""
+    Json.roundtripChecks o2, "\"o2\""
+    Json.roundtripChecks o3, "\"o3\""
     check:
       Json.decode("\"o_1\"", EnumTestO) == o1
       Json.decode("\"o_2\"", EnumTestO) == o2
@@ -656,7 +656,10 @@ suite "toJson tests":
     let decoded = try:
       Json.decode(json, Simple, requireAllFields = true, allowUnknownFields = true)
     except SerializationError as err:
-      checkpoint "Unexpected deserialization failure: " & err.formatMsg("<input>")
+      when nimvm:
+        checkpoint "Unexpected deserialization failure: " & err.msg
+      else:
+        checkpoint "Unexpected deserialization failure: " & err.formatMsg("<input>")
       raise
 
     check:
@@ -737,8 +740,8 @@ suite "toJson tests":
       h3 = Json.decode("""{"r":{"distance":3,"x":1,"y":"2"}}""",
                        HoldsOption, requireAllFields = true)
 
-    Json.roundtripTest h1, """{"r":null,"o":{"distance":3,"x":1,"y":"2"}}"""
-    Json.roundtripTest h2, """{"r":{"distance":3,"x":1,"y":"2"}}"""
+    Json.roundtripChecks h1, """{"r":null,"o":{"distance":3,"x":1,"y":"2"}}"""
+    Json.roundtripChecks h2, """{"r":{"distance":3,"x":1,"y":"2"}}"""
 
     check h3 == h2
 
@@ -754,10 +757,10 @@ suite "toJson tests":
       h5 = OtherOptionTest(b: some Meter(2))
       h6 = OtherOptionTest(a: some Meter(3), b: some Meter(4))
 
-    Json.roundtripTest h3, """{}"""
-    Json.roundtripTest h4, """{"a":1}"""
-    Json.roundtripTest h5, """{"b":2}"""
-    Json.roundtripTest h6, """{"a":3,"b":4}"""
+    Json.roundtripChecks h3, """{}"""
+    Json.roundtripChecks h4, """{"a":1}"""
+    Json.roundtripChecks h5, """{"b":2}"""
+    Json.roundtripChecks h6, """{"a":3,"b":4}"""
 
     let
       arr = @[some h3, some h4, some h5, some h6, none(OtherOptionTest)]
@@ -796,11 +799,11 @@ suite "toJson tests":
         # lent iterator error
         let a = a
         let b = b
-        Json.roundtripTest NestedOptionTest(c: a, d: b), results[r]
+        Json.roundtripChecks NestedOptionTest(c: a, d: b), results[r]
         r.inc
 
-    Json.roundtripTest SeqOptionTest(a: @[some 5.Meter, none Meter], b: Meter(5)), """{"a":[5,null],"b":5}"""
-    Json.roundtripTest OtherOptionTest2(a: some 5.Meter, b: none Meter, c: some 10.Meter), """{"a":5,"c":10}"""
+    Json.roundtripChecks SeqOptionTest(a: @[some 5.Meter, none Meter], b: Meter(5)), """{"a":[5,null],"b":5}"""
+    Json.roundtripChecks OtherOptionTest2(a: some 5.Meter, b: none Meter, c: some 10.Meter), """{"a":5,"c":10}"""
 
   test "Result Opt types":
     check:
@@ -812,8 +815,8 @@ suite "toJson tests":
       h1 = HoldsResultOpt(o: Opt[Simple].ok Simple(x: 1, y: "2", distance: Meter(3)))
       h2 = HoldsResultOpt(r: newSimple(1, "2", Meter(3)))
 
-    Json.roundtripTest h1, """{"o":{"distance":3,"x":1,"y":"2"},"r":null}"""
-    Json.roundtripTest h2, """{"r":{"distance":3,"x":1,"y":"2"}}"""
+    Json.roundtripChecks h1, """{"o":{"distance":3,"x":1,"y":"2"},"r":null}"""
+    Json.roundtripChecks h2, """{"r":{"distance":3,"x":1,"y":"2"}}"""
 
     let
       h3 = Json.decode("""{"r":{"distance":3,"x":1,"y":"2"}}""",
@@ -828,7 +831,7 @@ suite "toJson tests":
 
   test "Custom field serialization":
     let obj = WithCustomFieldRule(str: "test", intVal: 10)
-    Json.roundtripTest obj, """{"str":"test","intVal":"10"}"""
+    Json.roundtripChecks obj, """{"str":"test","intVal":"10"}"""
 
   test "Case object as field":
     let
@@ -911,7 +914,10 @@ suite "toJson tests":
 
     except SerializationError as e:
       echo e.getStackTrace
-      echo e.formatMsg("<>")
+      when nimvm:
+        echo e.msg
+      else:
+        echo e.formatMsg("<>")
       raise e
 
   test "Holders of JsonString":
@@ -927,7 +933,10 @@ suite "toJson tests":
       let decoded = Json.decode(jsonContent, JsonNode)
       check decoded["tasks"][0]["label"] == newJString("nimbus-eth2 build")
     except SerializationError as err:
-      checkpoint err.formatMsg("./cases/comments.json")
+      when nimvm:
+        checkpoint "<./cases/comments.json> " & err.msg
+      else:
+        checkpoint err.formatMsg("./cases/comments.json")
       check false
 
   test "A nil cstring":

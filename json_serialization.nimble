@@ -35,7 +35,8 @@ let cfg =
   (if verbose: "" else: " --verbosity:0 --hints:off") &
   " --outdir:build " &
   quoteShell("--nimcache:build/nimcache/$projectName") &
-  " -d:nimOldCaseObjects"
+  " -d:nimOldCaseObjects -d:serializationTestAllRountrips" &
+  (if NimMajor >= 2: " -d:unittest2Static" else: "")
 
 proc build(args, path: string) =
   exec nimc & " " & lang & " " & cfg & " " & flags & " " & args & " " & path
