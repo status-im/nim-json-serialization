@@ -10,31 +10,33 @@ jobs:
   build:
     timeout-minutes: 20
 
-    name: 'Generate & upload documentation'
-    runs-on: 'ubuntu-latest'
+    name: "Generate & upload documentation"
+    runs-on: "ubuntu-latest"
     continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/*.nimble') }}
+
+      - name: Setup cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+
+      - name: Install mdBook and preprocessors
+        run: |
+          cargo binstall mdbook@0.4.51 \
+            mdbook-toc@0.14.2 \
+            mdbook-open-on-gh@2.4.3 \
+            mdbook-admonish@1.20.0
+
       - uses: jiro4989/setup-nim-action@v1
         with:
-          nim-version: '2.2.4'
+          nim-version: "2.2.4"
 
       - name: Generate doc
         run: |
           nim --version
           nimble --version
-          nimble mdbook
           nimble docs || true
 
       - name: Deploy
