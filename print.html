@@ -1,0 +1,795 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>json_serialization</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="open-in.css">
+        <link rel="stylesheet" href="./mdbook-admonish.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">json_serialization</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/status-im/nim-json-serialization/" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<p><code>nim-json-serialization</code> is a library in the <a href="https://github.com/status-im/nim-serialization">nim-serialization</a> family for turning Nim objects into JSON documents and back. Features include:</p>
+<ul>
+<li>Efficient coding of JSON documents directly to and from Nim data types
+<ul>
+<li>Full type-based customization of both parsing and formatting</li>
+<li>Flavors for defining multiple JSON serialization styles per Nim type</li>
+<li>Efficient skipping of tags and values for partial JSON parsing</li>
+</ul>
+</li>
+<li>Flexibility in mixing type-based and dynamic JSON access
+<ul>
+<li>Structured <code>JsonValueRef</code> node type for DOM-style access to parsed document</li>
+<li>Flat <code>JsonString</code> type for passing nested JSON documents between abstraction layers</li>
+<li>Seamless interoperability with <a href="https://nim-lang.org/docs/json.html"><code>std/json</code></a> and <code>JsonNode</code></li>
+</ul>
+</li>
+<li>Full <a href="https://datatracker.ietf.org/doc/html/rfc8259">RFC8259 spec compliance</a> including the notorious JSON number
+<ul>
+<li>Passes <a href="https://github.com/nst/JSONTestSuite">JSONTestSuite</a></li>
+<li>Customizable parser strictness including support for non-standard extensions</li>
+</ul>
+</li>
+<li>Well-defined handling of malformed / malicious inputs with configurable parsing limits
+<ul>
+<li>Fuzzing and comprehensive manual test coverage</li>
+</ul>
+</li>
+<li>Since v0.4.4, compile time encode/decode is supported. This means you can initialize a const value using decode. It is also ok to use it inside a static block or other Nim VM code.</li>
+</ul>
+<h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
+<p>As a <code>nimble</code> dependency:</p>
+<pre><code class="language-nim">requires "json_serialization"
+</code></pre>
+<p>Via <code>nimble install</code>:</p>
+<pre><code class="language-text">nimble install json_serialization
+</code></pre>
+<h2 id="api-documentation"><a class="header" href="#api-documentation">API documentation</a></h2>
+<p>This guide covers basic usage of <code>json_serialization</code> - for details, see the
+<a href="./api/">API reference</a>.</p>
+<footer id="open-on-gh">Found a bug? <a href="https://github.com/status-im/nim-json-serialization//edit/master/docs/src/introduction.md">Edit this page on GitHub.</a></footer><div style="break-before: page; page-break-before: always;"></div><h1 id="getting-started"><a class="header" href="#getting-started">Getting started</a></h1>
+<ul>
+<li><a href="getting_started.html#imports-and-exports">Imports and exports</a></li>
+<li><a href="getting_started.html#simple-reader">Simple reader</a></li>
+<li><a href="getting_started.html#encoding-and-pretty-printing">Encoding and pretty printing</a></li>
+<li><a href="getting_started.html#handling-errors">Handling errors</a></li>
+<li><a href="getting_started.html#custom-parsing">Custom parsing</a></li>
+<li><a href="getting_started.html#flavors-and-strictness">Flavors and strictness</a></li>
+<li><a href="getting_started.html#required-and-optional-fields">Required and optional fields</a></li>
+<li><a href="getting_started.html#automatic-object-conversion">Automatic object conversion</a></li>
+<li><a href="getting_started.html#almost-there">...almost there!</a></li>
+</ul>
+<p><code>json_serialization</code> is used to parse JSON documents directly into Nim types and to encode them back as JSON efficiently.</p>
+<p>Let's start with a simple <a href="https://www.jsonrpc.org/specification#examples">JSON-RPC</a> example:</p>
+<pre><code class="language-json">{"jsonrpc": "2.0", "method": "subtract", "params": [42, 3], "id": 1}
+</code></pre>
+<h2 id="imports-and-exports"><a class="header" href="#imports-and-exports">Imports and exports</a></h2>
+<p>Before we can use <code>json_serialization</code>, we have to import the library.</p>
+<p>If you put your custom serialization code in a separate module, make sure to re-export <code>json_serialization</code>:</p>
+<pre><code class="language-nim">{.push gcsafe, raises: [].} # Encourage exception handling hygiene in procedures!
+
+import json_serialization
+export json_serialization
+</code></pre>
+<p>A common way to organize serialization code is to use a separate module named either after the library (<code>mylibrary_json_serialization</code>) or the flavor (<code>myflavor_json_serialization</code>).</p>
+<p>For types that mainly exist to interface with JSON, custom serializers can also be placed together with the type definitions.</p>
+<div id="admonition-re-exports" class="admonition admonish-tip" role="note" aria-labelledby="admonition-re-exports-title">
+<div class="admonition-title">
+<div id="admonition-re-exports-title">
+<p>Re-exports</p>
+</div>
+<a class="admonition-anchor-link" href="getting_started.html#admonition-re-exports"></a>
+</div>
+<div>
+<p>When importing a module that contains custom serializers, make sure to re-export it or you might end up with cryptic compiler errors or worse, the default serializers being used!</p>
+</div>
+</div>
+<h2 id="simple-reader"><a class="header" href="#simple-reader">Simple reader</a></h2>
+<p>Looking at the example, we'll define a Nim <code>object</code> to hold the request data, with matching field names and types:</p>
+<pre><code class="language-nim">type Request = object
+  jsonrpc: string
+  `method`: string # Quote Nim keywords
+  params: seq[int] # Map JSON array to `seq`
+  id: int
+
+</code></pre>
+<p><code>Json.decode</code> can now turn our JSON input into a <code>Request</code>:</p>
+<pre><code class="language-nim"># Decode the string into our Request type
+let decoded = Json.decode(
+  """{"jsonrpc": "2.0", "method": "subtract", "params": [42, 3], "id": 1}""", Request
+)
+
+echo decoded.id
+</code></pre>
+<div id="admonition-default" class="admonition admonish-tip" role="note">
+<div>
+<p>Replace <code>decode</code>/<code>encode</code> with <code>loadFile</code>/<code>saveFile</code> to read and write a file instead!</p>
+</div>
+</div>
+<h2 id="encoding-and-pretty-printing"><a class="header" href="#encoding-and-pretty-printing">Encoding and pretty printing</a></h2>
+<p>Having parsed the example with <code>Json.decode</code>, we can pretty-print it back to the console using <code>Json.encode</code> that returns a <code>string</code>:</p>
+<pre><code class="language-nim"># Now that we have a `Request` instance, we can pretty-print it:
+echo Json.encode(decoded, pretty = true)
+</code></pre>
+<h2 id="handling-errors"><a class="header" href="#handling-errors">Handling errors</a></h2>
+<p>Of course, someone might give us some invalid data - <code>json_serialization</code> will raise an exception when that happens:</p>
+<pre><code class="language-nim">try:
+  # Oops, a string was used for the `id` field!
+  discard Json.decode("""{"id": "test"}""", Request)
+except JsonError as exc:
+  # "&lt;string&gt;" helps identify the source of the document - this can be a
+  # filename, URL or something else that helps the user find the error
+  echo "Failed to parse document: ", exc.formatMsg("&lt;string&gt;")
+</code></pre>
+<p>The error message points out where things went wrong:</p>
+<pre><code class="language-text">Failed to parse document: &lt;string&gt;(1, 8) number expected
+</code></pre>
+<h2 id="custom-parsing"><a class="header" href="#custom-parsing">Custom parsing</a></h2>
+<p>Happy we averted a crisis by adding the forgotten exception handler, we go back to the <a href="https://www.jsonrpc.org/specification#request_object">JSON-RPC specification</a> and notice that strings are actually allowed in the <code>id</code> field - further, the only thing we have to do with <code>id</code> is to pass it back in the response - we don't really care about its contents.</p>
+<p>We'll define a helper type to deal with this situation and attach some custom parsing code to it that checks the type. Using <code>JsonString</code> as underlying storage is an easy way to pass around snippets of JSON whose contents we don't need.</p>
+<p>The custom code is added to <code>readValue</code>/<code>writeValue</code> procedures that take the stream and our custom type as arguments:</p>
+<pre><code class="language-nim">type JsonRpcId = distinct JsonString
+
+proc readValue*(
+    r: var JsonReader, value: var JsonRpcId
+) {.raises: [IOError, JsonReaderError].} =
+  let tok = r.tokKind
+  case tok
+  of JsonValueKind.Number, JsonValueKind.String, JsonValueKind.Null:
+    # Keep the original value without further processing
+    value = JsonRpcId(r.parseAsString())
+  else:
+    r.raiseUnexpectedValue("Invalid RequestId, got " &amp; $tok)
+
+proc writeValue*(w: var JsonWriter, value: JsonRpcId) {.raises: [IOError].} =
+  w.writeValue(JsonString(value)) # Preserve the original content
+
+</code></pre>
+<h2 id="flavors-and-strictness"><a class="header" href="#flavors-and-strictness">Flavors and strictness</a></h2>
+<p>While the defaults that <code>json_serialization</code> offers are sufficient to get started, implementing JSON-based standards often requires more fine-grained control, such as what to do when a field is missing, unknown or has high-level requirements for parsing and formatting.</p>
+<p>We use <code>createJsonFlavor</code> to declare the new flavor passing to it the customization options that we're interested in:</p>
+<pre><code class="language-nim">createJsonFlavor JrpcSys,
+  automaticObjectSerialization = false,
+  requireAllFields = true,
+  omitOptionalFields = true, # Don't output `none` values when writing
+  allowUnknownFields = false
+</code></pre>
+<h2 id="required-and-optional-fields"><a class="header" href="#required-and-optional-fields">Required and optional fields</a></h2>
+<p>In the JSON-RPC example, both the <code>jsonrpc</code> version tag and <code>method</code> are required while parameters and <code>id</code> can be omitted. Our flavor required all fields to be present except those explicitly optional - we use <code>Opt</code> from <a href="https://github.com/arnetheduck/nim-results">results</a> to select the optional ones:</p>
+<pre><code class="language-nim">type Request = object
+  jsonrpc: string
+  `method`: string
+  params: Opt[seq[int]]
+  id: Opt[JsonRpcId]
+</code></pre>
+<h2 id="automatic-object-conversion"><a class="header" href="#automatic-object-conversion">Automatic object conversion</a></h2>
+<p>The default <code>Json</code> flavor allows any <code>object</code> to be converted to JSON. If you define a custom serializer and someone forgets to import it, the compiler might end up using the default instead resulting in a nasty runtime surprise.</p>
+<p><code>automaticObjectSerialization = false</code> forces a compiler error for any type that has not opted in to be serialized:</p>
+<pre><code class="language-nim"># Allow serializing the `Request` type - serializing other types will result in
+# a compile-time error because `automaticObjectSerialization` is false!
+JrpcSys.useDefaultSerializationFor Request
+</code></pre>
+<p>With all that work done, we can finally use our custom flavor to encode and decode the <code>Request</code>:</p>
+<pre><code class="language-nim">const json = """{"jsonrpc": "2.0", "method": "subtract", "params": [42, 3], "id": 1}"""
+
+echo JrpcSys.encode(JrpcSys.decode(json, Request))
+</code></pre>
+<h2 id="almost-there"><a class="header" href="#almost-there">...almost there!</a></h2>
+<p>While we've covered a fair bit of ground already, our <code>Request</code> parser is still not fully standards-compliant - in particular, the list of parameters must be able to handle both positional and named arguments and the values can themselves be full JSON documents that need custom parsing based on the <code>method</code> value.</p>
+<p>A more mature JSON-RPC parser can be found in <a href="https://github.com/status-im/nim-json-rpc/blob/master/json_rpc/private/jrpc_sys.nim">nim-json-rpc</a> which connects the <code>json_serialization</code> library to a DSL that conveniently allows mapping Nim procedures to JSON-RPC methods, featuring automatic parameter conversion and other nice conveniences..</p>
+<p>Furtyher examples of how to use <code>json_serialization</code> can be found in the <code>tests</code> folder.</p>
+<div id="admonition-read-that-spec" class="admonition admonish-tip" role="note" aria-labelledby="admonition-read-that-spec-title">
+<div class="admonition-title">
+<div id="admonition-read-that-spec-title">
+<p>Read that spec!</p>
+</div>
+<a class="admonition-anchor-link" href="getting_started.html#admonition-read-that-spec"></a>
+</div>
+<div>
+<p>Not only did we learn to about <code>json_serialization</code>, but also that examples are no substitute for reading the spec!</p>
+</div>
+</div>
+<footer id="open-on-gh">Found a bug? <a href="https://github.com/status-im/nim-json-serialization//edit/master/docs/src/getting_started.md">Edit this page on GitHub.</a></footer><div style="break-before: page; page-break-before: always;"></div><h1 id="streaming"><a class="header" href="#streaming">Streaming</a></h1>
+<p><code>JsonWriter</code> can be used to incrementally write JSON data.</p>
+<p>Incremental processing is ideal for large documents or when you want to avoid building the entire JSON structure in memory.</p>
+<ul>
+<li><a href="streaming.html#writing">Writing</a>
+<ul>
+<li><a href="streaming.html#example-writing-a-json-array-of-objects">Example: Writing a JSON Array of Objects</a></li>
+<li><a href="streaming.html#example-writing-nested-structures">Example: Writing Nested Structures</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="writing"><a class="header" href="#writing">Writing</a></h2>
+<p>You can use <code>JsonWriter</code> to write JSON objects, arrays, and values step by step, directly to a file or any output stream.</p>
+<p>The process is similar to when you override <code>writeValue</code> to provide custom serialization.</p>
+<h3 id="example-writing-a-json-array-of-objects"><a class="header" href="#example-writing-a-json-array-of-objects">Example: Writing a JSON Array of Objects</a></h3>
+<p>Suppose you want to write a large array of objects to a file, one at a time:</p>
+<pre><code class="language-nim">import json_serialization, faststreams/outputs
+
+let file = fileOutput("output.json")
+var writer = JsonWriter[DefaultFlavor].init(file, pretty = true)
+
+writer.beginArray()
+
+for i in 0 ..&lt; 2:
+  writer.beginObject()
+
+  writer.writeMember("id", i)
+  writer.writeMember("name", "item" &amp; $i)
+
+  writer.endObject()
+
+writer.endArray()
+
+file.close()
+</code></pre>
+<p>Resulting file (<code>output.json</code>):</p>
+<pre><code class="language-json">[
+  {
+    "id": 0,
+    "name": "item0"
+  },
+  {
+    "id": 1,
+    "name": "item1"
+  }
+]
+</code></pre>
+<h3 id="example-writing-nested-structures"><a class="header" href="#example-writing-nested-structures">Example: Writing Nested Structures</a></h3>
+<p>Objects and arrays can be nested arbitrarily.</p>
+<p>Here is the same array of JSON objects, nested in an envelope containing an additional <code>status</code> field.</p>
+<p>Instead of manually placing <code>begin</code>/<code>end</code> pairs, we're using the convenience helpers <code>writeObject</code> and <code>writeArrayMember</code>, along with <code>writeElement</code> to manage the required element markers:</p>
+<pre><code class="language-ni">writer.writeObject:
+  writer.writeMember("status", "ok")
+  writer.writeName("data")
+  writer.writeArray:
+    for i in 0 ..&lt; 2:
+      writer.writeObject:
+        writer.writeMember("id", i)
+        writer.writeMember("name", "item" &amp; $i)
+</code></pre>
+<p>This produces a the following output - notice the more compact representation when <code>pretty = true</code> is not used:</p>
+<pre><code class="language-json">{"status":"ok","data":[{"id":0,"name":"item0"},{"id":1,"name":"item1"}]}
+</code></pre>
+<footer id="open-on-gh">Found a bug? <a href="https://github.com/status-im/nim-json-serialization//edit/master/docs/src/streaming.md">Edit this page on GitHub.</a></footer><div style="break-before: page; page-break-before: always;"></div><h1 id="reference"><a class="header" href="#reference">Reference</a></h1>
+<ul>
+<li><a href="reference.html#parsing">Parsing</a>
+<ul>
+<li><a href="reference.html#common-api">Common API</a></li>
+<li><a href="reference.html#standalone-reader">Standalone Reader</a></li>
+<li><a href="reference.html#parser-options">Parser options</a></li>
+<li><a href="reference.html#special-types">Special types</a></li>
+</ul>
+</li>
+<li><a href="reference.html#writing">Writing</a>
+<ul>
+<li><a href="reference.html#common-api-1">Common API</a></li>
+<li><a href="reference.html#standalone-writer">Standalone Writer</a></li>
+</ul>
+</li>
+<li><a href="reference.html#flavors">Flavors</a></li>
+<li><a href="reference.html#custom-parsers-and-writers">Custom parsers and writers</a>
+<ul>
+<li><a href="reference.html#objects">Objects</a></li>
+<li><a href="reference.html#sets-and-list-like-types">Sets and List-like Types</a></li>
+</ul>
+</li>
+<li><a href="reference.html#custom-iterators">Custom Iterators</a></li>
+<li><a href="reference.html#convenience-iterators">Convenience Iterators</a></li>
+<li><a href="reference.html#helper-procedures">Helper Procedures</a></li>
+<li><a href="reference.html#jsonwriter-helper-procedures">JsonWriter Helper Procedures</a></li>
+<li><a href="reference.html#enums">Enums</a></li>
+</ul>
+<p>This page provides an overview of the <code>json_serialization</code> API - for details, see the
+<a href="./api/">API reference</a>.</p>
+<h2 id="parsing"><a class="header" href="#parsing">Parsing</a></h2>
+<h3 id="common-api"><a class="header" href="#common-api">Common API</a></h3>
+<p>JSON parsing uses the <a href="https://github.com/status-im/nim-serialization?tab=readme-ov-file#common-api">common serialization API</a>, supporting both object-based and dynamic JSON documents:</p>
+<pre><code class="language-nim">const rawJson = """{"name": "localhost", "port": 42}"""
+type
+  NimServer = object
+    name: string
+    port: int
+
+  MixedServer = object
+    name: JsonValueRef[uint64]
+    port: int
+
+  StringServer = object
+    name: JsonString
+    port: JsonString
+
+var conf = defaultJsonReaderConf
+conf.nestedDepthLimit = 0
+
+# decode into native Nim
+let native = Json.decode(rawJson, NimServer)
+
+# decode into mixed Nim + JsonValueRef
+let mixed = Json.decode(rawJson, MixedServer)
+
+# decode any value into nested json string
+let str = Json.decode(rawJson, StringServer)
+
+# decode any valid JSON, using the `json_serialization` node type
+let value = Json.decode(rawJson, JsonValueRef[uint64])
+
+# decode any valid JSON, using the `std/json` node type
+let stdjson = Json.decode(rawJson, JsonNode)
+
+# read JSON document from file instead
+let file = Json.loadFile("filename.json", NimServer)
+</code></pre>
+<h3 id="standalone-reader"><a class="header" href="#standalone-reader">Standalone Reader</a></h3>
+<p>A reader can be created from any <a href="https://github.com/status-im/nim-faststreams">faststreams</a>-compatible stream:</p>
+<pre><code class="language-nim">var reader = JsonReader[DefaultFlavor].init(memoryInput(rawJson))
+let native2 = reader.readValue(NimServer)
+
+# Overwrite an existing instance
+var reader2 = JsonReader[DefaultFlavor].init(memoryInput(rawJson))
+var native3: NimServer
+reader2.readValue(native3)
+</code></pre>
+<h3 id="parser-options"><a class="header" href="#parser-options">Parser options</a></h3>
+<p>Parser options allow you to control the strictness and limits of the parser. Set them by passing to <code>Json.decode</code> or when initializing the reader:</p>
+<pre><code class="language-nim">let flags = defaultJsonReaderFlags + {allowUnknownFields}
+
+var conf = defaultJsonReaderConf
+conf.nestedDepthLimit = 0
+
+let native = Json.decode(
+  rawJson, NimServer, flags = flags, conf = conf)
+</code></pre>
+<p><a href="reference.html#flavors">Flavors</a> can be used to override the defaults for some these options.</p>
+<h4 id="flags"><a class="header" href="#flags">Flags</a></h4>
+<p>Flags control aspects of the parser that are not all part of the JSON standard, but commonly found in the wild:</p>
+<ul>
+<li><strong>allowUnknownFields [=off]</strong>: Skip unknown fields instead of raising an error.</li>
+<li><strong>requireAllFields [=off]</strong>: Raise an error if any required field is missing.</li>
+<li><strong>escapeHex [=off]</strong>: Allow <code>\xHH</code> escape sequences, which are not standard but common in some languages.</li>
+<li><strong>relaxedEscape [=off]</strong>: Allow escaping any character, not just control characters.</li>
+<li><strong>portableInt [=off]</strong>: Restrict integers to the safe JavaScript range (<code>-2^53 + 1</code> to <code>2^53 - 1</code>).</li>
+<li><strong>trailingComma [=on]</strong>: Allow trailing commas after the last object member or array element.</li>
+<li><strong>allowComments [=on]</strong>: Allow C-style comments (<code>//...</code> and <code>/* ... */</code>).</li>
+<li><strong>leadingFraction [=on]</strong>: Accept numbers like <code>.123</code>, which are not valid JSON but often used.</li>
+<li><strong>integerPositiveSign [=on]</strong>: Accept numbers like <code>+123</code>, for symmetry with negative numbers.</li>
+</ul>
+<h4 id="limits"><a class="header" href="#limits">Limits</a></h4>
+<p>Parser limits are passed to <code>decode</code>, similar to flags:</p>
+<p>You can adjust these defaults to suit your needs:</p>
+<ul>
+<li><strong>nestedDepthLimit [=512]</strong>: Maximum nesting depth for objects and arrays (0 = unlimited).</li>
+<li><strong>arrayElementsLimit [=0]</strong>: Maximum number of array elements (0 = unlimited).</li>
+<li><strong>objectMembersLimit [=0]</strong>: Maximum number of key-value pairs in an object (0 = unlimited).</li>
+<li><strong>integerDigitsLimit [=128]</strong>: Maximum digits in the integer part of a number.</li>
+<li><strong>fractionDigitsLimit [=128]</strong>: Maximum digits in the fractional part of a number.</li>
+<li><strong>exponentDigitsLimit [=32]</strong>: Maximum digits in the exponent part of a number.</li>
+<li><strong>stringLengthLimit [=0]</strong>: Maximum string length in bytes (0 = unlimited).</li>
+</ul>
+<h3 id="special-types"><a class="header" href="#special-types">Special types</a></h3>
+<ul>
+<li><strong>JsonString</strong>: Holds a JSON fragment as a distinct string.</li>
+<li><strong>JsonVoid</strong>: Skips a valid JSON value.</li>
+<li><strong>JsonNumber</strong>: Holds a JSON number, including fraction and exponent.
+<ul>
+<li>This is a generic type supporting <code>uint64</code> and <code>string</code> as parameters.</li>
+<li>The parameter determines the type for the integer and exponent parts.</li>
+<li>If <code>uint64</code> is used, overflow or digit limits may apply.</li>
+<li>If <code>string</code> is used, only digit limits apply.</li>
+<li>The fraction part is always a string to preserve leading zeros.</li>
+</ul>
+</li>
+<li><strong>JsonValueRef</strong>: Holds any valid JSON value, similar to <code>std/json.JsonNode</code>, but uses <code>JsonNumber</code> instead of <code>int</code> or <code>float</code>.</li>
+</ul>
+<h2 id="writing-1"><a class="header" href="#writing-1">Writing</a></h2>
+<h3 id="common-api-1"><a class="header" href="#common-api-1">Common API</a></h3>
+<p>Similar to parsing, the <a href="https://github.com/status-im/nim-serialization?tab=readme-ov-file#common-api">common serialization API</a> is used to produce JSON documents.</p>
+<pre><code class="language-nim"># Convert object to string
+echo Json.encode(native)
+
+# Write JSON to file
+Json.saveFile("filename.json", native)
+
+# Pretty-print a tuple
+echo Json.encode((x: 4, y: 5), pretty = true)
+</code></pre>
+<h3 id="standalone-writer"><a class="header" href="#standalone-writer">Standalone Writer</a></h3>
+<pre><code class="language-nim">var output = memoryOutput()
+var writer = JsonWriter[DefaultFlavor].init(output)
+writer.writeValue(native)
+echo output.getOutput(string)
+</code></pre>
+<h2 id="flavors"><a class="header" href="#flavors">Flavors</a></h2>
+<p>Flags and limits are runtime configurations, while a flavor is a compile-time mechanism to prevent conflicts between custom serializers for the same type. For example, a JSON-RPC-based API might require that numbers are formatted as hex strings while the same type exposed through REST should use a number.</p>
+<p>Flavors ensure the compiler selects the correct serializer for each subsystem. Use <code>useDefaultSerializationIn</code> to assign serializers of a flavor to a specific type.</p>
+<pre><code class="language-nim"># Parameters for `createJsonFlavor`:
+
+  FlavorName: untyped
+  mimeTypeValue = "application/json"
+  automaticObjectSerialization = false
+  requireAllFields = true
+  omitOptionalFields = true
+  allowUnknownFields = true
+  skipNullFields = false
+</code></pre>
+<pre><code class="language-nim">type
+  OptionalFields = object
+    one: Opt[string]
+    two: Option[int]
+
+createJsonFlavor OptJson
+OptionalFields.useDefaultSerializationIn OptJson
+</code></pre>
+<ul>
+<li><code>automaticObjectSerialization</code>: By default, all object types are accepted by <code>json_serialization</code> - disable automatic object serialization to only serialize explicitly allowed types</li>
+<li><code>omitOptionalFields</code>: Writer ignores fields with null values.</li>
+<li><code>skipNullFields</code>: Reader ignores fields with null values.</li>
+</ul>
+<h2 id="custom-parsers-and-writers"><a class="header" href="#custom-parsers-and-writers">Custom parsers and writers</a></h2>
+<p>Parsing and writing can be customized by providing overloads for the <code>readValue</code> and <code>writeValue</code> functions. Overrides are commonly used with a <a href="reference.html#flavors">flavor</a> that prevents automatic object serialization, to avoid that some objects use the default serialization, should an import be forgotten.</p>
+<pre><code class="language-nim"># Custom serializers for MyType should match the following signatures
+proc readValue*(r: var JsonReader, value: var MyType) {.raises: [IOError, SerializationError].}
+proc writeValue*(w: var JsonWriter, value: MyType) {.raises: [IOError].}
+
+# When flavors are used, add the flavor as well
+proc readValue*(r: var JsonReader[MyFlavor], value: var MyType) {.raises: [IOError, SerializationError].}
+proc writeValue*(w: var JsonWriter[MyFlavor], value: MyType) {.raises: [IOError].}
+</code></pre>
+<p>The JsonReader provides access to the JSON token stream coming out of the lexer. While the token stream can be accessed directly, there are several helpers that make it easier to correctly parse common JSON shapes.</p>
+<h3 id="objects"><a class="header" href="#objects">Objects</a></h3>
+<p>Decode objects using the <code>parseObject</code> template. To parse values, use helper functions or <code>readValue</code>. The <code>readObject</code> and <code>readObjectFields</code> iterators are also useful for custom object parsers.</p>
+<pre><code class="language-nim">proc readValue*(r: var JsonReader, value: var Table[string, int]) =
+  parseObject(r, key):
+    value[key] = r.parseInt(int)
+</code></pre>
+<h3 id="sets-and-list-like-types"><a class="header" href="#sets-and-list-like-types">Sets and List-like Types</a></h3>
+<p>Sets and list/array-like structures can be parsed using the <code>parseArray</code> template, which supports both indexed and non-indexed forms.</p>
+<p>Built-in <code>readValue</code> implementations exist for regular <code>seq</code> and <code>array</code>. For <code>set</code> or set-like types, you must provide your own implementation.</p>
+<pre><code class="language-nim">type
+  HoldArray = object
+    data: array[3, int]
+
+  HoldSeq = object
+    data: seq[int]
+
+  WelderFlag = enum
+    TIG
+    MIG
+    MMA
+
+  Welder = object
+    flags: set[WelderFlag]
+
+proc readValue*(r: var JsonReader, value: var HoldArray) =
+  # parseArray with index, `i` can be any valid identifier
+  r.parseArray(i):
+    value.data[i] = r.parseInt(int)
+
+proc readValue*(r: var JsonReader, value: var HoldSeq) =
+  # parseArray without index
+  r.parseArray:
+    let lastPos = value.data.len
+    value.data.setLen(lastPos + 1)
+    readValue(r, value.data[lastPos])
+
+proc readValue*(r: var JsonReader, value: var Welder) =
+  # populating set also okay
+  r.parseArray:
+    value.flags.incl r.parseInt(int).WelderFlag
+</code></pre>
+<h2 id="custom-iterators"><a class="header" href="#custom-iterators">Custom Iterators</a></h2>
+<p>Custom iterators provide access to sub-token elements:</p>
+<pre><code class="language-nim">customIntValueIt(r: var JsonReader; body: untyped)
+customNumberValueIt(r: var JsonReader; body: untyped)
+customStringValueIt(r: var JsonReader; limit: untyped; body: untyped)
+customStringValueIt(r: var JsonReader; body: untyped)
+</code></pre>
+<h2 id="convenience-iterators"><a class="header" href="#convenience-iterators">Convenience Iterators</a></h2>
+<pre><code class="language-nim">readArray(r: var JsonReader, ElemType: typedesc): ElemType
+readObjectFields(r: var JsonReader, KeyType: type): KeyType
+readObjectFields(r: var JsonReader): string
+readObject(r: var JsonReader, KeyType: type, ValueType: type): (KeyType, ValueType)
+</code></pre>
+<h2 id="helper-procedures"><a class="header" href="#helper-procedures">Helper Procedures</a></h2>
+<p>When writing a custom serializer, use these safe and intuitive parsers. Avoid using the lexer directly.</p>
+<pre><code class="language-nim">tokKind(r: var JsonReader): JsonValueKind
+parseString(r: var JsonReader, limit: int): string
+parseString(r: var JsonReader): string
+parseBool(r: var JsonReader): bool
+parseNull(r: var JsonReader)
+parseNumber(r: var JsonReader, T: type): JsonNumber[T: string or uint64]
+parseNumber(r: var JsonReader, val: var JsonNumber)
+toInt(r: var JsonReader, val: JsonNumber, T: type SomeInteger, portable: bool): T
+parseInt(r: var JsonReader, T: type SomeInteger, portable: bool = false): T
+toFloat(r: var JsonReader, val: JsonNumber, T: type SomeFloat): T
+parseFloat(r: var JsonReader, T: type SomeFloat): T
+parseAsString(r: var JsonReader, val: var string)
+parseAsString(r: var JsonReader): JsonString
+parseValue(r: var JsonReader, T: type): JsonValueRef[T: string or uint64]
+parseValue(r: var JsonReader, val: var JsonValueRef)
+parseArray(r: var JsonReader; body: untyped)
+parseArray(r: var JsonReader; idx: untyped; body: untyped)
+parseObject(r: var JsonReader, key: untyped, body: untyped)
+parseObjectWithoutSkip(r: var JsonReader, key: untyped, body: untyped)
+parseObjectSkipNullFields(r: var JsonReader, key: untyped, body: untyped)
+parseObjectCustomKey(r: var JsonReader, keyAction: untyped, body: untyped)
+parseJsonNode(r: var JsonReader): JsonNode
+skipSingleJsValue(r: var JsonReader)
+readRecordValue[T](r: var JsonReader, value: var T)
+</code></pre>
+<h2 id="jsonwriter-helper-procedures"><a class="header" href="#jsonwriter-helper-procedures">JsonWriter Helper Procedures</a></h2>
+<p>See the <a href="./api/json_serialization/writer.html">API reference</a></p>
+<h2 id="enums"><a class="header" href="#enums">Enums</a></h2>
+<pre><code class="language-nim">type
+  Fruit = enum
+    Apple = "Apple"
+    Banana = "Banana"
+
+  Drawer = enum
+    One
+    Two
+
+  Number = enum
+    Three = 3
+    Four = 4
+
+  Mixed = enum
+    Six = 6
+    Seven = "Seven"
+</code></pre>
+<p><code>json_serialization</code> automatically detects the expected representation for each enum based on its declaration.</p>
+<ul>
+<li><code>Fruit</code> expects string literals.</li>
+<li><code>Drawer</code> and <code>Number</code> expect numeric literals.</li>
+<li><code>Mixed</code> (with both string and numeric values) is disallowed by default.
+If the JSON literal does not match the expected style, an exception is raised.
+You can configure individual enum types:</li>
+</ul>
+<pre><code class="language-nim">configureJsonDeserialization(
+    T: type[enum], allowNumericRepr: static[bool] = false,
+    stringNormalizer: static[proc(s: string): string] = strictNormalize)
+
+# Example:
+Mixed.configureJsonDeserialization(allowNumericRepr = true) # Only at top level
+</code></pre>
+<p>You can also configure enum encoding at the flavor or type level:</p>
+<pre><code class="language-nim">type
+  EnumRepresentation* = enum
+    EnumAsString
+    EnumAsNumber
+    EnumAsStringifiedNumber
+
+# Examples:
+
+# Flavor level
+Json.flavorEnumRep(EnumAsString)   # Default flavor, can be called from non-top level
+Flavor.flavorEnumRep(EnumAsNumber) # Custom flavor, can be called from non-top level
+
+# Individual enum type, regardless of flavor
+Fruit.configureJsonSerialization(EnumAsNumber) # Only at top level
+
+# Individual enum type for a specific flavor
+MyJson.flavorEnumRep(Drawer, EnumAsString) # Only at top level
+</code></pre>
+<footer id="open-on-gh">Found a bug? <a href="https://github.com/status-im/nim-json-serialization//edit/master/docs/src/reference.md">Edit this page on GitHub.</a></footer><div style="break-before: page; page-break-before: always;"></div><h1 id="updating-this-book"><a class="header" href="#updating-this-book">Updating this book</a></h1>
+<p>This book is built using <a href="https://rust-lang.github.io/mdBook/">mdBook</a>, which in
+turn requires a recent version of <code>rust</code> and <code>cargo</code> installed.</p>
+<pre><code class="language-sh"># Install correct versions of tooling
+nimble mdbook
+
+# Run a local mdbook server
+mdbook serve docs
+</code></pre>
+<p>A <a href="../../.github/workflows/docs.yml">CI job</a> automatically published the book
+to <a href="https://pages.github.com/">GitHub Pages</a>.</p>
+<footer id="open-on-gh">Found a bug? <a href="https://github.com/status-im/nim-json-serialization//edit/master/docs/src/book.md">Edit this page on GitHub.</a></footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+    </div>
+    </body>
+</html>

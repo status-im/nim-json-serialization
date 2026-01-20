@@ -1,0 +1,12 @@
+nimTitle	reader_impl	json_serialization/reader_impl.html	module json_serialization/reader_impl		0
+nim	readArray	json_serialization/reader_impl.html#readArray.i,JsonReader,typedesc	iterator readArray(r: var JsonReader; ElemType: typedesc): ElemType:type		117
+nim	readObjectFields	json_serialization/reader_impl.html#readObjectFields.i,JsonReader,type	iterator readObjectFields(r: var JsonReader; KeyType: type): KeyType:type		126
+nim	readObject	json_serialization/reader_impl.html#readObject.i,JsonReader,type,type	iterator readObject(r: var JsonReader; KeyType: type; ValueType: type): (KeyType:type,\n    ValueType:type)		137
+nim	isFieldExpected	json_serialization/reader_impl.html#isFieldExpected,type	proc isFieldExpected(T: type): bool		152
+nim	totalExpectedFields	json_serialization/reader_impl.html#totalExpectedFields,type	proc totalExpectedFields(T: type): int		155
+nim	expectedFieldsBitmask	json_serialization/reader_impl.html#expectedFieldsBitmask,type,staticint	proc expectedFieldsBitmask(TT: type; fields: static int): auto		163
+nim	readRecordValue	json_serialization/reader_impl.html#readRecordValue,JsonReader,T	proc readRecordValue[T](r: var JsonReader; value: var T)		181
+nim	readValue	json_serialization/reader_impl.html#readValue,JsonReader,T	proc readValue[T](r: var JsonReader; value: var T)		289
+nim	readObjectFields	json_serialization/reader_impl.html#readObjectFields.i,JsonReader	iterator readObjectFields(r: var JsonReader): string		414
+nim	configureJsonDeserialization	json_serialization/reader_impl.html#configureJsonDeserialization.t,type[],static[bool],static[proc(string)]	template configureJsonDeserialization(T: type[enum];\n                             allowNumericRepr: static[bool] = false;\n    stringNormalizer: static[proc (s: string): string] = strictNormalize)		419
+nimgrp	readobjectfields	json_serialization/reader_impl.html#readObjectFields-iterators-all	iterator		126

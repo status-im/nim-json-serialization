@@ -1,0 +1,24 @@
+nimTitle	types	json_serialization/types.html	module json_serialization/types		0
+nim	JsonError	json_serialization/types.html#JsonError	object JsonError		21
+nim	JsonString	json_serialization/types.html#JsonString	type JsonString		23
+nim	JsonVoid	json_serialization/types.html#JsonVoid	object JsonVoid		28
+nim	JsonSign	json_serialization/types.html#JsonSign	enum JsonSign		31
+nim	JsonNumber	json_serialization/types.html#JsonNumber	object JsonNumber		38
+nim	JsonReaderFlag	json_serialization/types.html#JsonReaderFlag	enum JsonReaderFlag		45
+nim	JsonReaderFlags	json_serialization/types.html#JsonReaderFlags	type JsonReaderFlags		56
+nim	JsonReaderConf	json_serialization/types.html#JsonReaderConf	object JsonReaderConf		58
+nim	JsonValueKind	json_serialization/types.html#JsonValueKind	enum JsonValueKind		67
+nim	JsonObjectType	json_serialization/types.html#JsonObjectType	type JsonObjectType		75
+nim	JsonValueRef	json_serialization/types.html#JsonValueRef	type JsonValueRef		77
+nim	JsonValue	json_serialization/types.html#JsonValue	object JsonValue		78
+nim	minPortableInt	json_serialization/types.html#minPortableInt	const minPortableInt		94
+nim	maxPortableInt	json_serialization/types.html#maxPortableInt	const maxPortableInt		95
+nim	defaultJsonReaderFlags	json_serialization/types.html#defaultJsonReaderFlags	const defaultJsonReaderFlags		97
+nim	defaultJsonReaderConf	json_serialization/types.html#defaultJsonReaderConf	const defaultJsonReaderConf		104
+nim	`==`	json_serialization/types.html#==.t,JsonString,JsonString	template `==`(lhs, rhs: JsonString): bool		114
+nim	valueType	json_serialization/types.html#valueType.t,typeOrderedTable[K,V]	template valueType[K, V](_: type OrderedTable[K, V]): untyped		117
+nim	isFloat	json_serialization/types.html#isFloat,JsonNumber	proc isFloat(x: JsonNumber): bool		119
+nim	hasExponent	json_serialization/types.html#hasExponent,JsonNumber[T]	proc hasExponent[T](x: JsonNumber[T]): bool		122
+nim	toInt	json_serialization/types.html#toInt,JsonSign	proc toInt(sign: JsonSign): int		128
+nim	`==`	json_serialization/types.html#==,JsonValueRef,JsonValueRef	proc `==`(lhs, rhs: JsonValueRef): bool		134
+nim	`$`	json_serialization/types.html#$.t,JsonString	template `$`(s: JsonString): string		174

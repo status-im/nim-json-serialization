@@ -1,0 +1,49 @@
+nimTitle	reader_desc	json_serialization/reader_desc.html	module json_serialization/reader_desc		0
+nim	JsonReader	json_serialization/reader_desc.html#JsonReader	object JsonReader		24
+nim	JsonReaderError	json_serialization/reader_desc.html#JsonReaderError	object JsonReaderError		27
+nim	UnexpectedField	json_serialization/reader_desc.html#UnexpectedField	object UnexpectedField		30
+nim	etValue	json_serialization/reader_desc.html#etValue	ExpectedTokenCategory.etValue		34
+nim	etBool	json_serialization/reader_desc.html#etBool	ExpectedTokenCategory.etBool		34
+nim	etInt	json_serialization/reader_desc.html#etInt	ExpectedTokenCategory.etInt		34
+nim	etEnumAny	json_serialization/reader_desc.html#etEnumAny	ExpectedTokenCategory.etEnumAny		34
+nim	etEnumString	json_serialization/reader_desc.html#etEnumString	ExpectedTokenCategory.etEnumString		34
+nim	etNumber	json_serialization/reader_desc.html#etNumber	ExpectedTokenCategory.etNumber		34
+nim	etString	json_serialization/reader_desc.html#etString	ExpectedTokenCategory.etString		34
+nim	etComma	json_serialization/reader_desc.html#etComma	ExpectedTokenCategory.etComma		34
+nim	etColon	json_serialization/reader_desc.html#etColon	ExpectedTokenCategory.etColon		34
+nim	etBracketLe	json_serialization/reader_desc.html#etBracketLe	ExpectedTokenCategory.etBracketLe		34
+nim	etBracketRi	json_serialization/reader_desc.html#etBracketRi	ExpectedTokenCategory.etBracketRi		34
+nim	etCurrlyLe	json_serialization/reader_desc.html#etCurrlyLe	ExpectedTokenCategory.etCurrlyLe		34
+nim	etCurrlyRi	json_serialization/reader_desc.html#etCurrlyRi	ExpectedTokenCategory.etCurrlyRi		34
+nim	ExpectedTokenCategory	json_serialization/reader_desc.html#ExpectedTokenCategory	enum ExpectedTokenCategory		34
+nim	GenericJsonReaderError	json_serialization/reader_desc.html#GenericJsonReaderError	object GenericJsonReaderError		49
+nim	UnexpectedTokenError	json_serialization/reader_desc.html#UnexpectedTokenError	object UnexpectedTokenError		53
+nim	UnexpectedValueError	json_serialization/reader_desc.html#UnexpectedValueError	object UnexpectedValueError		57
+nim	IncompleteObjectError	json_serialization/reader_desc.html#IncompleteObjectError	object IncompleteObjectError		59
+nim	IntOverflowError	json_serialization/reader_desc.html#IntOverflowError	object IntOverflowError		62
+nim	ReaderType	json_serialization/reader_desc.html#ReaderType.t,typeJson	template ReaderType(T`gensym0: type Json; F`gensym0: distinct type = DefaultFlavor): type		30
+nim	Reader	json_serialization/reader_desc.html#Reader.t,typeJson	template Reader(T`gensym0: type Json; F`gensym0: distinct type = DefaultFlavor): type		31
+nim	formatMsg	json_serialization/reader_desc.html#formatMsg.e,ref.JsonReaderError,string	method formatMsg(err: ref JsonReaderError; filename: string): string		77
+nim	formatMsg	json_serialization/reader_desc.html#formatMsg.e,ref.UnexpectedField,string	method formatMsg(err: ref UnexpectedField; filename: string): string		80
+nim	formatMsg	json_serialization/reader_desc.html#formatMsg.e,ref.UnexpectedTokenError,string	method formatMsg(err: ref UnexpectedTokenError; filename: string): string		83
+nim	formatMsg	json_serialization/reader_desc.html#formatMsg.e,ref.GenericJsonReaderError,string	method formatMsg(err: ref GenericJsonReaderError; filename: string): string		86
+nim	formatMsg	json_serialization/reader_desc.html#formatMsg.e,ref.IntOverflowError,string	method formatMsg(err: ref IntOverflowError; filename: string): string		89
+nim	formatMsg	json_serialization/reader_desc.html#formatMsg.e,ref.UnexpectedValueError,string	method formatMsg(err: ref UnexpectedValueError; filename: string): string		92
+nim	formatMsg	json_serialization/reader_desc.html#formatMsg.e,ref.IncompleteObjectError,string	method formatMsg(err: ref IncompleteObjectError; filename: string): string		95
+nim	assignLineNumber	json_serialization/reader_desc.html#assignLineNumber,ref.JsonReaderError,JsonLexer	proc assignLineNumber(ex: ref JsonReaderError; lex: JsonLexer)		98
+nim	raiseUnexpectedToken	json_serialization/reader_desc.html#raiseUnexpectedToken,JsonLexer,ExpectedTokenCategory	proc raiseUnexpectedToken(lex: var JsonLexer; expected: ExpectedTokenCategory)		102
+nim	raiseUnexpectedToken	json_serialization/reader_desc.html#raiseUnexpectedToken.t,JsonReader,ExpectedTokenCategory	template raiseUnexpectedToken(reader: JsonReader; expected: ExpectedTokenCategory)		110
+nim	raiseUnexpectedValue	json_serialization/reader_desc.html#raiseUnexpectedValue,JsonLexer,string	proc raiseUnexpectedValue(lex: JsonLexer; msg: string)		113
+nim	raiseUnexpectedValue	json_serialization/reader_desc.html#raiseUnexpectedValue.t,JsonReader,string	template raiseUnexpectedValue(r: JsonReader; msg: string)		120
+nim	raiseIntOverflow	json_serialization/reader_desc.html#raiseIntOverflow,JsonLexer,BiggestUInt,bool	proc raiseIntOverflow(lex: JsonLexer; absIntVal: BiggestUInt; isNegative: bool)		123
+nim	raiseIntOverflow	json_serialization/reader_desc.html#raiseIntOverflow.t,JsonReader,BiggestUInt,bool	template raiseIntOverflow(r: JsonReader; absIntVal: BiggestUInt; isNegative: bool)		132
+nim	raiseUnexpectedField	json_serialization/reader_desc.html#raiseUnexpectedField,JsonLexer,string,cstring	proc raiseUnexpectedField(lex: JsonLexer; fieldName: string;\n                     deserializedType: cstring)		135
+nim	raiseUnexpectedField	json_serialization/reader_desc.html#raiseUnexpectedField.t,JsonReader,string,cstring	template raiseUnexpectedField(r: JsonReader; fieldName: string; deserializedType: cstring)		144
+nim	raiseIncompleteObject	json_serialization/reader_desc.html#raiseIncompleteObject,JsonLexer,cstring	proc raiseIncompleteObject(lex: JsonLexer; objectType: cstring)		147
+nim	raiseIncompleteObject	json_serialization/reader_desc.html#raiseIncompleteObject.t,JsonReader,cstring	template raiseIncompleteObject(r: JsonReader; objectType: cstring)		155
+nim	handleReadException	json_serialization/reader_desc.html#handleReadException,JsonLexer,type,string,auto,ref.CatchableError	proc handleReadException(lex: JsonLexer; Record: type; fieldName: string;\n                    field: auto; err: ref CatchableError)		158
+nim	handleReadException	json_serialization/reader_desc.html#handleReadException.t,JsonReader,type,string,auto,ref.CatchableError	template handleReadException(r: JsonReader; Record: type; fieldName: string; field: auto;\n                    err: ref CatchableError)		169
+nim	init	json_serialization/reader_desc.html#init,typeJsonReader,InputStream,JsonReaderFlags,JsonReaderConf	proc init(T: type JsonReader; stream: InputStream; flags: JsonReaderFlags;\n     conf: JsonReaderConf = defaultJsonReaderConf): T:type		176
+nim	init	json_serialization/reader_desc.html#init,typeJsonReader,InputStream	proc init(T: type JsonReader; stream: InputStream; allowUnknownFields = false;\n     requireAllFields = false): T:type		182
+nimgrp	init	json_serialization/reader_desc.html#init-procs-all	proc		176
+nimgrp	formatmsg	json_serialization/reader_desc.html#formatMsg-methods-all	method		77
