@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2023-2024 Status Research & Development GmbH
+# Copyright (c) 2023-2026 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -22,20 +22,20 @@ requires "nim >= 1.6.0",
          "stew >= 0.2.0",
          "results"
 
+from std/os import quoteShell
+from std/strutils import endsWith
+
 let nimc = getEnv("NIMC", "nim") # Which nim compiler to use
 let lang = getEnv("NIMLANG", "c") # Which backend (c/cpp/js)
 let flags = getEnv("NIMFLAGS", "") # Extra flags for the compiler
 let verbose = getEnv("V", "") notin ["", "0"]
 
-from os import quoteShell
-from strutils import endsWith
-
 let cfg =
   " --styleCheck:usages --styleCheck:error" &
-  (if verbose: "" else: " --verbosity:0 --hints:off") &
+  (if verbose: "" else: " --verbosity:0") &
   " --outdir:build " &
   quoteShell("--nimcache:build/nimcache/$projectName") &
-  " -d:nimOldCaseObjects -d:serializationTestAllRountrips" &
+  " -d:serializationTestAllRountrips" &
   (if NimMajor >= 2: " -d:unittest2Static" else: "")
 
 proc build(args, path: string) =

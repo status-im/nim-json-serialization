@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2023 Status Research & Development GmbH
+# Copyright (c) 2023-2026 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -7,13 +7,18 @@
 # This file may not be copied, modified, or distributed except according to
 # those terms.
 
+{.push gcsafe.}
+
 import
-  std/[strutils, os, json],
+  std/json,
   faststreams,
   unittest2,
   ../json_serialization/parser,
   ../json_serialization/value_ops,
   ./utils
+
+from std/os import splitPath, walkDirRec
+from std/strutils import startsWith
 
 createJsonFlavor NullFields,
   skipNullFields = true
@@ -410,7 +415,7 @@ suite "Parse to runtime dynamic structure":
   test "parseValue bignum overflow":
     var r = toReader(jsonBigNum)
     expect JsonReaderError:
-      let n = r.parseValue(uint64)
+      discard r.parseValue(uint64)
 
   test "nim v2 regression #23233":
     # Nim compiler bug #23233 will prevent
