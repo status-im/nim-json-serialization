@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2024-2025 Status Research & Development GmbH
+# Copyright (c) 2024-2026 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -54,9 +54,9 @@ proc writeValue*(w: var JsonWriter, val: OWOF)
     w.writeField("b", val.b)
     w.writeField("c", val.c)
 
-func toReader(input: string): JsonReader[DefaultFlavor] =
+func toReader(input: string): JsonReader[Json] =
   var stream = unsafeMemoryInput(input)
-  JsonReader[DefaultFlavor].init(stream)
+  JsonReader[Json].init(stream)
 
 suite "Test writer":
   test "stdlib option top level some YourJson":
@@ -188,50 +188,50 @@ suite "Test writer":
     check vv == """{"a":null,"b":null,"c":999}"""
 
   test "Enum value representation primitives":
-    DefaultFlavor.flavorEnumRep(EnumAsString)
-    when DefaultFlavor.flavorEnumRep() == EnumAsString:
+    Json.flavorEnumRep(EnumAsString)
+    when Json.flavorEnumRep() == EnumAsString:
       check true
-    elif DefaultFlavor.flavorEnumRep() == EnumAsNumber:
+    elif Json.flavorEnumRep() == EnumAsNumber:
       check false
-    elif DefaultFlavor.flavorEnumRep() == EnumAsStringifiedNumber:
+    elif Json.flavorEnumRep() == EnumAsStringifiedNumber:
       check false
 
-    DefaultFlavor.flavorEnumRep(EnumAsNumber)
-    when DefaultFlavor.flavorEnumRep() == EnumAsString:
+    Json.flavorEnumRep(EnumAsNumber)
+    when Json.flavorEnumRep() == EnumAsString:
       check false
-    elif DefaultFlavor.flavorEnumRep() == EnumAsNumber:
+    elif Json.flavorEnumRep() == EnumAsNumber:
       check true
-    elif DefaultFlavor.flavorEnumRep() == EnumAsStringifiedNumber:
+    elif Json.flavorEnumRep() == EnumAsStringifiedNumber:
       check false
 
-    DefaultFlavor.flavorEnumRep(EnumAsStringifiedNumber)
-    when DefaultFlavor.flavorEnumRep() == EnumAsString:
+    Json.flavorEnumRep(EnumAsStringifiedNumber)
+    when Json.flavorEnumRep() == EnumAsString:
       check false
-    elif DefaultFlavor.flavorEnumRep() == EnumAsNumber:
+    elif Json.flavorEnumRep() == EnumAsNumber:
       check false
-    elif DefaultFlavor.flavorEnumRep() == EnumAsStringifiedNumber:
+    elif Json.flavorEnumRep() == EnumAsStringifiedNumber:
       check true
 
-  test "Enum value representation of DefaultFlavor":
+  test "Enum value representation of Json":
     type
       ExoticFruits = enum
         DragonFruit
         SnakeFruit
         StarFruit
 
-    DefaultFlavor.flavorEnumRep(EnumAsNumber)
+    Json.flavorEnumRep(EnumAsNumber)
     let u = Json.encode(DragonFruit)
     check u == "0"
 
-    DefaultFlavor.flavorEnumRep(EnumAsString)
+    Json.flavorEnumRep(EnumAsString)
     let v = Json.encode(SnakeFruit)
     check v == "\"SnakeFruit\""
 
-    DefaultFlavor.flavorEnumRep(EnumAsStringifiedNumber)
+    Json.flavorEnumRep(EnumAsStringifiedNumber)
     let w = Json.encode(StarFruit)
     check w == "\"2\""
 
-  test "EnumAsString of DefaultFlavor/Json":
+  test "EnumAsString of Json/Json":
     type
       Fruit = enum
         Banana = "BaNaNa"

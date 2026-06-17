@@ -52,7 +52,8 @@ template generateJsonAutoSerializationAddon*(FLAVOR: typed) {.dirty.} =
 
 
 serializationFormat Json,
-                    mimeType = "application/json"
+                    mimeType = "application/json",
+                    version = 1
 
 template supports*(_: type Json, T: type): bool =
   # The JSON format should support every type
@@ -64,41 +65,24 @@ type
     EnumAsNumber
     EnumAsStringifiedNumber
 
-template flavorUsesAutomaticObjectSerialization*(T: type DefaultFlavor): bool = true
-template flavorOmitsOptionalFields*(T: type DefaultFlavor): bool = true
-template flavorRequiresAllFields*(T: type DefaultFlavor): bool = false
-template flavorAllowsUnknownFields*(T: type DefaultFlavor): bool = false
-template flavorSkipNullFields*(T: type DefaultFlavor): bool = false
+template flavorUsesAutomaticObjectSerialization*(_: type Json): bool = true
+template flavorOmitsOptionalFields*(_: type Json): bool = true
+template flavorRequiresAllFields*(_: type Json): bool = false
+template flavorAllowsUnknownFields*(_: type Json): bool = false
+template flavorSkipNullFields*(_: type Json): bool = false
 
-var DefaultFlavorEnumRep {.compileTime.} = EnumAsString
-template flavorEnumRep*(T: type DefaultFlavor): EnumRepresentation =
-  DefaultFlavorEnumRep
+var JsonEnumRep {.compileTime.} = EnumAsString
+template flavorEnumRep*(_: type Json): EnumRepresentation =
+  JsonEnumRep
 
-template flavorEnumRep*(T: type DefaultFlavor, rep: static[EnumRepresentation]) =
+template flavorEnumRep*(_: type Json, rep: static[EnumRepresentation]) =
   static:
-    DefaultFlavorEnumRep = rep
-
-# If user choose to use `Json` instead of `DefaultFlavor`, it still goes to `DefaultFlavor`
-template flavorEnumRep*(T: type Json, rep: static[EnumRepresentation]) =
-  static:
-    DefaultFlavorEnumRep = rep
+    JsonEnumRep = rep
 
 when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
-  # Keep backward compatibility behavior, DefaultFlavor always enable all built in serialization.
-  generateJsonAutoSerializationAddon(DefaultFlavor)
-  DefaultFlavor.automaticBuiltinSerialization(true)
-
-# We create overloads of these traits to force the mixin treatment of the symbols
-type DummyFlavor* = object
-template flavorUsesAutomaticObjectSerialization*(T: type DummyFlavor): bool = true
-template flavorOmitsOptionalFields*(T: type DummyFlavor): bool = false
-template flavorRequiresAllFields*(T: type DummyFlavor): bool = false
-template flavorAllowsUnknownFields*(T: type DummyFlavor): bool = false
-template flavorSkipNullFields*(T: type DummyFlavor): bool = false
-
-when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
-  generateJsonAutoSerializationAddon(DummyFlavor)
-  DummyFlavor.automaticBuiltinSerialization(false)
+  # Keep backward compatibility behavior, Json always enable all built in serialization.
+  generateJsonAutoSerializationAddon(Json)
+  Json.automaticBuiltinSerialization(true)
 
 template decode*(
     Format: type Json,
@@ -121,10 +105,10 @@ template createJsonFlavor*(FlavorName: untyped,
   else:
     type FlavorName* = object
 
-    template Reader*(T: type FlavorName): type = Reader(Json, FlavorName)
-    template Writer*(T: type FlavorName): type = Writer(Json, FlavorName)
-    template PreferredOutputType*(T: type FlavorName): type = string
-    template mimeType*(T: type FlavorName): string = mimeTypeValue
+    template Reader*(_: type FlavorName): type = Reader(Json, FlavorName)
+    template Writer*(_: type FlavorName): type = Writer(Json, FlavorName)
+    template PreferredOutputType*(_: type FlavorName): type = string
+    template mimeType*(_: type FlavorName): string = mimeTypeValue
 
   template decode*(
       Format: type FlavorName,
@@ -134,17 +118,17 @@ template createJsonFlavor*(FlavorName: untyped,
   ): auto =
     decode(Format, string(inputParam), RecordType, params)
 
-  template flavorUsesAutomaticObjectSerialization*(T: type FlavorName): bool = automaticObjectSerialization
-  template flavorOmitsOptionalFields*(T: type FlavorName): bool = omitOptionalFields
-  template flavorRequiresAllFields*(T: type FlavorName): bool = requireAllFields
-  template flavorAllowsUnknownFields*(T: type FlavorName): bool = allowUnknownFields
-  template flavorSkipNullFields*(T: type FlavorName): bool = skipNullFields
+  template flavorUsesAutomaticObjectSerialization*(_: type FlavorName): bool = automaticObjectSerialization
+  template flavorOmitsOptionalFields*(_: type FlavorName): bool = omitOptionalFields
+  template flavorRequiresAllFields*(_: type FlavorName): bool = requireAllFields
+  template flavorAllowsUnknownFields*(_: type FlavorName): bool = allowUnknownFields
+  template flavorSkipNullFields*(_: type FlavorName): bool = skipNullFields
 
   var `FlavorName EnumRep` {.compileTime.} = EnumAsString
-  template flavorEnumRep*(T: type FlavorName): EnumRepresentation =
+  template flavorEnumRep*(_: type FlavorName): EnumRepresentation =
     `FlavorName EnumRep`
 
-  template flavorEnumRep*(T: type FlavorName, rep: static[EnumRepresentation]) =
+  template flavorEnumRep*(_: type FlavorName, rep: static[EnumRepresentation]) =
     static:
       `FlavorName EnumRep` = rep
 

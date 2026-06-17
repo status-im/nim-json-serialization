@@ -23,9 +23,9 @@ from std/strutils import startsWith
 createJsonFlavor NullFields,
   skipNullFields = true
 
-func toReader(input: string): JsonReader[DefaultFlavor] =
+func toReader(input: string): JsonReader[Json] =
   var stream = unsafeMemoryInput(input)
-  JsonReader[DefaultFlavor].init(stream)
+  JsonReader[Json].init(stream)
 
 func toReaderNullFields(input: string): JsonReader[NullFields] =
   var stream = unsafeMemoryInput(input)
@@ -239,7 +239,7 @@ suite "Public parser":
   template testParseAsString(fileName: string) =
     try:
       var stream = inputFile(fileName)
-      var r = JsonReader[DefaultFlavor].init(stream)
+      var r = JsonReader[Json].init(stream)
       let val = r.parseAsString()
       var xr = toReader val.string
       let xval = xr.parseAsString()

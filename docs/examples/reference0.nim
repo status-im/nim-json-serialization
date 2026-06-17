@@ -38,11 +38,11 @@ let file = Json.loadFile("filename.json", NimServer)
 # ANCHOR_END: Decode
 
 # ANCHOR: Reader
-var reader = JsonReader[DefaultFlavor].init(memoryInput(rawJson))
+var reader = JsonReader[Json].init(memoryInput(rawJson))
 let native2 = reader.readValue(NimServer)
 
 # Overwrite an existing instance
-var reader2 = JsonReader[DefaultFlavor].init(memoryInput(rawJson))
+var reader2 = JsonReader[Json].init(memoryInput(rawJson))
 var native3: NimServer
 reader2.readValue(native3)
 # ANCHOR_END: Reader
@@ -60,7 +60,7 @@ echo Json.encode((x: 4, y: 5), pretty = true)
 
 # ANCHOR: Writer
 var output = memoryOutput()
-var writer = JsonWriter[DefaultFlavor].init(output)
+var writer = JsonWriter[Json].init(output)
 writer.writeValue(native)
 echo output.getOutput(string)
 # ANCHOR_END: Writer

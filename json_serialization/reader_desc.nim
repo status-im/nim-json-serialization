@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2019-2025 Status Research & Development GmbH
+# Copyright (c) 2019-2026 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -13,15 +13,14 @@
 import
   std/[strformat],
   faststreams/inputs,
-  serialization/[formats, errors, object_serialization],
+  serialization/[formats, errors],
   "."/[format, types, lexer]
 
 export
-  inputs, format, types, errors,
-  DefaultFlavor
+  inputs, format, types, errors
 
 type
-  JsonReader*[Flavor = DefaultFlavor] = object
+  JsonReader*[Flavor = Json] = object
     lex*: JsonLexer
 
   JsonReaderError* = object of types.JsonError

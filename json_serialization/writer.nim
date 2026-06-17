@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2019-2025 Status Research & Development GmbH
+# Copyright (c) 2019-2026 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -32,14 +32,14 @@ import
   "."/[format, types]
 
 export
-  outputs, format, types, JsonString, DefaultFlavor
+  outputs, format, types, JsonString
 
 type
   CollectionKind = enum
     Array
     Object
 
-  JsonWriter*[Flavor = DefaultFlavor] = object
+  JsonWriter*[Flavor = Json] = object
     stream: OutputStream
     hasTypeAnnotations: bool
     hasPrettyOutput*: bool # read-only
@@ -574,14 +574,14 @@ proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
       flavorName = typetraits.name(Flavor)
     {.error: flavorName & ": Failed to convert to JSON an unsupported type: " & typeName.}
 
-proc toJson*(v: auto, pretty = false, typeAnnotations = false, Flavor = DefaultFlavor): string =
+proc toJson*(v: auto, pretty = false, typeAnnotations = false, Flavor = Json): string =
   ## Convert a value to its JSON string representation.
   ## Optionally enables pretty output and type annotations.
   mixin writeValue
 
   var
     s = memoryOutput()
-    w = JsonWriter[DefaultFlavor].init(s, pretty, typeAnnotations)
+    w = JsonWriter[Json].init(s, pretty, typeAnnotations)
   try:
     w.writeValue v
   except IOError:
@@ -622,11 +622,5 @@ template configureJsonSerialization*(Flavor: type,
                         T: type[enum],
                         enumRep: static[EnumRepresentation]) =
   ## Configure JSON serialization for an enum type and flavor with a specific representation.
-  when Flavor is Json:
-    proc writeValue*(w: var JsonWriter[DefaultFlavor],
-                     value: T) {.raises: [IOError].} =
-      writeEnumImpl(w, value, enumRep)
-  else:
-    proc writeValue*(w: var JsonWriter[Flavor],
-                     value: T) {.raises: [IOError].} =
-      writeEnumImpl(w, value, enumRep)
+  proc writeValue*(w: var JsonWriter[Flavor], value: T) {.raises: [IOError].} =
+    writeEnumImpl(w, value, enumRep)

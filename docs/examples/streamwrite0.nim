@@ -1,7 +1,7 @@
 import json_serialization, faststreams/outputs
 
 let file = fileOutput("output.json")
-var writer = JsonWriter[DefaultFlavor].init(file, pretty = true)
+var writer = JsonWriter[Json].init(file, pretty = true)
 
 writer.beginArray()
 

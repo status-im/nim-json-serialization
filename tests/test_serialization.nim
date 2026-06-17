@@ -107,7 +107,7 @@ type
     b*: Option[Meter]
     c*: Option[Meter]
 
-proc readValue*(r: var JsonReader[DefaultFlavor], value: var CaseObject)
+proc readValue*(r: var JsonReader[Json], value: var CaseObject)
     {.gcsafe, raises: [SerializationError, IOError].}
 
 template readValueImpl(r: var JsonReader, value: var CaseObject) =
@@ -174,7 +174,7 @@ template readValueImpl(r: var JsonReader, value: var CaseObject) =
       "The CaseObject value should have sub-fields named " &
       "'kind', and ('a' and 'other') or 'b' depending on 'kind'")
 
-proc readValue*(r: var JsonReader[DefaultFlavor], value: var CaseObject)
+proc readValue*(r: var JsonReader[Json], value: var CaseObject)
     {.raises: [SerializationError, IOError].} =
   readValueImpl(r, value)
 
@@ -228,7 +228,7 @@ template readValueImpl(r: var JsonReader, value: var MyCaseObject) =
       "The MyCaseObject value should have sub-fields named " &
       "'name', 'kind', and 'banana' or 'apple' depending on 'kind'")
 
-proc readValue*(r: var JsonReader[DefaultFlavor], value: var MyCaseObject)
+proc readValue*(r: var JsonReader[Json], value: var MyCaseObject)
     {.raises: [SerializationError, IOError].} =
   readValueImpl(r, value)
 
@@ -289,7 +289,7 @@ proc readValue(reader: var JsonReader, value: var FancyText) =
 
 # TODO `borrowSerialization` still doesn't work
 # properly when it's placed in another module:
-Meter.borrowSerialization int
+Meter.serializesAsBase Json
 
 template reject(code) {.used.} =
   static: doAssert(not compiles(code))
