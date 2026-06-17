@@ -1,7 +1,7 @@
 nimTitle	writer	json_serialization/writer.html	module json_serialization/writer		0
 nim	JsonWriter	json_serialization/writer.html#JsonWriter	object JsonWriter		42
-nim	WriterType	json_serialization/writer.html#WriterType.t,typeJson	template WriterType(T`gensym0: type Json; F`gensym0: distinct type = DefaultFlavor): type		38
-nim	Writer	json_serialization/writer.html#Writer.t,typeJson	template Writer(T`gensym0: type Json; F`gensym0: distinct type = DefaultFlavor): type		39
+nim	WriterType	json_serialization/writer.html#WriterType.t,typeJson	template WriterType(T`gensym0: type Json; F`gensym0: distinct type = Flavor`gensym0): type		64
+nim	Writer	json_serialization/writer.html#Writer.t,typeJson	template Writer(T`gensym0: type Json; F`gensym0: distinct type = Flavor`gensym0): type		65
 nim	PreferredOutputType	json_serialization/writer.html#PreferredOutputType.t,typeJson	template PreferredOutputType(T`gensym0: type Json): type		53
 nim	init	json_serialization/writer.html#init,typeJsonWriter,OutputStream	proc init(W: type JsonWriter; stream: OutputStream; pretty = false;\n     typeAnnotations = false): W:type		59
 nim	writeValue	json_serialization/writer.html#writeValue,JsonWriter,V	proc writeValue[V: not void](w: var JsonWriter; value: V)		70

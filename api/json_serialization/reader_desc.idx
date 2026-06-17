@@ -21,8 +21,8 @@ nim	UnexpectedTokenError	json_serialization/reader_desc.html#UnexpectedTokenErro
 nim	UnexpectedValueError	json_serialization/reader_desc.html#UnexpectedValueError	object UnexpectedValueError		57
 nim	IncompleteObjectError	json_serialization/reader_desc.html#IncompleteObjectError	object IncompleteObjectError		59
 nim	IntOverflowError	json_serialization/reader_desc.html#IntOverflowError	object IntOverflowError		62
-nim	ReaderType	json_serialization/reader_desc.html#ReaderType.t,typeJson	template ReaderType(T`gensym0: type Json; F`gensym0: distinct type = DefaultFlavor): type		30
-nim	Reader	json_serialization/reader_desc.html#Reader.t,typeJson	template Reader(T`gensym0: type Json; F`gensym0: distinct type = DefaultFlavor): type		31
+nim	ReaderType	json_serialization/reader_desc.html#ReaderType.t,typeJson	template ReaderType(T`gensym0: type Json; F`gensym0: distinct type = Flavor`gensym0): type		55
+nim	Reader	json_serialization/reader_desc.html#Reader.t,typeJson	template Reader(T`gensym0: type Json; F`gensym0: distinct type = Flavor`gensym0): type		56
 nim	formatMsg	json_serialization/reader_desc.html#formatMsg.e,ref.JsonReaderError,string	method formatMsg(err: ref JsonReaderError; filename: string): string		77
 nim	formatMsg	json_serialization/reader_desc.html#formatMsg.e,ref.UnexpectedField,string	method formatMsg(err: ref UnexpectedField; filename: string): string		80
 nim	formatMsg	json_serialization/reader_desc.html#formatMsg.e,ref.UnexpectedTokenError,string	method formatMsg(err: ref UnexpectedTokenError; filename: string): string		83

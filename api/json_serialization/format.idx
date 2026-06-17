@@ -1,7 +1,8 @@
 nimTitle	format	json_serialization/format.html	module json_serialization/format		0
 nim	generateJsonAutoSerializationAddon	json_serialization/format.html#generateJsonAutoSerializationAddon.t,typed	template generateJsonAutoSerializationAddon(FLAVOR: typed)		18
-nim	Json	json_serialization/format.html#Json	object Json		22
-nim	mimeType	json_serialization/format.html#mimeType.t,typeJson	template mimeType(T: type Json): string		54
+nim	Json	json_serialization/format.html#Json	object Json		23
+nim	mimeType	json_serialization/format.html#mimeType.t,typeJson	template mimeType(T: type Json): string		24
+nim	versionInt	json_serialization/format.html#versionInt.t,typeJson	template versionInt(T: type Json): uint		54
 nim	supports	json_serialization/format.html#supports.t,typeJson,type	template supports(_: type Json; T: type): bool		57
 nim	EnumAsString	json_serialization/format.html#EnumAsString	EnumRepresentation.EnumAsString		62
 nim	EnumAsNumber	json_serialization/format.html#EnumAsNumber	EnumRepresentation.EnumAsNumber		62
