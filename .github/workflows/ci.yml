@@ -12,6 +12,6 @@ jobs:
     with:
       test-command: |
         nimble list --installed --version
-        env NIMLANG=c nimble --useSystemNim test
-        env NIMLANG=cpp nimble --useSystemNim test
-        env nimble --useSystemNim examples
+        env NIMLANG=c nimble test
+        env NIMLANG=cpp nimble test
+        env nimble examples
