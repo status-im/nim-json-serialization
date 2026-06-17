@@ -11,6 +11,7 @@ jobs:
     uses: status-im/nimbus-common-workflow/.github/workflows/common.yml@main
     with:
       test-command: |
+        nimble list --installed --version
         env NIMLANG=c nimble --useSystemNim test
         env NIMLANG=cpp nimble --useSystemNim test
         env nimble --useSystemNim examples
