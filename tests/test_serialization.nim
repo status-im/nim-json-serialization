@@ -174,9 +174,11 @@ template readValueImpl(r: var JsonReader, value: var CaseObject) =
       "The CaseObject value should have sub-fields named " &
       "'kind', and ('a' and 'other') or 'b' depending on 'kind'")
 
+{.push warning[ProveField]:off.}  # https://github.com/nim-lang/Nim/issues/22060
 proc readValue*(r: var JsonReader[DefaultFlavor], value: var CaseObject)
     {.raises: [SerializationError, IOError].} =
   readValueImpl(r, value)
+{.pop.}
 
 template readValueImpl(r: var JsonReader, value: var MyCaseObject) =
   var
@@ -228,9 +230,11 @@ template readValueImpl(r: var JsonReader, value: var MyCaseObject) =
       "The MyCaseObject value should have sub-fields named " &
       "'name', 'kind', and 'banana' or 'apple' depending on 'kind'")
 
+{.push warning[ProveField]:off.}  # https://github.com/nim-lang/Nim/issues/22060
 proc readValue*(r: var JsonReader[DefaultFlavor], value: var MyCaseObject)
     {.raises: [SerializationError, IOError].} =
   readValueImpl(r, value)
+{.pop.}
 
 var
   customVisit {.global, compileTime.}: TokenRegistry
