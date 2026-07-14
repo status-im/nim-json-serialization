@@ -8,7 +8,8 @@
 # those terms.
 
 import
-  strutils, unittest2, json,
+  std/[json, strutils],
+  unittest2,
   serialization/object_serialization,
   serialization/testing/generic_suite,
   ../json_serialization, ./utils,
