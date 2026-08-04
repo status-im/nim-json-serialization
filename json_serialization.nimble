@@ -19,7 +19,7 @@ skipDirs      = @["tests", "fuzzer"]
 requires "nim >= 1.6.0",
          "faststreams >= 0.5.0",
          "serialization",
-         "stew >= 0.2.0",
+         "stew >= 0.5.1",
          "results"
 
 from std/os import quoteShell
