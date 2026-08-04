@@ -15,6 +15,7 @@ import
   types
 
 from stew/ptrops import makeUncheckedArray
+from stew/shims/struninit import setLenUninit2
 from faststreams/buffers import len, advance
 
 export
@@ -545,13 +546,7 @@ proc scanString*[T](lex: var JsonLexer, val: var T, limit: int)
           if take > 0:
             when T is string:
               let old = val.len
-              # https://github.com/nim-lang/Nim/pull/24836
-              # https://github.com/nim-lang/Nim/pull/25767
-              when (NimMajor, NimMinor, NimPatch) < (2, 2, 10) or
-                   ((NimMajor, NimMinor) < (2, 4) and defined(gcRefc)):
-                val.setLen(old + take)
-              else:
-                val.setLenUninit(old + take)
+              val.setLenUninit2(old + take)
               copyMem(addr val[old], base, take)
             inc strLen, take
             lex.stream.span.advance(take)

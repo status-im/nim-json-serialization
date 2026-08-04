@@ -15,6 +15,7 @@ import
   ./lexer
 
 from std/json import JsonNode, JsonNodeKind, escapeJsonUnquoted, parseJson
+from stew/shims/struninit import setLenUninit2
 
 export
   reader_desc
@@ -63,13 +64,7 @@ func addEscapedJson(val: var string, s: string) =
         val.add s[start ..< i]  # copyMem unavailable in VM
       else:
         let old = val.len
-        # https://github.com/nim-lang/Nim/pull/24836
-        # https://github.com/nim-lang/Nim/pull/25767
-        when (NimMajor, NimMinor, NimPatch) < (2, 2, 10) or
-             ((NimMajor, NimMinor) < (2, 4) and defined(gcRefc)):
-          val.setLen(old + (i - start))
-        else:
-          val.setLenUninit(old + (i - start))
+        val.setLenUninit2(old + (i - start))
         copyMem(addr val[old], unsafeAddr s[start], i - start)
     if i < n:
       scratch[0] = s[i]
