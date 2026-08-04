@@ -547,7 +547,7 @@ proc scanString*[T](lex: var JsonLexer, val: var T, limit: int)
           if take > 0:
             when T is string:
               let old = val.len
-              val.setLenUninit(old + take)
+              val.setLen(old + take)
               copyMem(addr val[old], base, take)
             inc strLen, take
             lex.stream.span.advance(take)
