@@ -538,8 +538,6 @@ proc scanString*[T](lex: var JsonLexer, val: var T, limit: int)
               base[i] >= 0x20'u8:
           inc i
         if i > 0:
-          # Honor the string-length limit exactly as the per-char path does:
-          # copy the portion of the run that fits, then raise.
           var take = i
           let hitLimit = limit > 0 and strLen + take > limit
           if hitLimit:
@@ -547,7 +545,13 @@ proc scanString*[T](lex: var JsonLexer, val: var T, limit: int)
           if take > 0:
             when T is string:
               let old = val.len
-              val.setLen(old + take)
+              # https://github.com/nim-lang/Nim/pull/24836
+              # https://github.com/nim-lang/Nim/pull/25767
+              when (NimMajor, NimMinor, NimPatch) < (2, 2, 10) or
+                   ((NimMajor, NimMinor) < (2, 4) and defined(gcRefc)):
+                val.setLen(old + take)
+              else:
+                val.setLenUninit(old + take)
               copyMem(addr val[old], base, take)
             inc strLen, take
             lex.stream.span.advance(take)
