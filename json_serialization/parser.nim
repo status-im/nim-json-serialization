@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2019-2025 Status Research & Development GmbH
+# Copyright (c) 2019-2026 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -14,7 +14,8 @@ import
   ./reader_desc,
   ./lexer
 
-from json import JsonNode, JsonNodeKind, escapeJson, parseJson
+from std/json import JsonNode, JsonNodeKind, escapeJsonUnquoted, parseJson
+from stew/shims/struninit import setLenUninit2
 
 export
   reader_desc
@@ -48,6 +49,28 @@ template raiseParserError(r: var JsonReader) =
 
 template raiseParserError(r: var JsonReader, err: JsonErrorKind) =
   r.raiseUnexpectedValue($err)
+
+func addEscapedJson(val: var string, s: string) =
+  val.add '"'
+  var scratch = newString(1)
+  var i = 0
+  let n = s.len
+  while i < n:
+    let start = i
+    while i < n and s[i] >= ' ' and s[i] != '"' and s[i] != '\\':
+      inc i
+    if i > start:
+      when nimvm:
+        val.add s[start ..< i]  # copyMem unavailable in VM
+      else:
+        let old = val.len
+        val.setLenUninit2(old + (i - start))
+        copyMem(addr val[old], unsafeAddr s[start], i - start)
+    if i < n:
+      scratch[0] = s[i]
+      escapeJsonUnquoted(scratch, val)
+      inc i
+  val.add '"'
 
 # ------------------------------------------------------------------------------
 # Public helpers
@@ -253,7 +276,7 @@ proc parseInt*(r: var JsonReader, T: type SomeInteger, portable: bool = false): 
     r.raiseParserError(errInvalidInt)
   r.toInt(val, T, portable)
 
-proc toFloat*(r: var JsonReader, val: JsonNumber, T: type SomeFloat): T
+func toFloat*(r: var JsonReader, val: JsonNumber, T: type SomeFloat): T
       {.raises: [JsonReaderError].}=
   const
     powersOfTen = [1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9,
@@ -292,7 +315,7 @@ proc parseAsString*(r: var JsonReader, val: var string)
        {.raises: [IOError, JsonReaderError].} =
   case r.tokKind
   of JsonValueKind.String:
-    escapeJson(r.parseString(), val)
+    val.addEscapedJson(r.parseString())
   of JsonValueKind.Number:
     r.lex.scanNumber(val)
     r.checkError
@@ -305,7 +328,7 @@ proc parseAsString*(r: var JsonReader, val: var string)
     do: # comma action
       val.add ','
     do: # key action
-      escapeJson(r.parseString(), val)
+      val.addEscapedJson(r.parseString())
     do: # value action
       val.add ':'
       r.parseAsString(val)

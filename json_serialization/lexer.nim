@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2019-2025 Status Research & Development GmbH
+# Copyright (c) 2019-2026 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -13,6 +13,10 @@ import
   std/[json, unicode],
   faststreams/inputs,
   types
+
+from stew/ptrops import makeUncheckedArray
+from stew/shims/struninit import setLenUninit2
+from faststreams/buffers import len, advance
 
 export
   inputs, types
@@ -124,14 +128,14 @@ template enterNestedStructure(lex: JsonLexer, action: untyped) {.dirty.} =
 template exitNestedStructure(lex: JsonLexer) =
   dec lex.depthLimit
 
-proc handleLF(lex: var JsonLexer) =
+func handleLF(lex: var JsonLexer) =
   lex.advance
   lex.line += 1
   lex.lineStartPos = lex.stream.pos
   lex.tokenStart = lex.stream.pos
 
-proc isDigit(c: char): bool =
-  return (c >= '0' and c <= '9')
+func isDigit(c: char): bool =
+  c >= '0' and c <= '9'
 
 template eatDigitAndPeek(body: untyped): char =
   lex.advance
@@ -240,7 +244,7 @@ template requireMoreNumberChars() =
   if not lex.readable:
     error errNumberExpected
 
-proc scanSign(lex: var JsonLexer): JsonSign
+func scanSign(lex: var JsonLexer): JsonSign
     {.gcsafe, raises: [].} =
   # Returns None, Pos, or Neg
   # If a sign character is present, it must be followed
@@ -254,9 +258,9 @@ proc scanSign(lex: var JsonLexer): JsonSign
     lex.advance
     return JsonSign.Pos
 
-  return JsonSign.None
+  JsonSign.None
 
-proc scanSign[T](lex: var JsonLexer, val: var T, onlyNeg = false)
+func scanSign[T](lex: var JsonLexer, val: var T, onlyNeg = false)
     {.gcsafe, raises: [].} =
 
   when T isnot (string or JsonVoid or JsonSign):
@@ -342,7 +346,7 @@ proc scanInt[T](lex: var JsonLexer, val: var T,
 # Constructors
 # ------------------------------------------------------------------------------
 
-proc init*(T: type JsonLexer,
+func init*(T: type JsonLexer,
            stream: InputStream,
            flags: JsonReaderFlags = defaultJsonReaderFlags,
            conf: JsonReaderConf = defaultJsonReaderConf): T =
@@ -361,10 +365,10 @@ proc init*(T: type JsonLexer,
 func isErr*(lex: JsonLexer): bool =
   lex.err != errNone
 
-proc col*(lex: JsonLexer): int =
+func col*(lex: JsonLexer): int =
   lex.stream.pos - lex.lineStartPos
 
-proc tokenStartCol*(lex: JsonLexer): int =
+func tokenStartCol*(lex: JsonLexer): int =
   1 + lex.tokenStart - lex.lineStartPos
 
 proc nonws*(lex: var JsonLexer): char {.gcsafe, raises: [IOError].} =
@@ -524,6 +528,31 @@ proc scanString*[T](lex: var JsonLexer, val: var T, limit: int)
   lex.advance
 
   while true:
+    when nimvm:
+      discard  # copyMem unavailable in VM
+    else:
+      let avail = lex.stream.span.len
+      if avail > 0:
+        let base = makeUncheckedArray(lex.stream.span.startAddr)
+        var i = 0
+        while i < avail and base[i] != byte('"') and base[i] != byte('\\') and
+              base[i] >= 0x20'u8:
+          inc i
+        if i > 0:
+          var take = i
+          let hitLimit = limit > 0 and strLen + take > limit
+          if hitLimit:
+            take = limit - strLen
+          if take > 0:
+            when T is string:
+              let old = val.len
+              val.setLenUninit2(old + take)
+              copyMem(addr val[old], base, take)
+            inc strLen, take
+            lex.stream.span.advance(take)
+          if hitLimit:
+            error errStringLengthLimit
+
     var c = lex.requireNextChar()
     case c
     of '"':
