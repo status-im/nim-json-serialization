@@ -10,17 +10,17 @@
 mode = ScriptMode.Verbose
 
 packageName   = "json_serialization"
-version       = "0.4.4"
+version       = "0.4.5"
 author        = "Status Research & Development GmbH"
 description   = "Flexible JSON serialization not relying on run-time type information"
 license       = "Apache License 2.0"
 skipDirs      = @["tests", "fuzzer"]
 
-requires "nim >= 1.6.0",
+requires "nim >= 1.6.18",
          "faststreams >= 0.5.0",
-         "serialization",
-         "stew >= 0.5.1",
-         "results"
+         "results >= 0.5.0",
+         "serialization >= 0.5.4",
+         "stew >= 0.5.1"
 
 from std/os import quoteShell
 from std/strutils import endsWith
