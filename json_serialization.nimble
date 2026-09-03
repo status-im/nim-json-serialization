@@ -16,7 +16,7 @@ description   = "Flexible JSON serialization not relying on run-time type inform
 license       = "Apache License 2.0"
 skipDirs      = @["tests", "fuzzer"]
 
-requires "nim >= 1.6.18",
+requires "nim >= 2.0.10",
          "faststreams >= 0.5.0",
          "results >= 0.5.0",
          "serialization >= 0.5.4",
@@ -35,16 +35,14 @@ let cfg =
   (if verbose: "" else: " --verbosity:0") &
   " --outdir:build " &
   quoteShell("--nimcache:build/nimcache/$projectName") &
-  " -d:serializationTestAllRountrips" &
-  (if NimMajor >= 2: " -d:unittest2Static" else: "")
+  " -d:serializationTestAllRountrips -d:unittest2Static"
 
 proc build(args, path: string) =
   exec nimc & " " & lang & " " & cfg & " " & flags & " " & args & " " & path
 
 proc run(args, path: string) =
   build args & " --mm:refc -r", path
-  if (NimMajor, NimMinor) > (1, 6):
-    build args & " --mm:orc -r", path
+  build args & " --mm:orc -r", path
 
 task test, "Run all tests":
   for threads in ["--threads:off", "--threads:on"]:
