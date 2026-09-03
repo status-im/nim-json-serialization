@@ -39,8 +39,8 @@ nim	parseObjectWithoutSkip	json_serialization/parser.html#parseObjectWithoutSkip
 nim	parseObjectSkipNullFields	json_serialization/parser.html#parseObjectSkipNullFields.t,JsonReader,untyped,untyped	template parseObjectSkipNullFields(r: var JsonReader; key: untyped; body: untyped)		431
 nim	parseObjectCustomKey	json_serialization/parser.html#parseObjectCustomKey.t,JsonReader,untyped,untyped	template parseObjectCustomKey(r: var JsonReader; keyAction: untyped; body: untyped)		444
 nim	parseJsonNode	json_serialization/parser.html#parseJsonNode,JsonReader	proc parseJsonNode(r: var JsonReader): JsonNode		467
-nim	skipSingleJsValue	json_serialization/parser.html#skipSingleJsValue,JsonLexer	proc skipSingleJsValue(lex: var JsonLexer)		531
-nim	skipSingleJsValue	json_serialization/parser.html#skipSingleJsValue.t,JsonReader	template skipSingleJsValue(r: var JsonReader)		537
+nim	skipSingleJsValue	json_serialization/parser.html#skipSingleJsValue,JsonLexer	proc skipSingleJsValue(lex: var JsonLexer)		525
+nim	skipSingleJsValue	json_serialization/parser.html#skipSingleJsValue.t,JsonReader	template skipSingleJsValue(r: var JsonReader)		531
 nimgrp	toint	json_serialization/parser.html#toInt-procs-all	proc		237
 nimgrp	parsestring	json_serialization/parser.html#parseString-procs-all	proc		191
 nimgrp	parseasstring	json_serialization/parser.html#parseAsString-procs-all	proc		314
