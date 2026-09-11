@@ -65,7 +65,7 @@ func addEscapedJson(val: var string, s: string) =
       else:
         let old = val.len
         val.setLenUninit2(old + (i - start))
-        copyMem(addr val[old], unsafeAddr s[start], i - start)
+        copyMem(addr val[old], addr s[start], i - start)
     if i < n:
       scratch[0] = s[i]
       escapeJsonUnquoted(scratch, val)
