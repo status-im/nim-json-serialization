@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - master
-      - docs
   workflow_dispatch:
 
 jobs:
@@ -17,7 +16,7 @@ jobs:
           "mdbook-toc@0.14.2",
           "mdbook-admonish@1.20.0"
         ]
-      nim-version: "2.2.4"
+      nim-version: "2.2.12"
       publish-dir: ./docs/book
       docs-command: |
         nim --version
