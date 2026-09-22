@@ -16,13 +16,16 @@
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH4QQQEwksSS9ZWwAAAk1JREFUWMPtll2ITVEUx39nn/O7Y5qR8f05wtCUUr6ZIS++8pEnkZInPImneaCQ5METNdOkeFBKUhMPRIkHKfEuUZSUlGlKPN2TrgfncpvmnntnmlEyq1Z7t89/rf9a6+y99oZxGZf/XeIq61EdtgKXgdXA0xrYAvBjOIF1AI9zvjcC74BSpndrJPkBWDScTF8Aa4E3wDlgHbASaANmVqlcCnwHvgDvgVfAJ+AikAAvgfVZwLnSVZHZaOuKoQi3ZOMi4NkYkpe1p4J7A8BpYAD49hfIy/oqG0+hLomiKP2L5L+1ubn5115S+3OAn4EnwBlgMzCjyt6ZAnQCJ4A7wOs88iRJHvw50HoujuPBoCKwHWiosy8MdfZnAdcHk8dxXFJ3VQbQlCTJvRBCGdRbD4M6uc5glpY3eAihpN5S5w12diSEcCCEcKUO4ljdr15T76ur1FDDLIQQ3qv71EdDOe3Kxj3leRXyk+pxdWnFWod6Wt2bY3de3aSuUHcPBVimHs7mK9WrmeOF6lR1o9qnzskh2ar2qm1qizpfXaPeVGdlmGN5pb09qMxz1Xb1kLqgzn1RyH7JUXW52lr5e/Kqi9qpto7V1atuUzfnARrV7jEib1T76gG2qxdGmXyiekkt1GswPTtek0aBfJp6YySGBfWg2tPQ0FAYgf1stUfdmdcjarbYJEniKIq6gY/Aw+zWHAC+p2labGpqiorFYgGYCEzN7oQdQClN07O1/EfDyGgC0ALMBdYAi4FyK+4H3gLPsxfR1zRNi+NP7nH5J+QntnXe5B5mpfQAAAAASUVORK5CYII=">
 
 <!-- CSS -->
-<link rel="stylesheet" type="text/css" href="../nimdoc.out.css?v=2.2.4">
+<link rel="stylesheet" type="text/css" href="../nimdoc.out.css?v=2.2.12">
 
 <!-- JS -->
-<script type="text/javascript" src="../dochack.js?v=2.2.4"></script>
+<script type="text/javascript" src="../dochack.js?v=2.2.12"></script>
 </head>
 <body>
   <div class="document" id="documentId">
+    <input type="checkbox" id="nav-toggle" hidden>
+    <label for="nav-toggle" id="nav-burger">&#9776;</label>
+    <label for="nav-toggle" id="nav-overlay"></label>
     <div class="container">
       <h1 class="title">json_serialization/types</h1>
       <div class="row">
@@ -177,7 +180,7 @@
   <h1><a class="toc-backref" href="#7">Types</a></h1>
   <dl class="item">
     <div id="JsonError">
-  <dt><pre><a href="types.html#JsonError"><span class="Identifier">JsonError</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <span class="Identifier">SerializationError</span></pre></dt>
+  <dt><pre><a href="#JsonError"><span class="Identifier">JsonError</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <span class="Identifier">SerializationError</span></pre></dt>
   <dd>
     
     
@@ -187,11 +190,11 @@
   </dd>
 </div>
 <div id="JsonNumber">
-  <dt><pre><a href="types.html#JsonNumber"><span class="Identifier">JsonNumber</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span> <span class="Other">=</span> <span class="Keyword">object</span>
-  <span class="Identifier">sign</span><span class="Operator">*</span><span class="Other">:</span> <a href="types.html#JsonSign"><span class="Identifier">JsonSign</span></a>
+  <dt><pre><a href="#JsonNumber"><span class="Identifier">JsonNumber</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span> <span class="Other">=</span> <span class="Keyword">object</span>
+  <span class="Identifier">sign</span><span class="Operator">*</span><span class="Other">:</span> <a href="#JsonSign"><span class="Identifier">JsonSign</span></a>
   <span class="Identifier">integer</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">T</span>
   <span class="Identifier">fraction</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>
-  <span class="Identifier">expSign</span><span class="Operator">*</span><span class="Other">:</span> <a href="types.html#JsonSign"><span class="Identifier">JsonSign</span></a>
+  <span class="Identifier">expSign</span><span class="Operator">*</span><span class="Other">:</span> <a href="#JsonSign"><span class="Identifier">JsonSign</span></a>
   <span class="Identifier">exponent</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">T</span></pre></dt>
   <dd>
     
@@ -202,7 +205,7 @@
   </dd>
 </div>
 <div id="JsonObjectType">
-  <dt><pre><a href="types.html#JsonObjectType"><span class="Identifier">JsonObjectType</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span> <span class="Other">=</span> <span class="Identifier">OrderedTable</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">,</span> <a href="types.html#JsonValueRef"><span class="Identifier">JsonValueRef</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span><span class="Other">]</span></pre></dt>
+  <dt><pre><a href="#JsonObjectType"><span class="Identifier">JsonObjectType</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span> <span class="Other">=</span> <span class="Identifier">OrderedTable</span><span class="Other">[</span><span class="Identifier">string</span><span class="Other">,</span> <a href="#JsonValueRef"><span class="Identifier">JsonValueRef</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span><span class="Other">]</span></pre></dt>
   <dd>
     
     
@@ -212,7 +215,7 @@
   </dd>
 </div>
 <div id="JsonReaderConf">
-  <dt><pre><a href="types.html#JsonReaderConf"><span class="Identifier">JsonReaderConf</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
+  <dt><pre><a href="#JsonReaderConf"><span class="Identifier">JsonReaderConf</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
   <span class="Identifier">nestedDepthLimit</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>
   <span class="Identifier">arrayElementsLimit</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>
   <span class="Identifier">objectMembersLimit</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>
@@ -229,7 +232,7 @@
   </dd>
 </div>
 <div id="JsonReaderFlag">
-  <dt><pre><a href="types.html#JsonReaderFlag"><span class="Identifier">JsonReaderFlag</span></a> {.<span class="Identifier">pure</span>.} <span class="Other">=</span> <span class="Keyword">enum</span>
+  <dt><pre><a href="#JsonReaderFlag"><span class="Identifier">JsonReaderFlag</span></a> {.<span class="Identifier">pure</span>.} <span class="Other">=</span> <span class="Keyword">enum</span>
   <span class="Identifier">allowUnknownFields</span><span class="Other">,</span> <span class="Identifier">requireAllFields</span><span class="Other">,</span> <span class="Identifier">escapeHex</span><span class="Other">,</span> <span class="Identifier">relaxedEscape</span><span class="Other">,</span> <span class="Identifier">portableInt</span><span class="Other">,</span>
   <span class="Identifier">trailingComma</span><span class="Other">,</span> <span class="Identifier">allowComments</span><span class="Other">,</span> <span class="Identifier">leadingFraction</span><span class="Other">,</span> <span class="Identifier">integerPositiveSign</span></pre></dt>
   <dd>
@@ -241,7 +244,7 @@
   </dd>
 </div>
 <div id="JsonReaderFlags">
-  <dt><pre><a href="types.html#JsonReaderFlags"><span class="Identifier">JsonReaderFlags</span></a> <span class="Other">=</span> <span class="Identifier">set</span><span class="Other">[</span><a href="types.html#JsonReaderFlag"><span class="Identifier">JsonReaderFlag</span></a><span class="Other">]</span></pre></dt>
+  <dt><pre><a href="#JsonReaderFlags"><span class="Identifier">JsonReaderFlags</span></a> <span class="Other">=</span> <span class="Identifier">set</span><span class="Other">[</span><a href="#JsonReaderFlag"><span class="Identifier">JsonReaderFlag</span></a><span class="Other">]</span></pre></dt>
   <dd>
     
     
@@ -251,7 +254,7 @@
   </dd>
 </div>
 <div id="JsonSign">
-  <dt><pre><a href="types.html#JsonSign"><span class="Identifier">JsonSign</span></a> {.<span class="Identifier">pure</span>.} <span class="Other">=</span> <span class="Keyword">enum</span>
+  <dt><pre><a href="#JsonSign"><span class="Identifier">JsonSign</span></a> {.<span class="Identifier">pure</span>.} <span class="Other">=</span> <span class="Keyword">enum</span>
   <span class="Identifier">None</span><span class="Other">,</span> <span class="Identifier">Pos</span><span class="Other">,</span> <span class="Identifier">Neg</span></pre></dt>
   <dd>
     
@@ -262,7 +265,7 @@
   </dd>
 </div>
 <div id="JsonString">
-  <dt><pre><a href="types.html#JsonString"><span class="Identifier">JsonString</span></a> <span class="Other">=</span> <span class="Keyword">distinct</span> <span class="Identifier">string</span></pre></dt>
+  <dt><pre><a href="#JsonString"><span class="Identifier">JsonString</span></a> <span class="Other">=</span> <span class="Keyword">distinct</span> <span class="Identifier">string</span></pre></dt>
   <dd>
     
     A string containing valid JSON. Used to preserve and pass on parts of a JSON document to another parser or layer without interpreting it further
@@ -272,16 +275,16 @@
   </dd>
 </div>
 <div id="JsonValue">
-  <dt><pre><a href="types.html#JsonValue"><span class="Identifier">JsonValue</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span> <span class="Other">=</span> <span class="Keyword">object</span>
-  <span class="Keyword">case</span> <span class="Identifier">kind</span><span class="Operator">*</span><span class="Other">:</span> <a href="types.html#JsonValueKind"><span class="Identifier">JsonValueKind</span></a>
+  <dt><pre><a href="#JsonValue"><span class="Identifier">JsonValue</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span> <span class="Other">=</span> <span class="Keyword">object</span>
+  <span class="Keyword">case</span> <span class="Identifier">kind</span><span class="Operator">*</span><span class="Other">:</span> <a href="#JsonValueKind"><span class="Identifier">JsonValueKind</span></a>
   <span class="Keyword">of</span> <span class="Identifier">JsonValueKind</span><span class="Other">.</span><span class="Identifier">String</span><span class="Other">:</span>
     <span class="Identifier">strVal</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>
   <span class="Keyword">of</span> <span class="Identifier">JsonValueKind</span><span class="Other">.</span><span class="Identifier">Number</span><span class="Other">:</span>
-    <span class="Identifier">numVal</span><span class="Operator">*</span><span class="Other">:</span> <a href="types.html#JsonNumber"><span class="Identifier">JsonNumber</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span>
+    <span class="Identifier">numVal</span><span class="Operator">*</span><span class="Other">:</span> <a href="#JsonNumber"><span class="Identifier">JsonNumber</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span>
   <span class="Keyword">of</span> <span class="Identifier">JsonValueKind</span><span class="Other">.</span><span class="Identifier">Object</span><span class="Other">:</span>
-    <span class="Identifier">objVal</span><span class="Operator">*</span><span class="Other">:</span> <a href="types.html#JsonObjectType"><span class="Identifier">JsonObjectType</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span>
+    <span class="Identifier">objVal</span><span class="Operator">*</span><span class="Other">:</span> <a href="#JsonObjectType"><span class="Identifier">JsonObjectType</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span>
   <span class="Keyword">of</span> <span class="Identifier">JsonValueKind</span><span class="Other">.</span><span class="Identifier">Array</span><span class="Other">:</span>
-    <span class="Identifier">arrayVal</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="types.html#JsonValueRef"><span class="Identifier">JsonValueRef</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span><span class="Other">]</span>
+    <span class="Identifier">arrayVal</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="#JsonValueRef"><span class="Identifier">JsonValueRef</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span><span class="Other">]</span>
   <span class="Keyword">of</span> <span class="Identifier">JsonValueKind</span><span class="Other">.</span><span class="Identifier">Bool</span><span class="Other">:</span>
     <span class="Identifier">boolVal</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">bool</span>
   <span class="Keyword">of</span> <span class="Identifier">JsonValueKind</span><span class="Other">.</span><span class="Identifier">Null</span><span class="Other">:</span>
@@ -295,7 +298,7 @@
   </dd>
 </div>
 <div id="JsonValueKind">
-  <dt><pre><a href="types.html#JsonValueKind"><span class="Identifier">JsonValueKind</span></a> {.<span class="Identifier">pure</span>.} <span class="Other">=</span> <span class="Keyword">enum</span>
+  <dt><pre><a href="#JsonValueKind"><span class="Identifier">JsonValueKind</span></a> {.<span class="Identifier">pure</span>.} <span class="Other">=</span> <span class="Keyword">enum</span>
   <span class="Identifier">String</span><span class="Other">,</span> <span class="Identifier">Number</span><span class="Other">,</span> <span class="Identifier">Object</span><span class="Other">,</span> <span class="Identifier">Array</span><span class="Other">,</span> <span class="Identifier">Bool</span><span class="Other">,</span> <span class="Identifier">Null</span></pre></dt>
   <dd>
     
@@ -306,7 +309,7 @@
   </dd>
 </div>
 <div id="JsonValueRef">
-  <dt><pre><a href="types.html#JsonValueRef"><span class="Identifier">JsonValueRef</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span> <span class="Other">=</span> <span class="Keyword">ref</span> <a href="types.html#JsonValue"><span class="Identifier">JsonValue</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span></pre></dt>
+  <dt><pre><a href="#JsonValueRef"><span class="Identifier">JsonValueRef</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span> <span class="Other">=</span> <span class="Keyword">ref</span> <a href="#JsonValue"><span class="Identifier">JsonValue</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span></pre></dt>
   <dd>
     
     
@@ -316,7 +319,7 @@
   </dd>
 </div>
 <div id="JsonVoid">
-  <dt><pre><a href="types.html#JsonVoid"><span class="Identifier">JsonVoid</span></a> <span class="Other">=</span> <span class="Keyword">object</span></pre></dt>
+  <dt><pre><a href="#JsonVoid"><span class="Identifier">JsonVoid</span></a> <span class="Other">=</span> <span class="Keyword">object</span></pre></dt>
   <dd>
     
     Marker used for skipping a JSON value during parsing
@@ -332,7 +335,7 @@
   <h1><a class="toc-backref" href="#10">Consts</a></h1>
   <dl class="item">
     <div id="defaultJsonReaderConf">
-  <dt><pre><a href="types.html#defaultJsonReaderConf"><span class="Identifier">defaultJsonReaderConf</span></a> <span class="Other">=</span> <span class="Other">(</span><span class="Identifier">nestedDepthLimit</span><span class="Other">:</span> <span class="DecNumber">512</span><span class="Other">,</span> <span class="Identifier">arrayElementsLimit</span><span class="Other">:</span> <span class="DecNumber">0</span><span class="Other">,</span>
+  <dt><pre><a href="#defaultJsonReaderConf"><span class="Identifier">defaultJsonReaderConf</span></a> <span class="Other">=</span> <span class="Other">(</span><span class="Identifier">nestedDepthLimit</span><span class="Other">:</span> <span class="DecNumber">512</span><span class="Other">,</span> <span class="Identifier">arrayElementsLimit</span><span class="Other">:</span> <span class="DecNumber">0</span><span class="Other">,</span>
                          <span class="Identifier">objectMembersLimit</span><span class="Other">:</span> <span class="DecNumber">0</span><span class="Other">,</span> <span class="Identifier">integerDigitsLimit</span><span class="Other">:</span> <span class="DecNumber">128</span><span class="Other">,</span>
                          <span class="Identifier">fractionDigitsLimit</span><span class="Other">:</span> <span class="DecNumber">128</span><span class="Other">,</span> <span class="Identifier">exponentDigitsLimit</span><span class="Other">:</span> <span class="DecNumber">32</span><span class="Other">,</span>
                          <span class="Identifier">stringLengthLimit</span><span class="Other">:</span> <span class="DecNumber">0</span><span class="Other">)</span></pre></dt>
@@ -345,7 +348,7 @@
   </dd>
 </div>
 <div id="defaultJsonReaderFlags">
-  <dt><pre><a href="types.html#defaultJsonReaderFlags"><span class="Identifier">defaultJsonReaderFlags</span></a> <span class="Other">=</span> <span class="Other">{</span><span class="DecNumber">JsonReaderFlag.integerPositiveSign</span><span class="Other">,</span>
+  <dt><pre><a href="#defaultJsonReaderFlags"><span class="Identifier">defaultJsonReaderFlags</span></a> <span class="Other">=</span> <span class="Other">{</span><span class="DecNumber">JsonReaderFlag.integerPositiveSign</span><span class="Other">,</span>
                           <span class="DecNumber">JsonReaderFlag.allowComments</span><span class="Other">,</span>
                           <span class="DecNumber">JsonReaderFlag.leadingFraction</span><span class="Other">,</span>
                           <span class="DecNumber">JsonReaderFlag.trailingComma</span><span class="Other">}</span></pre></dt>
@@ -358,7 +361,7 @@
   </dd>
 </div>
 <div id="maxPortableInt">
-  <dt><pre><a href="types.html#maxPortableInt"><span class="Identifier">maxPortableInt</span></a> <span class="Other">=</span> <span class="DecNumber">9007199254740991'i64</span></pre></dt>
+  <dt><pre><a href="#maxPortableInt"><span class="Identifier">maxPortableInt</span></a> <span class="Other">=</span> <span class="DecNumber">9007199254740991'i64</span></pre></dt>
   <dd>
     
     
@@ -368,7 +371,7 @@
   </dd>
 </div>
 <div id="minPortableInt">
-  <dt><pre><a href="types.html#minPortableInt"><span class="Identifier">minPortableInt</span></a> <span class="Other">=</span> <span class="DecNumber">-9007199254740991'i64</span></pre></dt>
+  <dt><pre><a href="#minPortableInt"><span class="Identifier">minPortableInt</span></a> <span class="Other">=</span> <span class="DecNumber">-9007199254740991'i64</span></pre></dt>
   <dd>
     
     
@@ -385,7 +388,7 @@
   <dl class="item">
     <div id="==-procs-all">
   <div id="==,JsonValueRef,JsonValueRef">
-  <dt><pre><span class="Keyword">func</span> <a href="#%3D%3D%2CJsonValueRef%2CJsonValueRef"><span class="Identifier">`==`</span></a><span class="Other">(</span><span class="Identifier">lhs</span><span class="Other">,</span> <span class="Identifier">rhs</span><span class="Other">:</span> <a href="types.html#JsonValueRef"><span class="Identifier">JsonValueRef</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">gcsafe</span></span>.}</pre></dt>
+  <dt><pre><span class="Keyword">func</span> <a href="#%3D%3D%2CJsonValueRef%2CJsonValueRef"><span class="Identifier">`==`</span></a><span class="Other">(</span><span class="Identifier">lhs</span><span class="Other">,</span> <span class="Identifier">rhs</span><span class="Other">:</span> <a href="#JsonValueRef"><span class="Identifier">JsonValueRef</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">gcsafe</span></span>.}</pre></dt>
   <dd>
     
     
@@ -398,7 +401,7 @@
 </div>
 <div id="hasExponent-procs-all">
   <div id="hasExponent,JsonNumber[T]">
-  <dt><pre><span class="Keyword">func</span> <a href="#hasExponent%2CJsonNumber%5BT%5D"><span class="Identifier">hasExponent</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">x</span><span class="Other">:</span> <a href="types.html#JsonNumber"><span class="Identifier">JsonNumber</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">gcsafe</span></span>.}</pre></dt>
+  <dt><pre><span class="Keyword">func</span> <a href="#hasExponent%2CJsonNumber%5BT%5D"><span class="Identifier">hasExponent</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span><span class="Other">(</span><span class="Identifier">x</span><span class="Other">:</span> <a href="#JsonNumber"><span class="Identifier">JsonNumber</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">gcsafe</span></span>.}</pre></dt>
   <dd>
     
     
@@ -411,7 +414,7 @@
 </div>
 <div id="isFloat-procs-all">
   <div id="isFloat,JsonNumber">
-  <dt><pre><span class="Keyword">func</span> <a href="#isFloat%2CJsonNumber"><span class="Identifier">isFloat</span></a><span class="Other">(</span><span class="Identifier">x</span><span class="Other">:</span> <a href="types.html#JsonNumber"><span class="Identifier">JsonNumber</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">gcsafe</span></span>.}</pre></dt>
+  <dt><pre><span class="Keyword">func</span> <a href="#isFloat%2CJsonNumber"><span class="Identifier">isFloat</span></a><span class="Other">(</span><span class="Identifier">x</span><span class="Other">:</span> <a href="#JsonNumber"><span class="Identifier">JsonNumber</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">gcsafe</span></span>.}</pre></dt>
   <dd>
     
     
@@ -424,7 +427,7 @@
 </div>
 <div id="toInt-procs-all">
   <div id="toInt,JsonSign">
-  <dt><pre><span class="Keyword">func</span> <a href="#toInt%2CJsonSign"><span class="Identifier">toInt</span></a><span class="Other">(</span><span class="Identifier">sign</span><span class="Other">:</span> <a href="types.html#JsonSign"><span class="Identifier">JsonSign</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">int</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">gcsafe</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dt><pre><span class="Keyword">func</span> <a href="#toInt%2CJsonSign"><span class="Identifier">toInt</span></a><span class="Other">(</span><span class="Identifier">sign</span><span class="Other">:</span> <a href="#JsonSign"><span class="Identifier">JsonSign</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">int</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">gcsafe</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     
@@ -443,7 +446,7 @@
   <dl class="item">
     <div id="$-templates-all">
   <div id="$.t,JsonString">
-  <dt><pre><span class="Keyword">template</span> <a href="#%24.t%2CJsonString"><span class="Identifier">`$`</span></a><span class="Other">(</span><span class="Identifier">s</span><span class="Other">:</span> <a href="types.html#JsonString"><span class="Identifier">JsonString</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {..}</pre></dt>
+  <dt><pre><span class="Keyword">template</span> <a href="#%24.t%2CJsonString"><span class="Identifier">`$`</span></a><span class="Other">(</span><span class="Identifier">s</span><span class="Other">:</span> <a href="#JsonString"><span class="Identifier">JsonString</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">string</span> {..}</pre></dt>
   <dd>
     
     
@@ -456,7 +459,7 @@
 </div>
 <div id="==-templates-all">
   <div id="==.t,JsonString,JsonString">
-  <dt><pre><span class="Keyword">template</span> <a href="#%3D%3D.t%2CJsonString%2CJsonString"><span class="Identifier">`==`</span></a><span class="Other">(</span><span class="Identifier">lhs</span><span class="Other">,</span> <span class="Identifier">rhs</span><span class="Other">:</span> <a href="types.html#JsonString"><span class="Identifier">JsonString</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> {..}</pre></dt>
+  <dt><pre><span class="Keyword">template</span> <a href="#%3D%3D.t%2CJsonString%2CJsonString"><span class="Identifier">`==`</span></a><span class="Other">(</span><span class="Identifier">lhs</span><span class="Other">,</span> <span class="Identifier">rhs</span><span class="Other">:</span> <a href="#JsonString"><span class="Identifier">JsonString</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> {..}</pre></dt>
   <dd>
     
     
@@ -490,7 +493,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-09-11 21:59:29 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-09-22 09:13:00 UTC</small>
       </div>
     </div>
   </div>
