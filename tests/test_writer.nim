@@ -8,6 +8,7 @@
 # those terms.
 
 import
+  std/strutils,
   unittest2,
   ../json_serialization/pkg/results,
   ../json_serialization/std/options,
@@ -300,3 +301,16 @@ suite "Test writer":
     type NoFields = object
 
     check: Json.encode(default(NoFields)) == "{}"
+  
+  test "control characters":
+    for code in 0x00..0x1f:
+      let escaped =
+        case code
+        of 0x08: r"\b"
+        of 0x09: r"\t"
+        of 0x0a: r"\n"
+        of 0x0c: r"\f"
+        of 0x0d: r"\r"
+        else: r"\u" & toHex(code, 4).toLowerAscii()
+
+      check Json.encode($char(code)) == "\"" & escaped & "\""

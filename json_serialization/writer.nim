@@ -450,7 +450,7 @@ template writeValueStringLike(w, value) =
     template addPrefixSlash(c) =
       s.write '\\'
       s.write c
-    const hexChars = "0123456789abcde"
+    const hexChars = "0123456789abcdef"
     for c in value:
       case c
       of '\b': addPrefixSlash 'b' # \x08
