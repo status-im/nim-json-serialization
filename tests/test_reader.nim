@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2023 Status Research & Development GmbH
+# Copyright (c) 2023-2026 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -17,9 +17,9 @@ import
 createJsonFlavor NullFields,
   skipNullFields = true
 
-func toReader(input: string): JsonReader[DefaultFlavor] =
+func toReader(input: string): JsonReader[Json] =
   var stream = memoryInput(input)
-  JsonReader[DefaultFlavor].init(stream)
+  JsonReader[Json].init(stream)
 
 func toReaderNullFields(input: string): JsonReader[NullFields] =
   var stream = memoryInput(input)
@@ -231,14 +231,14 @@ suite "JsonReader basic test":
 
     block:
       var stream = memoryInput(jsonText)
-      var r = JsonReader[DefaultFlavor].init(stream, allowUnknownFields=true)
+      var r = JsonReader[Json].init(stream, allowUnknownFields=true)
 
       check:
         r.readValue(NoFields) == NoFields()
 
     block:
       var stream = memoryInput(jsonText)
-      var r = JsonReader[DefaultFlavor].init(stream, allowUnknownFields=false)
+      var r = JsonReader[Json].init(stream, allowUnknownFields=false)
 
       expect(JsonReaderError):
         discard r.readValue(NoFields)

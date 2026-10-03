@@ -107,7 +107,7 @@ type
     b*: Option[Meter]
     c*: Option[Meter]
 
-proc readValue*(r: var JsonReader[DefaultFlavor], value: var CaseObject)
+proc readValue*(r: var JsonReader[Json], value: var CaseObject)
     {.gcsafe, raises: [SerializationError, IOError].}
 
 template readValueImpl(r: var JsonReader, value: var CaseObject) =
@@ -175,7 +175,7 @@ template readValueImpl(r: var JsonReader, value: var CaseObject) =
       "'kind', and ('a' and 'other') or 'b' depending on 'kind'")
 
 {.push warning[ProveField]:off.}  # https://github.com/nim-lang/Nim/issues/22060
-proc readValue*(r: var JsonReader[DefaultFlavor], value: var CaseObject)
+proc readValue*(r: var JsonReader[Json], value: var CaseObject)
     {.raises: [SerializationError, IOError].} =
   readValueImpl(r, value)
 {.pop.}
@@ -231,7 +231,7 @@ template readValueImpl(r: var JsonReader, value: var MyCaseObject) =
       "'name', 'kind', and 'banana' or 'apple' depending on 'kind'")
 
 {.push warning[ProveField]:off.}  # https://github.com/nim-lang/Nim/issues/22060
-proc readValue*(r: var JsonReader[DefaultFlavor], value: var MyCaseObject)
+proc readValue*(r: var JsonReader[Json], value: var MyCaseObject)
     {.raises: [SerializationError, IOError].} =
   readValueImpl(r, value)
 {.pop.}
@@ -293,7 +293,7 @@ proc readValue(reader: var JsonReader, value: var FancyText) =
 
 # TODO `borrowSerialization` still doesn't work
 # properly when it's placed in another module:
-Meter.borrowSerialization int
+Meter.serializesAsBase Json
 
 template reject(code) {.used.} =
   static: doAssert(not compiles(code))

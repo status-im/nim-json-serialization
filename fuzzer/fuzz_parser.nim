@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2023 Status Research & Development GmbH
+# Copyright (c) 2023-2026 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -12,9 +12,9 @@ import
   faststreams,
   ../json_serialization/parser
 
-func toReader(input: openArray[byte]): JsonReader[DefaultFlavor] =
+func toReader(input: openArray[byte]): JsonReader[Json] =
   var stream = unsafeMemoryInput(input)
-  JsonReader[DefaultFlavor].init(stream)
+  JsonReader[Json].init(stream)
 
 proc executeParser(payload: openArray[byte]) =
   try:
@@ -23,7 +23,6 @@ proc executeParser(payload: openArray[byte]) =
     discard z
   except JsonReaderError:
     discard
-    
-test:  
+
+test:
   executeParser(payload)
-  
