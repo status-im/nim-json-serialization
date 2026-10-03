@@ -373,7 +373,7 @@ echo JrpcSys.encode(JrpcSys.decode(json, Request))
 <pre><code class="language-nim">import json_serialization, faststreams/outputs
 
 let file = fileOutput("output.json")
-var writer = JsonWriter[DefaultFlavor].init(file, pretty = true)
+var writer = JsonWriter[Json].init(file, pretty = true)
 
 writer.beginArray()
 
@@ -488,11 +488,11 @@ let file = Json.loadFile("filename.json", NimServer)
 </code></pre>
 <h3 id="standalone-reader"><a class="header" href="#standalone-reader">Standalone Reader</a></h3>
 <p>A reader can be created from any <a href="https://github.com/status-im/nim-faststreams">faststreams</a>-compatible stream:</p>
-<pre><code class="language-nim">var reader = JsonReader[DefaultFlavor].init(memoryInput(rawJson))
+<pre><code class="language-nim">var reader = JsonReader[Json].init(memoryInput(rawJson))
 let native2 = reader.readValue(NimServer)
 
 # Overwrite an existing instance
-var reader2 = JsonReader[DefaultFlavor].init(memoryInput(rawJson))
+var reader2 = JsonReader[Json].init(memoryInput(rawJson))
 var native3: NimServer
 reader2.readValue(native3)
 </code></pre>
@@ -561,7 +561,7 @@ echo Json.encode((x: 4, y: 5), pretty = true)
 </code></pre>
 <h3 id="standalone-writer"><a class="header" href="#standalone-writer">Standalone Writer</a></h3>
 <pre><code class="language-nim">var output = memoryOutput()
-var writer = JsonWriter[DefaultFlavor].init(output)
+var writer = JsonWriter[Json].init(output)
 writer.writeValue(native)
 echo output.getOutput(string)
 </code></pre>

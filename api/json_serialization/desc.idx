@@ -1,0 +1,4 @@
+nimTitle	desc	json_serialization/desc.html	module json_serialization/desc		0
+nim	Json	json_serialization/desc.html#Json	object Json		23
+nim	mimeType	json_serialization/desc.html#mimeType.t,typeJson	template mimeType(T: type Json): string		24
+nim	versionInt	json_serialization/desc.html#versionInt.t,typeJson	template versionInt(T: type Json): uint		16

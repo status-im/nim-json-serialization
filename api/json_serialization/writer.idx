@@ -27,7 +27,7 @@ nim	writeValue	json_serialization/writer.html#writeValue,JsonWriter,JsonNumber	p
 nim	writeValue	json_serialization/writer.html#writeValue,JsonWriter,JsonObjectType	proc writeValue(w: var JsonWriter; value: JsonObjectType)		347
 nim	writeValue	json_serialization/writer.html#writeValue,JsonWriter,JsonValue	proc writeValue(w: var JsonWriter; value: JsonValue)		353
 nim	writeValue	json_serialization/writer.html#writeValue.t,JsonWriter,	template writeValue(w: var JsonWriter; value: enum)		378
-nim	toJson	json_serialization/writer.html#toJson,auto	proc toJson(v: auto; pretty = false; typeAnnotations = false; Flavor = DefaultFlavor): string		577
+nim	toJson	json_serialization/writer.html#toJson,auto	proc toJson(v: auto; pretty = false; typeAnnotations = false; Flavor = Json): string		577
 nim	beginRecord	json_serialization/writer.html#beginRecord.t,JsonWriter	template beginRecord(w: var JsonWriter)		593
 nim	beginRecord	json_serialization/writer.html#beginRecord.t,JsonWriter,type	template beginRecord(w: var JsonWriter; T: type)		596
 nim	writeFieldName	json_serialization/writer.html#writeFieldName.t,JsonWriter,string	template writeFieldName(w: var JsonWriter; name: string)		599

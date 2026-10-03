@@ -28,7 +28,7 @@
     <label for="nav-toggle" id="nav-overlay"></label>
     <div class="container">
       <h1 class="title">Index</h1>
-      Modules: <a href="json_serialization.html">json_serialization</a>, <a href="json_serialization/format.html">json_serialization/format</a>, <a href="json_serialization/lexer.html">json_serialization/lexer</a>, <a href="json_serialization/parser.html">json_serialization/parser</a>, <a href="json_serialization/reader.html">json_serialization/reader</a>, <a href="json_serialization/reader_desc.html">json_serialization/reader_desc</a>, <a href="json_serialization/reader_impl.html">json_serialization/reader_impl</a>, <a href="json_serialization/types.html">json_serialization/types</a>, <a href="json_serialization/writer.html">json_serialization/writer</a>.<br/><p /><h2>API symbols</h2>
+      Modules: <a href="json_serialization.html">json_serialization</a>, <a href="json_serialization/desc.html">json_serialization/desc</a>, <a href="json_serialization/format.html">json_serialization/format</a>, <a href="json_serialization/lexer.html">json_serialization/lexer</a>, <a href="json_serialization/parser.html">json_serialization/parser</a>, <a href="json_serialization/reader.html">json_serialization/reader</a>, <a href="json_serialization/reader_desc.html">json_serialization/reader_desc</a>, <a href="json_serialization/reader_impl.html">json_serialization/reader_impl</a>, <a href="json_serialization/types.html">json_serialization/types</a>, <a href="json_serialization/writer.html">json_serialization/writer</a>.<br/><p /><h2>API symbols</h2>
 <dl><dt><a name="%60%24%60" href="#%60%24%60"><span>`$`:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="types: template `$`(s: JsonString): string" href="json_serialization/types.html#%24.t%2CJsonString">types: template `$`(s: JsonString): string</a></li>
@@ -45,25 +45,15 @@
           </ul></dd>
 <dt><a name="automaticBuiltinSerialization" href="#automaticBuiltinSerialization"><span>automaticBuiltinSerialization:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: template automaticBuiltinSerialization(F: type DefaultFlavor; enable: static[bool])" href="json_serialization/format.html#automaticBuiltinSerialization.t%2CtypeDefaultFlavor%2Cstatic%5Bbool%5D">format: template automaticBuiltinSerialization(F: type DefaultFlavor; enable: static[bool])</a></li>
-          <li><a class="reference external"
-          data-doc-search-tag="format: template automaticBuiltinSerialization(F: type DummyFlavor; enable: static[bool])" href="json_serialization/format.html#automaticBuiltinSerialization.t%2CtypeDummyFlavor%2Cstatic%5Bbool%5D">format: template automaticBuiltinSerialization(F: type DummyFlavor; enable: static[bool])</a></li>
+          data-doc-search-tag="format: template automaticBuiltinSerialization(F: type Json; enable: static[bool])" href="json_serialization/format.html#automaticBuiltinSerialization.t%2CtypeJson%2Cstatic%5Bbool%5D">format: template automaticBuiltinSerialization(F: type Json; enable: static[bool])</a></li>
           </ul></dd>
 <dt><a name="automaticPrimitivesSerialization" href="#automaticPrimitivesSerialization"><span>automaticPrimitivesSerialization:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: template automaticPrimitivesSerialization(F: type DefaultFlavor; enable: static[bool])" href="json_serialization/format.html#automaticPrimitivesSerialization.t%2CtypeDefaultFlavor%2Cstatic%5Bbool%5D">format: template automaticPrimitivesSerialization(F: type DefaultFlavor; enable: static[bool])</a></li>
-          <li><a class="reference external"
-          data-doc-search-tag="format: template automaticPrimitivesSerialization(F: type DummyFlavor; enable: static[bool])" href="json_serialization/format.html#automaticPrimitivesSerialization.t%2CtypeDummyFlavor%2Cstatic%5Bbool%5D">format: template automaticPrimitivesSerialization(F: type DummyFlavor; enable: static[bool])</a></li>
+          data-doc-search-tag="format: template automaticPrimitivesSerialization(F: type Json; enable: static[bool])" href="json_serialization/format.html#automaticPrimitivesSerialization.t%2CtypeJson%2Cstatic%5Bbool%5D">format: template automaticPrimitivesSerialization(F: type Json; enable: static[bool])</a></li>
           </ul></dd>
 <dt><a name="automaticSerialization" href="#automaticSerialization"><span>automaticSerialization:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: template automaticSerialization(F: type DefaultFlavor; T: distinct type;
-                       enable: static[bool])" href="json_serialization/format.html#automaticSerialization.t%2CtypeDefaultFlavor%2C%2Cstatic%5Bbool%5D">format: template automaticSerialization(F: type DefaultFlavor; T: distinct type;
-                       enable: static[bool])</a></li>
-          <li><a class="reference external"
-          data-doc-search-tag="format: template automaticSerialization(F: type DummyFlavor; T: distinct type;
-                       enable: static[bool])" href="json_serialization/format.html#automaticSerialization.t%2CtypeDummyFlavor%2C%2Cstatic%5Bbool%5D">format: template automaticSerialization(F: type DummyFlavor; T: distinct type;
-                       enable: static[bool])</a></li>
+          data-doc-search-tag="format: template automaticSerialization(F: type Json; T: distinct type; enable: static[bool])" href="json_serialization/format.html#automaticSerialization.t%2CtypeJson%2C%2Cstatic%5Bbool%5D">format: template automaticSerialization(F: type Json; T: distinct type; enable: static[bool])</a></li>
           </ul></dd>
 <dt><a name="beginArray" href="#beginArray"><span>beginArray:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -166,10 +156,6 @@
 <dt><a name="defaultJsonReaderFlags" href="#defaultJsonReaderFlags"><span>defaultJsonReaderFlags:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="types: const defaultJsonReaderFlags" href="json_serialization/types.html#defaultJsonReaderFlags">types: const defaultJsonReaderFlags</a></li>
-          </ul></dd>
-<dt><a name="DummyFlavor" href="#DummyFlavor"><span>DummyFlavor:</span></a></dt><dd><ul class="simple">
-<li><a class="reference external"
-          data-doc-search-tag="format: object DummyFlavor" href="json_serialization/format.html#DummyFlavor">format: object DummyFlavor</a></li>
           </ul></dd>
 <dt><a name="endArray" href="#endArray"><span>endArray:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -441,41 +427,29 @@
           </ul></dd>
 <dt><a name="flavorAllowsUnknownFields" href="#flavorAllowsUnknownFields"><span>flavorAllowsUnknownFields:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: template flavorAllowsUnknownFields(T: type DefaultFlavor): bool" href="json_serialization/format.html#flavorAllowsUnknownFields.t%2CtypeDefaultFlavor">format: template flavorAllowsUnknownFields(T: type DefaultFlavor): bool</a></li>
-          <li><a class="reference external"
-          data-doc-search-tag="format: template flavorAllowsUnknownFields(T: type DummyFlavor): bool" href="json_serialization/format.html#flavorAllowsUnknownFields.t%2CtypeDummyFlavor">format: template flavorAllowsUnknownFields(T: type DummyFlavor): bool</a></li>
+          data-doc-search-tag="format: template flavorAllowsUnknownFields(_: type Json): bool" href="json_serialization/format.html#flavorAllowsUnknownFields.t%2CtypeJson">format: template flavorAllowsUnknownFields(_: type Json): bool</a></li>
           </ul></dd>
 <dt><a name="flavorEnumRep" href="#flavorEnumRep"><span>flavorEnumRep:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: template flavorEnumRep(T: type DefaultFlavor): EnumRepresentation" href="json_serialization/format.html#flavorEnumRep.t%2CtypeDefaultFlavor">format: template flavorEnumRep(T: type DefaultFlavor): EnumRepresentation</a></li>
+          data-doc-search-tag="format: template flavorEnumRep(_: type Json): EnumRepresentation" href="json_serialization/format.html#flavorEnumRep.t%2CtypeJson">format: template flavorEnumRep(_: type Json): EnumRepresentation</a></li>
           <li><a class="reference external"
-          data-doc-search-tag="format: template flavorEnumRep(T: type DefaultFlavor; rep: static[EnumRepresentation])" href="json_serialization/format.html#flavorEnumRep.t%2CtypeDefaultFlavor%2Cstatic%5BEnumRepresentation%5D">format: template flavorEnumRep(T: type DefaultFlavor; rep: static[EnumRepresentation])</a></li>
-          <li><a class="reference external"
-          data-doc-search-tag="format: template flavorEnumRep(T: type Json; rep: static[EnumRepresentation])" href="json_serialization/format.html#flavorEnumRep.t%2CtypeJson%2Cstatic%5BEnumRepresentation%5D">format: template flavorEnumRep(T: type Json; rep: static[EnumRepresentation])</a></li>
+          data-doc-search-tag="format: template flavorEnumRep(_: type Json; rep: static[EnumRepresentation])" href="json_serialization/format.html#flavorEnumRep.t%2CtypeJson%2Cstatic%5BEnumRepresentation%5D">format: template flavorEnumRep(_: type Json; rep: static[EnumRepresentation])</a></li>
           </ul></dd>
 <dt><a name="flavorOmitsOptionalFields" href="#flavorOmitsOptionalFields"><span>flavorOmitsOptionalFields:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: template flavorOmitsOptionalFields(T: type DefaultFlavor): bool" href="json_serialization/format.html#flavorOmitsOptionalFields.t%2CtypeDefaultFlavor">format: template flavorOmitsOptionalFields(T: type DefaultFlavor): bool</a></li>
-          <li><a class="reference external"
-          data-doc-search-tag="format: template flavorOmitsOptionalFields(T: type DummyFlavor): bool" href="json_serialization/format.html#flavorOmitsOptionalFields.t%2CtypeDummyFlavor">format: template flavorOmitsOptionalFields(T: type DummyFlavor): bool</a></li>
+          data-doc-search-tag="format: template flavorOmitsOptionalFields(_: type Json): bool" href="json_serialization/format.html#flavorOmitsOptionalFields.t%2CtypeJson">format: template flavorOmitsOptionalFields(_: type Json): bool</a></li>
           </ul></dd>
 <dt><a name="flavorRequiresAllFields" href="#flavorRequiresAllFields"><span>flavorRequiresAllFields:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: template flavorRequiresAllFields(T: type DefaultFlavor): bool" href="json_serialization/format.html#flavorRequiresAllFields.t%2CtypeDefaultFlavor">format: template flavorRequiresAllFields(T: type DefaultFlavor): bool</a></li>
-          <li><a class="reference external"
-          data-doc-search-tag="format: template flavorRequiresAllFields(T: type DummyFlavor): bool" href="json_serialization/format.html#flavorRequiresAllFields.t%2CtypeDummyFlavor">format: template flavorRequiresAllFields(T: type DummyFlavor): bool</a></li>
+          data-doc-search-tag="format: template flavorRequiresAllFields(_: type Json): bool" href="json_serialization/format.html#flavorRequiresAllFields.t%2CtypeJson">format: template flavorRequiresAllFields(_: type Json): bool</a></li>
           </ul></dd>
 <dt><a name="flavorSkipNullFields" href="#flavorSkipNullFields"><span>flavorSkipNullFields:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: template flavorSkipNullFields(T: type DefaultFlavor): bool" href="json_serialization/format.html#flavorSkipNullFields.t%2CtypeDefaultFlavor">format: template flavorSkipNullFields(T: type DefaultFlavor): bool</a></li>
-          <li><a class="reference external"
-          data-doc-search-tag="format: template flavorSkipNullFields(T: type DummyFlavor): bool" href="json_serialization/format.html#flavorSkipNullFields.t%2CtypeDummyFlavor">format: template flavorSkipNullFields(T: type DummyFlavor): bool</a></li>
+          data-doc-search-tag="format: template flavorSkipNullFields(_: type Json): bool" href="json_serialization/format.html#flavorSkipNullFields.t%2CtypeJson">format: template flavorSkipNullFields(_: type Json): bool</a></li>
           </ul></dd>
 <dt><a name="flavorUsesAutomaticObjectSerialization" href="#flavorUsesAutomaticObjectSerialization"><span>flavorUsesAutomaticObjectSerialization:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: template flavorUsesAutomaticObjectSerialization(T: type DefaultFlavor): bool" href="json_serialization/format.html#flavorUsesAutomaticObjectSerialization.t%2CtypeDefaultFlavor">format: template flavorUsesAutomaticObjectSerialization(T: type DefaultFlavor): bool</a></li>
-          <li><a class="reference external"
-          data-doc-search-tag="format: template flavorUsesAutomaticObjectSerialization(T: type DummyFlavor): bool" href="json_serialization/format.html#flavorUsesAutomaticObjectSerialization.t%2CtypeDummyFlavor">format: template flavorUsesAutomaticObjectSerialization(T: type DummyFlavor): bool</a></li>
+          data-doc-search-tag="format: template flavorUsesAutomaticObjectSerialization(_: type Json): bool" href="json_serialization/format.html#flavorUsesAutomaticObjectSerialization.t%2CtypeJson">format: template flavorUsesAutomaticObjectSerialization(_: type Json): bool</a></li>
           </ul></dd>
 <dt><a name="formatMsg" href="#formatMsg"><span>formatMsg:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -565,7 +539,7 @@
           </ul></dd>
 <dt><a name="Json" href="#Json"><span>Json:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: object Json" href="json_serialization/format.html#Json">format: object Json</a></li>
+          data-doc-search-tag="desc: object Json" href="json_serialization/desc.html#Json">desc: object Json</a></li>
           </ul></dd>
 <dt><a name="JsonError" href="#JsonError"><span>JsonError:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -641,7 +615,7 @@
           </ul></dd>
 <dt><a name="mimeType" href="#mimeType"><span>mimeType:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: template mimeType(T: type Json): string" href="json_serialization/format.html#mimeType.t%2CtypeJson">format: template mimeType(T: type Json): string</a></li>
+          data-doc-search-tag="desc: template mimeType(T: type Json): string" href="json_serialization/desc.html#mimeType.t%2CtypeJson">desc: template mimeType(T: type Json): string</a></li>
           </ul></dd>
 <dt><a name="minPortableInt" href="#minPortableInt"><span>minPortableInt:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -881,7 +855,7 @@
           </ul></dd>
 <dt><a name="toJson" href="#toJson"><span>toJson:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="writer: proc toJson(v: auto; pretty = false; typeAnnotations = false; Flavor = DefaultFlavor): string" href="json_serialization/writer.html#toJson%2Cauto">writer: proc toJson(v: auto; pretty = false; typeAnnotations = false; Flavor = DefaultFlavor): string</a></li>
+          data-doc-search-tag="writer: proc toJson(v: auto; pretty = false; typeAnnotations = false; Flavor = Json): string" href="json_serialization/writer.html#toJson%2Cauto">writer: proc toJson(v: auto; pretty = false; typeAnnotations = false; Flavor = Json): string</a></li>
           </ul></dd>
 <dt><a name="tokenStartCol" href="#tokenStartCol"><span>tokenStartCol:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -899,18 +873,12 @@
           </ul></dd>
 <dt><a name="typeAutoSerialize" href="#typeAutoSerialize"><span>typeAutoSerialize:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: proc typeAutoSerialize(F: type DefaultFlavor; TM: distinct type): bool" href="json_serialization/format.html#typeAutoSerialize%2CtypeDefaultFlavor%2C">format: proc typeAutoSerialize(F: type DefaultFlavor; TM: distinct type): bool</a></li>
-          <li><a class="reference external"
-          data-doc-search-tag="format: proc typeAutoSerialize(F: type DummyFlavor; TM: distinct type): bool" href="json_serialization/format.html#typeAutoSerialize%2CtypeDummyFlavor%2C">format: proc typeAutoSerialize(F: type DummyFlavor; TM: distinct type): bool</a></li>
+          data-doc-search-tag="format: proc typeAutoSerialize(F: type Json; TM: distinct type): bool" href="json_serialization/format.html#typeAutoSerialize%2CtypeJson%2C">format: proc typeAutoSerialize(F: type Json; TM: distinct type): bool</a></li>
           </ul></dd>
 <dt><a name="typeClassOrMemberAutoSerialize" href="#typeClassOrMemberAutoSerialize"><span>typeClassOrMemberAutoSerialize:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: proc typeClassOrMemberAutoSerialize(F: type DefaultFlavor; TC: distinct type;
-                               TM: distinct type): bool" href="json_serialization/format.html#typeClassOrMemberAutoSerialize%2CtypeDefaultFlavor%2C%2C">format: proc typeClassOrMemberAutoSerialize(F: type DefaultFlavor; TC: distinct type;
-                               TM: distinct type): bool</a></li>
-          <li><a class="reference external"
-          data-doc-search-tag="format: proc typeClassOrMemberAutoSerialize(F: type DummyFlavor; TC: distinct type;
-                               TM: distinct type): bool" href="json_serialization/format.html#typeClassOrMemberAutoSerialize%2CtypeDummyFlavor%2C%2C">format: proc typeClassOrMemberAutoSerialize(F: type DummyFlavor; TC: distinct type;
+          data-doc-search-tag="format: proc typeClassOrMemberAutoSerialize(F: type Json; TC: distinct type;
+                               TM: distinct type): bool" href="json_serialization/format.html#typeClassOrMemberAutoSerialize%2CtypeJson%2C%2C">format: proc typeClassOrMemberAutoSerialize(F: type Json; TC: distinct type;
                                TM: distinct type): bool</a></li>
           </ul></dd>
 <dt><a name="UnexpectedField" href="#UnexpectedField"><span>UnexpectedField:</span></a></dt><dd><ul class="simple">
@@ -931,7 +899,7 @@
           </ul></dd>
 <dt><a name="versionInt" href="#versionInt"><span>versionInt:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="format: template versionInt(T: type Json): uint" href="json_serialization/format.html#versionInt.t%2CtypeJson">format: template versionInt(T: type Json): uint</a></li>
+          data-doc-search-tag="desc: template versionInt(T: type Json): uint" href="json_serialization/desc.html#versionInt.t%2CtypeJson">desc: template versionInt(T: type Json): uint</a></li>
           </ul></dd>
 <dt><a name="writeArray" href="#writeArray"><span>writeArray:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -1003,7 +971,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-10-02 05:11:30 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-10-03 14:17:12 UTC</small>
       </div>
     </div>
   </div>
