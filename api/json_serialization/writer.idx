@@ -27,17 +27,17 @@ nim	writeValue	json_serialization/writer.html#writeValue,JsonWriter,JsonNumber	p
 nim	writeValue	json_serialization/writer.html#writeValue,JsonWriter,JsonObjectType	proc writeValue(w: var JsonWriter; value: JsonObjectType)		347
 nim	writeValue	json_serialization/writer.html#writeValue,JsonWriter,JsonValue	proc writeValue(w: var JsonWriter; value: JsonValue)		353
 nim	writeValue	json_serialization/writer.html#writeValue.t,JsonWriter,	template writeValue(w: var JsonWriter; value: enum)		378
-nim	toJson	json_serialization/writer.html#toJson,auto	proc toJson(v: auto; pretty = false; typeAnnotations = false; Flavor = Json): string		577
-nim	beginRecord	json_serialization/writer.html#beginRecord.t,JsonWriter	template beginRecord(w: var JsonWriter)		593
-nim	beginRecord	json_serialization/writer.html#beginRecord.t,JsonWriter,type	template beginRecord(w: var JsonWriter; T: type)		596
-nim	writeFieldName	json_serialization/writer.html#writeFieldName.t,JsonWriter,string	template writeFieldName(w: var JsonWriter; name: string)		599
-nim	writeField	json_serialization/writer.html#writeField.t,JsonWriter,string,auto	template writeField(w: var JsonWriter; name: string; value: auto)		602
-nim	endRecord	json_serialization/writer.html#endRecord.t,JsonWriter	template endRecord(w: var JsonWriter)		606
-nim	serializesAsTextInJson	json_serialization/writer.html#serializesAsTextInJson.t,type[]	template serializesAsTextInJson(T: type[enum])		609
-nim	configureJsonSerialization	json_serialization/writer.html#configureJsonSerialization.t,type[],static[EnumRepresentation]	template configureJsonSerialization(T: type[enum]; enumRep: static[EnumRepresentation])		614
-nim	configureJsonSerialization	json_serialization/writer.html#configureJsonSerialization.t,type,type[],static[EnumRepresentation]	template configureJsonSerialization(Flavor: type; T: type[enum];\n                           enumRep: static[EnumRepresentation])		621
+nim	toJson	json_serialization/writer.html#toJson,auto	proc toJson(v: auto; pretty = false; typeAnnotations = false; Flavor = Json): string		565
+nim	beginRecord	json_serialization/writer.html#beginRecord.t,JsonWriter	template beginRecord(w: var JsonWriter)		581
+nim	beginRecord	json_serialization/writer.html#beginRecord.t,JsonWriter,type	template beginRecord(w: var JsonWriter; T: type)		584
+nim	writeFieldName	json_serialization/writer.html#writeFieldName.t,JsonWriter,string	template writeFieldName(w: var JsonWriter; name: string)		587
+nim	writeField	json_serialization/writer.html#writeField.t,JsonWriter,string,auto	template writeField(w: var JsonWriter; name: string; value: auto)		590
+nim	endRecord	json_serialization/writer.html#endRecord.t,JsonWriter	template endRecord(w: var JsonWriter)		594
+nim	serializesAsTextInJson	json_serialization/writer.html#serializesAsTextInJson.t,type[]	template serializesAsTextInJson(T: type[enum])		597
+nim	configureJsonSerialization	json_serialization/writer.html#configureJsonSerialization.t,type[],static[EnumRepresentation]	template configureJsonSerialization(T: type[enum]; enumRep: static[EnumRepresentation])		602
+nim	configureJsonSerialization	json_serialization/writer.html#configureJsonSerialization.t,type,type[],static[EnumRepresentation]	template configureJsonSerialization(Flavor: type; T: type[enum];\n                           enumRep: static[EnumRepresentation])		609
 nimgrp	writevalue	json_serialization/writer.html#writeValue-procs-all	proc		70
 nimgrp	beginobject	json_serialization/writer.html#beginObject-procs-all	proc		117
 nimgrp	writeobject	json_serialization/writer.html#writeObject-templates-all	template		263
-nimgrp	beginrecord	json_serialization/writer.html#beginRecord-templates-all	template		593
-nimgrp	configurejsonserialization	json_serialization/writer.html#configureJsonSerialization-templates-all	template		614
+nimgrp	beginrecord	json_serialization/writer.html#beginRecord-templates-all	template		581
+nimgrp	configurejsonserialization	json_serialization/writer.html#configureJsonSerialization-templates-all	template		602
