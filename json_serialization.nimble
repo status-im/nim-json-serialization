@@ -16,11 +16,11 @@ description   = "Flexible JSON serialization not relying on run-time type inform
 license       = "Apache License 2.0"
 skipDirs      = @["tests", "fuzzer"]
 
-requires "nim >= 2.0.10",
-         "faststreams >= 0.5.0",
+requires "nim >= 2.0.16",
+         "faststreams >= 0.6.0",
          "results >= 0.5.0",
          "serialization >= 0.5.4",
-         "stew >= 0.5.1"
+         "stew >= 0.6.0"
 
 from std/os import quoteShell
 from std/strutils import endsWith
@@ -50,12 +50,7 @@ task test, "Run all tests":
     run threads & " --mm:orc", "tests/test_all"
 
 task test_asan, "Run all tests with ASAN":
-  if platform != "x86" and (NimMajor, NimMinor) >= (2, 2):
-    try:
-      exec "echo '#if __clang_major__ < 20\n#error\n#endif' | clang -E - >/dev/null"
-    except OSError:
-      return
-
+  if platform != "x86":
     # https://clang.llvm.org/docs/AddressSanitizer.html
     putEnv("ASAN_OPTIONS", "detect_leaks=0:detect_stack_use_after_return=1")
     # https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html

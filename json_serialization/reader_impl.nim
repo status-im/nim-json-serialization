@@ -17,7 +17,7 @@ import
   serialization/[object_serialization, errors],
   "."/[format, types, lexer, parser, reader_desc]
 
-from json import JsonNode
+from std/json import JsonNode
 
 export
   enumutils, inputs, format, types, errors, parser, reader_desc
@@ -226,33 +226,27 @@ proc readRecordValue*[T](r: var JsonReader, value: var T)
         r.raiseUnexpectedField(key, cstring typeName)
 
 template autoSerializeCheck(F: distinct type, T: distinct type, body) =
-  when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
-    mixin typeAutoSerialize
-    when not F.typeAutoSerialize(T):
-      const
-        typeName = typetraits.name(T)
-        flavorName = typetraits.name(F)
-      {.error: flavorName &
-        ": automatic serialization is not enabled or readValue not implemented for `" &
-        typeName & "`".}
-    else:
-      body
+  mixin typeAutoSerialize
+  when not F.typeAutoSerialize(T):
+    const
+      typeName = typetraits.name(T)
+      flavorName = typetraits.name(F)
+    {.error: flavorName &
+      ": automatic serialization is not enabled or readValue not implemented for `" &
+      typeName & "`".}
   else:
     body
 
 template autoSerializeCheck(F: distinct type, TC: distinct type, M: distinct type, body) =
-  when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
-    mixin typeClassOrMemberAutoSerialize
-    when not F.typeClassOrMemberAutoSerialize(TC, M):
-      const
-        typeName = typetraits.name(M)
-        typeClassName = typetraits.name(TC)
-        flavorName = typetraits.name(F)
-      {.error: flavorName  &
-        ": automatic serialization is not enabled or readValue not implemented for `" &
-        typeName & "` of typeclass `" & typeClassName & "`".}
-    else:
-      body
+  mixin typeClassOrMemberAutoSerialize
+  when not F.typeClassOrMemberAutoSerialize(TC, M):
+    const
+      typeName = typetraits.name(M)
+      typeClassName = typetraits.name(TC)
+      flavorName = typetraits.name(F)
+    {.error: flavorName  &
+      ": automatic serialization is not enabled or readValue not implemented for `" &
+      typeName & "` of typeclass `" & typeClassName & "`".}
   else:
     body
 
@@ -391,17 +385,11 @@ proc readValue*[T](r: var JsonReader, value: var T)
           r.raiseUnexpectedValue("Too many items for " & $(typeof(value)))
 
   elif value is object:
-    when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey and cannot accept `object` param
-      autoSerializeCheck(Flavor, object, typeof(value)):
-        readValueObjectOrTuple(Flavor, r, value)
-    else:
+    autoSerializeCheck(Flavor, object, typeof(value)):
       readValueObjectOrTuple(Flavor, r, value)
 
   elif value is tuple:
-    when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey and cannot accept `tuple` param
-      autoSerializeCheck(Flavor, tuple, typeof(value)):
-        readValueObjectOrTuple(Flavor, r, value)
-    else:
+    autoSerializeCheck(Flavor, tuple, typeof(value)):
       readValueObjectOrTuple(Flavor, r, value)
 
   else:
