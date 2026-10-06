@@ -73,10 +73,9 @@ template flavorEnumRep*(_: type Json, rep: static[EnumRepresentation]) =
   static:
     JsonEnumRep = rep
 
-when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
-  # Keep backward compatibility behavior, Json always enable all built in serialization.
-  generateJsonAutoSerializationAddon(Json)
-  Json.automaticBuiltinSerialization(true)
+# Keep backward compatibility behavior, Json always enable all built in serialization.
+generateJsonAutoSerializationAddon(Json)
+Json.automaticBuiltinSerialization(true)
 
 template decode*(
     Format: type Json,
@@ -94,15 +93,7 @@ template createJsonFlavor*(FlavorName: untyped,
                            allowUnknownFields = true,
                            skipNullFields = false,
                            automaticPrimitivesSerialization = true) {.dirty.} =
-  when declared(SerializationFormat): # Earlier versions lack mimeTypeValue
-    createFlavor(Json, FlavorName, mimeTypeValue)
-  else:
-    type FlavorName* = object
-
-    template Reader*(_: type FlavorName): type = Reader(Json, FlavorName)
-    template Writer*(_: type FlavorName): type = Writer(Json, FlavorName)
-    template PreferredOutputType*(_: type FlavorName): type = string
-    template mimeType*(_: type FlavorName): string = mimeTypeValue
+  createFlavor(Json, FlavorName, mimeTypeValue)
 
   template decode*(
       Format: type FlavorName,
@@ -126,10 +117,9 @@ template createJsonFlavor*(FlavorName: untyped,
     static:
       `FlavorName EnumRep` = rep
 
-  when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
-    generateJsonAutoSerializationAddon(FlavorName)
+  generateJsonAutoSerializationAddon(FlavorName)
 
-    # Set default to true for backward compatibility
-    # but user can call it again later with different value.
-    # Or fine tuning use `Flavor.automaticSerialization(type, true/false)`
-    FlavorName.automaticBuiltinSerialization(automaticPrimitivesSerialization)
+  # Set default to true for backward compatibility
+  # but user can call it again later with different value.
+  # Or fine tuning use `Flavor.automaticSerialization(type, true/false)`
+  FlavorName.automaticBuiltinSerialization(automaticPrimitivesSerialization)

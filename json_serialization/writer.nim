@@ -390,33 +390,27 @@ template isStringLikeArray[N](v: array[N, char]): bool = true
 template isStringLikeArray(v: auto): bool = false
 
 template autoSerializeCheck(F: distinct type, T: distinct type, body) =
-  when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
-    mixin typeAutoSerialize
-    when not F.typeAutoSerialize(T):
-      const
-        typeName = typetraits.name(T)
-        flavorName = typetraits.name(F)
-      {.error: flavorName &
-        ": automatic serialization is not enabled or writeValue not implemented for `" &
-        typeName & "`".}
-    else:
-      body
+  mixin typeAutoSerialize
+  when not F.typeAutoSerialize(T):
+    const
+      typeName = typetraits.name(T)
+      flavorName = typetraits.name(F)
+    {.error: flavorName &
+      ": automatic serialization is not enabled or writeValue not implemented for `" &
+      typeName & "`".}
   else:
     body
 
 template autoSerializeCheck(F: distinct type, TC: distinct type, M: distinct type, body) =
-  when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey
-    mixin typeClassOrMemberAutoSerialize
-    when not F.typeClassOrMemberAutoSerialize(TC, M):
-      const
-        typeName = typetraits.name(M)
-        typeClassName = typetraits.name(TC)
-        flavorName = typetraits.name(F)
-      {.error: flavorName &
-        ": automatic serialization is not enabled or writeValue not implemented for `" &
-        typeName & "` of typeclass `" & typeClassName & "`".}
-    else:
-      body
+  mixin typeClassOrMemberAutoSerialize
+  when not F.typeClassOrMemberAutoSerialize(TC, M):
+    const
+      typeName = typetraits.name(M)
+      typeClassName = typetraits.name(TC)
+      flavorName = typetraits.name(F)
+    {.error: flavorName &
+      ": automatic serialization is not enabled or writeValue not implemented for `" &
+      typeName & "` of typeclass `" & typeClassName & "`".}
   else:
     body
 
@@ -551,17 +545,11 @@ proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
         w.writeArray(value)
 
   elif value is object:
-    when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey and cannot accept `object` param
-      autoSerializeCheck(Flavor, object, typeof(value)):
-        writeValueObjectOrTuple(Flavor, w, value)
-    else:
+    autoSerializeCheck(Flavor, object, typeof(value)):
       writeValueObjectOrTuple(Flavor, w, value)
 
   elif value is tuple:
-    when declared(macrocache.hasKey): # Nim 1.6 have no macrocache.hasKey and cannot accept `tuple` param
-      autoSerializeCheck(Flavor, tuple, typeof(value)):
-        writeValueObjectOrTuple(Flavor, w, value)
-    else:
+    autoSerializeCheck(Flavor, tuple, typeof(value)):
       writeValueObjectOrTuple(Flavor, w, value)
 
   elif value is distinct:
