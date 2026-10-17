@@ -523,21 +523,21 @@ proc writeValue*[V: not void](w: var JsonWriter, value: V) {.raises: [IOError].}
       w.streamElement(s):
         s.writeText value
 
-  elif value is seq or(value is distinct and distinctBase(value) is seq):
+  elif distinctBase(typeof(value)) is seq:
     autoSerializeCheck(Flavor, seq, typeof(value)):
       when value is distinct:
         w.writeArray(distinctBase value)
       else:
         w.writeArray(value)
 
-  elif value is array or(value is distinct and distinctBase(value) is array):
+  elif distinctBase(typeof(value)) is array:
     autoSerializeCheck(Flavor, array, typeof(value)):
       when value is distinct:
         w.writeArray(distinctBase value)
       else:
         w.writeArray(value)
 
-  elif value is openArray or(value is distinct and distinctBase(value) is openArray):
+  elif distinctBase(typeof(value)) is openArray:
     autoSerializeCheck(Flavor, openArray, typeof(value)):
       when value is distinct:
         w.writeArray(distinctBase value)
