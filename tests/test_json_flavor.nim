@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2019-2025 Status Research & Development GmbH
+# Copyright (c) 2019-2026 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -61,6 +61,12 @@ type
   ListOnly = object
     list: JsonString
 
+  ViaRef = object
+    x: int
+
+  ViaPtr = object
+    y: int
+
 Container.useDefaultSerializationIn StringyJson
 
 createJsonFlavor OptJson
@@ -95,6 +101,9 @@ createJsonFlavor NullyFields,
 
 Container.useDefaultSerializationIn NullyFields
 ListOnly.useDefaultSerializationIn NullyFields
+
+createJsonFlavor PointerJson
+PointerJson.useDefaultSerializationFor(ref ViaRef, ptr ViaPtr)
 
 suite "Test JsonFlavor":
   test "basic test":
@@ -213,3 +222,10 @@ suite "Test JsonFlavor":
   test "custom writer that uses stream":
     let value = @[@[byte 0, 1], @[byte 2, 3]]
     check: StringyJson.encode(value) == """["0001","0203"]"""
+
+  test "default serialization for ref and ptr types":
+    check:
+      PointerJson.encode(ViaRef(x: 1)) == """{"x":1}"""
+      PointerJson.encode(ViaPtr(y: 2)) == """{"y":2}"""
+      PointerJson.decode("""{"x":1}""", ViaRef) == ViaRef(x: 1)
+      PointerJson.decode("""{"y":2}""", ViaPtr) == ViaPtr(y: 2)
