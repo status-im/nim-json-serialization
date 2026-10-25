@@ -16,7 +16,7 @@ import
 
 from stew/ptrops import makeUncheckedArray
 from stew/shims/struninit import setLenUninit2
-from faststreams/buffers import len, advance
+from faststreams/buffers import len, advance, data
 
 export
   inputs, types
@@ -493,6 +493,27 @@ proc scanNumber*[T](lex: var JsonLexer, val: var T)
       discard lex.scanInt(val.exponent, lex.conf.exponentDigitsLimit,
         false, errExpDigitLimit)
 
+func isSpecial(c: byte): uint8 {.inline.} =
+  # Quotation mark, reverse solidus and control characters U+0000 to U+001F:
+  # https://datatracker.ietf.org/doc/html/rfc8259#section-7
+  uint8(c == byte('"')) or uint8(c == byte('\\')) or uint8(c < 0x20'u8)
+
+func hasSpecial(chunk: openArray[byte]): bool {.inline.} =
+  # Branch-free, so that the loop gets vectorized
+  var special = 0'u8
+  for c in chunk:
+    special = special or isSpecial(c)
+  special != 0
+
+func stringRunLen*(data: openArray[byte]): int =
+  ## Length of the leading run of `data` that needs no unescaping
+  var i = 0
+  while i + 64 <= data.len and not hasSpecial(data.toOpenArray(i, i + 63)):
+    i += 64
+  while i < data.len and isSpecial(data[i]) == 0:
+    inc i
+  i
+
 proc scanString*[T](lex: var JsonLexer, val: var T, limit: int)
                     {.gcsafe, raises: [IOError].} =
   ## scanInt only accepts `string` or `JsonVoid`
@@ -533,11 +554,9 @@ proc scanString*[T](lex: var JsonLexer, val: var T, limit: int)
     else:
       let avail = lex.stream.span.len
       if avail > 0:
-        let base = makeUncheckedArray(lex.stream.span.startAddr)
-        var i = 0
-        while i < avail and base[i] != byte('"') and base[i] != byte('\\') and
-              base[i] >= 0x20'u8:
-          inc i
+        let
+          base = makeUncheckedArray(lex.stream.span.startAddr)
+          i = stringRunLen(lex.stream.span.data)
         if i > 0:
           var take = i
           let hitLimit = limit > 0 and strLen + take > limit
