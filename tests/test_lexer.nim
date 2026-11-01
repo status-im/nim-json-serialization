@@ -1,5 +1,5 @@
 # json-serialization
-# Copyright (c) 2019-2024 Status Research & Development GmbH
+# Copyright (c) 2019-2026 Status Research & Development GmbH
 # Licensed under either of
 #  * Apache License, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE))
 #  * MIT license ([LICENSE-MIT](LICENSE-MIT))
@@ -8,6 +8,7 @@
 # those terms.
 
 import
+  std/strutils,
   faststreams,
   unittest2
 
@@ -246,6 +247,23 @@ suite "lexer test suite":
     testScanString("\"\\\"\\\\\\b\\f\\n\\r\\t\"", JsonVoid())
 
     testScanString("\"Обычный текст в кодировке UTF-8\"", JsonVoid())
+
+  test "scanString long plain runs":
+    # Plain runs are scanned in blocks of 64 bytes;
+    # put the special character before, on and after block boundaries
+    for n in [0, 1, 63, 64, 65, 127, 128, 129, 200]:
+      let plain = 'a'.repeat(n)
+      testScanString("\"" & plain & "\"", plain, limit = 0)
+      testScanString(
+        "\"" & plain & "\\n" & plain & "\"", plain & "\n" & plain, limit = 0)
+      testScanString(
+        "\"" & plain & "\n\"", plain, limit = 0, error = errQuoteExpected)
+      testScanString(
+        "\"" & plain & "\t\"", plain, limit = 0, error = errEscapeControlChar)
+      testScanString("\"" & plain, plain, limit = 0, error = errUnexpectedEof)
+      if n > 0:
+        testScanString(
+          "\"" & plain & "b\"", plain, limit = n, error = errStringLengthLimit)
 
   test "scanNumber integer part string":
     testScanNumber("0", "0")
