@@ -505,7 +505,7 @@ func hasSpecial(chunk: openArray[byte]): bool {.inline.} =
     special = special or isSpecial(c)
   special != 0
 
-func stringRunLen*(data: openArray[byte]): int =
+func stringRunLen(data: openArray[byte]): int =
   ## Length of the leading run of `data` that needs no unescaping
   var i = 0
   while i + 64 <= data.len and not hasSpecial(data.toOpenArray(i, i + 63)):
