@@ -52,10 +52,10 @@ nim	nonws	json_serialization/lexer.html#nonws,JsonLexer	proc nonws(lex: var Json
 nim	scanBool	json_serialization/lexer.html#scanBool,JsonLexer	proc scanBool(lex: var JsonLexer): bool		380
 nim	scanNull	json_serialization/lexer.html#scanNull,JsonLexer	proc scanNull(lex: var JsonLexer)		404
 nim	scanNumber	json_serialization/lexer.html#scanNumber,JsonLexer,T	proc scanNumber[T](lex: var JsonLexer; val: var T)		415
-nim	scanString	json_serialization/lexer.html#scanString,JsonLexer,T,int	proc scanString[T](lex: var JsonLexer; val: var T; limit: int)		496
-nim	scanValue	json_serialization/lexer.html#scanValue,JsonLexer,T	proc scanValue[T](lex: var JsonLexer; val: var T)		610
-nim	tokKind	json_serialization/lexer.html#tokKind,JsonLexer	proc tokKind(lex: var JsonLexer): JsonValueKind		613
-nim	parseObjectImpl	json_serialization/lexer.html#parseObjectImpl.t,JsonLexer,static[bool],untyped,untyped,untyped,untyped,untyped,untyped	template parseObjectImpl(lex: JsonLexer; skipNullFields: static[bool];\n                actionInitial: untyped; actionClosing: untyped;\n                actionComma: untyped; actionKey: untyped; actionValue: untyped;\n                actionError: untyped)		616
-nim	scanObject	json_serialization/lexer.html#scanObject,JsonLexer,T	proc scanObject[T](lex: var JsonLexer; val: var T)		695
-nim	parseArrayImpl	json_serialization/lexer.html#parseArrayImpl.t,JsonLexer,untyped,untyped,untyped,untyped,untyped,untyped	template parseArrayImpl(lex: JsonLexer; numElem: untyped; actionInitial: untyped;\n               actionClosing: untyped; actionComma: untyped;\n               actionValue: untyped; actionError: untyped)		739
-nim	scanArray	json_serialization/lexer.html#scanArray,JsonLexer,T	proc scanArray[T](lex: var JsonLexer; val: var T)		804
+nim	scanString	json_serialization/lexer.html#scanString,JsonLexer,T,int	proc scanString[T](lex: var JsonLexer; val: var T; limit: int)		517
+nim	scanValue	json_serialization/lexer.html#scanValue,JsonLexer,T	proc scanValue[T](lex: var JsonLexer; val: var T)		629
+nim	tokKind	json_serialization/lexer.html#tokKind,JsonLexer	proc tokKind(lex: var JsonLexer): JsonValueKind		632
+nim	parseObjectImpl	json_serialization/lexer.html#parseObjectImpl.t,JsonLexer,static[bool],untyped,untyped,untyped,untyped,untyped,untyped	template parseObjectImpl(lex: JsonLexer; skipNullFields: static[bool];\n                actionInitial: untyped; actionClosing: untyped;\n                actionComma: untyped; actionKey: untyped; actionValue: untyped;\n                actionError: untyped)		635
+nim	scanObject	json_serialization/lexer.html#scanObject,JsonLexer,T	proc scanObject[T](lex: var JsonLexer; val: var T)		714
+nim	parseArrayImpl	json_serialization/lexer.html#parseArrayImpl.t,JsonLexer,untyped,untyped,untyped,untyped,untyped,untyped	template parseArrayImpl(lex: JsonLexer; numElem: untyped; actionInitial: untyped;\n               actionClosing: untyped; actionComma: untyped;\n               actionValue: untyped; actionError: untyped)		758
+nim	scanArray	json_serialization/lexer.html#scanArray,JsonLexer,T	proc scanArray[T](lex: var JsonLexer; val: var T)		823
