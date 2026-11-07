@@ -85,6 +85,35 @@ proc tokKind*(r: var JsonReader): JsonValueKind
   result = r.lex.tokKind
   r.checkError
 
+proc parseString*(
+    r: var JsonReader, limit: int
+): string {.raises: [IOError, JsonReaderError].}
+
+proc doParseStringView(
+    r: var JsonReader,
+    limit: int, buf: var string
+): tuple[data: ptr UncheckedArray[char], dataHigh: int] {.
+    raises: [IOError, JsonReaderError].} =
+  if r.tokKind != JsonValueKind.String:
+    r.raiseParserError(errStringExpected)
+  let res = r.lex.scanStringView(buf, limit)
+  r.checkError
+  res
+
+template parseStringView*(
+    r: var JsonReader, limit: int
+): openArray[char] =
+  var buf: string
+  when nimvm:
+    buf = r.parseString(limit)
+    buf.toOpenArray(0, buf.high)
+  else:
+    let (data, dataHigh) = r.doParseStringView(limit, buf)
+    data.toOpenArray(0, dataHigh)
+
+template parseStringView*(r: var JsonReader): openArray[char] =
+  r.parseStringView(r.lex.conf.stringLengthLimit)
+
 # ------------------------------------------------------------------------------
 # Custom iterators
 # ------------------------------------------------------------------------------
@@ -126,13 +155,7 @@ proc customStringHandler*(r: var JsonReader; limit: int; handler: CustomStringHa
        {.raises: [IOError, JsonReaderError].} =
   ## Apply the `handler` argument function for parsing a String type
   ## value.
-  # TODO: remove temporary token
-  if r.tokKind != JsonValueKind.String:
-    r.raiseParserError(errStringExpected)
-  var val: string
-  r.lex.scanString(val, limit)
-  r.checkError
-  for c in val:
+  for c in r.parseStringView(limit):
     handler(c)
 
 template customIntValueIt*(r: var JsonReader; body: untyped) =
@@ -160,6 +183,7 @@ template customNumberValueIt*(r: var JsonReader; body: untyped) =
 
 # !!!: don't change limit from untyped to int, it will trigger Nim bug
 # the second overloaded customStringValueIt will fail to compile
+# https://github.com/nim-lang/Nim/issues/14827
 template customStringValueIt*(r: var JsonReader; limit: untyped; body: untyped) =
   ## Convenience wrapper around `customStringHandler()` for parsing a text
   ## terminating with a double quote character '"'.

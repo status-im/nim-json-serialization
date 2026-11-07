@@ -12,6 +12,7 @@ import
   unittest2,
   results,
   stew/byteutils,
+  faststreams/textio,
   serialization,
   ../json_serialization/pkg/results,
   ../json_serialization/std/options,
@@ -22,8 +23,21 @@ createJsonFlavor StringyJson
 proc writeValue(w: var JsonWriter[StringyJson], value: seq[byte]) =
   w.streamElement(s):
     s.write('"')
-    s.write(toHex(value))
+    s.writeHex(value)
     s.write('"')
+
+proc decodeHex(
+    r: var JsonReader[StringyJson], hex: openArray[char], value: var seq[byte]) =
+  if hex.len mod 2 != 0:
+    r.raiseUnexpectedValue("hex string must have even length")
+  value.setLen(hex.len div 2)
+  try:
+    hexToByteArrayStrict(hex, value)
+  except ValueError as err:
+    r.raiseUnexpectedValue(err.msg)
+
+proc readValue(r: var JsonReader[StringyJson], value: var seq[byte]) =
+  r.decodeHex(r.parseStringView(), value)
 
 proc writeValue*(
     w: var JsonWriter[StringyJson], val: SomeInteger) {.raises: [IOError].} =
@@ -219,9 +233,13 @@ suite "Test JsonFlavor":
     let z = NullyFields.encode(Banana)
     check z == "0"
 
-  test "custom writer that uses stream":
+  test "custom writer and reader that use the stream":
     let value = @[@[byte 0, 1], @[byte 2, 3]]
-    check: StringyJson.encode(value) == """["0001","0203"]"""
+    check:
+      StringyJson.encode(value) == """["0001","0203"]"""
+      StringyJson.decode("""["0001", "0203"]""", seq[seq[byte]]) == value
+    expect SerializationError:
+      discard StringyJson.decode("""["000", "0203"]""", seq[seq[byte]])
 
   test "default serialization for ref and ptr types":
     check:

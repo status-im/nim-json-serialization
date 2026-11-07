@@ -221,6 +221,8 @@ When writing a custom serializer, use these safe and intuitive parsers. Avoid us
 tokKind(r: var JsonReader): JsonValueKind
 parseString(r: var JsonReader, limit: int): string
 parseString(r: var JsonReader): string
+parseStringView(r: var JsonReader, limit: int): openArray[char]
+parseStringView(r: var JsonReader): openArray[char]
 parseBool(r: var JsonReader): bool
 parseNull(r: var JsonReader)
 parseNumber(r: var JsonReader, T: type): JsonNumber[T: string or uint64]
