@@ -19,6 +19,7 @@ import
 
 from std/os import splitPath, walkDirRec
 from std/strutils import startsWith
+from stew/ptrops import baseAddr
 
 createJsonFlavor NullFields,
   skipNullFields = true
@@ -68,6 +69,12 @@ suite "Custom iterators":
           text.add it
 
       check text == "hello \t world"
+
+      text.reset()
+      r = toReader "\"abc\""
+      r.customStringValueIt(int.high):
+        text.add it
+      check text == "abc"
     customTest()
 
 suite "Public parser":
@@ -228,6 +235,52 @@ suite "Public parser":
     r = toReader "-56.009e6"
     val = r.parseFloat(float64)
     check val == -56009000.0
+
+  test "parseStringView":
+    proc parse(r: var JsonReader): seq[string] =
+      r.parseArray:
+        result.add r.parseStringView().substr()
+
+    var r = toReader "[\"0x0123\", \"\", \"0x\\u0061b\", \"a\\\\b\"]"
+    check r.parse() == @["0x0123", "", "0xab", "a\\b"]
+
+    r = toReader "\"a\" \"b\""
+    check:
+      r.parseStringView().substr() == "a"
+      r.parseStringView().substr() == "b"
+
+    for limit in [3, int.high]:
+      r = toReader "\"abc\""
+      check r.parseStringView(limit).substr() == "abc"
+
+    var conf = defaultJsonReaderConf
+    conf.stringLengthLimit = 3
+    r = JsonReader[Json].init(
+      unsafeMemoryInput("\"abcd\""), defaultJsonReaderFlags, conf)
+    expect JsonReaderError:
+      discard r.parseStringView().len
+
+    for input in ["1", "null", "\"ab", "\"a\tb\"", "\"a\nb\""]:
+      r = toReader input
+      expect JsonReaderError:
+        discard r.parseStringView().len
+
+    when nimvm:
+      discard
+    else:
+      # Without escape sequences, the view points into the input
+      let input = "\"abc\""
+      r = toReader input
+      check pointer(baseAddr(r.parseStringView())) ==
+        pointer(baseAddr(input.toOpenArray(1, 3)))
+
+      # Strings that are split between buffers are copied
+      for pageSize in [1, 3, 8]:
+        let buffers = PageBuffers.init(pageSize)
+        for c in "[\"0x0123\", \"\", \"0x\\u0061b\"]":
+          buffers.write(byte(c))
+        r = JsonReader[Json].init(memoryInput(buffers))
+        check r.parse() == @["0x0123", "", "0xab"]
 
   proc inputFile(fileName: string): InputStream =
     when nimvm:

@@ -14,7 +14,7 @@ import
   faststreams/inputs,
   types
 
-from stew/ptrops import makeUncheckedArray
+from stew/ptrops import baseAddr, makeUncheckedArray
 from stew/shims/struninit import setLenUninit2
 from faststreams/buffers import len, advance, data
 
@@ -554,9 +554,9 @@ proc scanString*[T](lex: var JsonLexer, val: var T, limit: int)
     else:
       let avail = lex.stream.span.len
       if avail > 0:
-        let
-          base = makeUncheckedArray(lex.stream.span.startAddr)
-          i = stringRunLen(lex.stream.span.data)
+        when T is string:
+          let base = makeUncheckedArray(lex.stream.span.startAddr)
+        let i = stringRunLen(lex.stream.span.data)
         if i > 0:
           var take = i
           let hitLimit = limit > 0 and strLen + take > limit
@@ -625,6 +625,27 @@ proc scanString*[T](lex: var JsonLexer, val: var T, limit: int)
       error errQuoteExpected
     else:
       appendVal c
+
+proc scanStringView*(
+    lex: var JsonLexer,
+    buf: var string, limit: int
+): tuple[data: ptr UncheckedArray[char], dataHigh: int] {.
+    gcsafe, raises: [IOError].} =
+  ## Variant of scanString that avoids copying into `buf` for content
+  ## that does not require unescaping. Reading from the stream again
+  ## invalidates the returned buffer.
+  let avail = lex.stream.span.len - 1  # Start after the opening quote
+  if avail > 0:
+    let
+      base = makeUncheckedArray(lex.stream.span.startAddr)
+      scanLen = if limit > 0 and limit < avail: limit + 1 else: avail
+      i = stringRunLen(base.toOpenArray(1, scanLen))
+    if i < scanLen and base[i + 1] == '"'.byte:
+      lex.stream.span.advance(i + 2)
+      return (makeUncheckedArray(cast[ptr char](addr base[1])), i - 1)
+
+  lex.scanString(buf, limit)
+  (makeUncheckedArray baseAddr(buf), buf.high)
 
 proc scanValue*[T](lex: var JsonLexer, val: var T)
                    {.gcsafe, raises: [IOError].}
